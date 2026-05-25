@@ -21,14 +21,9 @@ from plane.license.utils.instance_value import get_configuration_value
 
 
 class GitHubOAuthProvider(OauthAdapter):
-    token_url = "https://github.com/login/oauth/access_token"
-    userinfo_url = "https://api.github.com/user"
     org_membership_url = "https://api.github.com/orgs"
 
     provider = "github"
-    scope = "read:user user:email"
-
-    organization_scope = "read:org"
 
     def __init__(self, request, code=None, state=None, callback=None):
         GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_ORGANIZATION_ID = get_configuration_value([
@@ -56,8 +51,19 @@ class GitHubOAuthProvider(OauthAdapter):
         client_secret = GITHUB_CLIENT_SECRET
         self.organization_id = GITHUB_ORGANIZATION_ID
 
-        if self.organization_id:
-            self.scope += f" {self.organization_scope}"
+        # URL overrides for Authentik (or any OIDC provider); fall back to GitHub defaults.
+        token_url = os.environ.get("AUTHENTIK_TOKEN_URL", "https://github.com/login/oauth/access_token")
+        userinfo_url = os.environ.get("AUTHENTIK_USERINFO_URL", "https://api.github.com/user")
+        authorize_base = os.environ.get("AUTHENTIK_AUTHORIZE_URL", "https://github.com/login/oauth/authorize")
+
+        # Use OIDC scopes when redirecting to an external IdP; otherwise GitHub scopes.
+        if os.environ.get("AUTHENTIK_AUTHORIZE_URL"):
+            scope = os.environ.get("AUTHENTIK_SCOPE", "openid email profile")
+        else:
+            scope = "read:user user:email"
+            if self.organization_id:
+                scope += " read:org"
+        self.scope = scope
 
         redirect_uri = f"""{"https" if request.is_secure() else "http"}://{request.get_host()}/auth/github/callback/"""
         url_params = {
@@ -66,7 +72,7 @@ class GitHubOAuthProvider(OauthAdapter):
             "scope": self.scope,
             "state": state,
         }
-        auth_url = f"https://github.com/login/oauth/authorize?{urlencode(url_params)}"
+        auth_url = f"{authorize_base}?{urlencode(url_params)}"
         super().__init__(
             request,
             self.provider,
@@ -74,8 +80,8 @@ class GitHubOAuthProvider(OauthAdapter):
             self.scope,
             redirect_uri,
             auth_url,
-            self.token_url,
-            self.userinfo_url,
+            token_url,
+            userinfo_url,
             client_secret,
             code,
             callback=callback,
@@ -105,12 +111,14 @@ class GitHubOAuthProvider(OauthAdapter):
             "id_token": token_response.get("id_token", ""),
         })
 
-    def __get_email(self, headers):
+    def __get_email(self, headers, user_info_response):
+        # Standard OIDC (Authentik) provides email directly in the userinfo response.
+        if user_info_response.get("email"):
+            return user_info_response["email"]
+        # Fall back to the GitHub-specific separate emails endpoint.
         try:
-            # Github does not provide email in user response
             emails_url = "https://api.github.com/user/emails"
             emails_response = requests.get(emails_url, headers=headers).json()
-            # Ensure the response is a list before iterating
             if not isinstance(emails_response, list):
                 self.logger.error("Unexpected response format from GitHub emails API")
                 raise AuthenticationException(
@@ -126,9 +134,7 @@ class GitHubOAuthProvider(OauthAdapter):
                 )
             return email
         except requests.RequestException:
-            self.logger.warning(
-                "Error getting email from GitHub",
-            )
+            self.logger.warning("Error getting email from GitHub")
             raise AuthenticationException(
                 error_code=AUTHENTICATION_ERROR_CODES["GITHUB_OAUTH_PROVIDER_ERROR"],
                 error_message="GITHUB_OAUTH_PROVIDER_ERROR",
@@ -163,19 +169,19 @@ class GitHubOAuthProvider(OauthAdapter):
                     error_message="GITHUB_USER_NOT_IN_ORG",
                 )
 
-        email = self.__get_email(headers=headers)
-        self.logger.debug(
-            "Email found",
-            extra={
-                "email": email,
-            },
-        )
+        email = self.__get_email(headers=headers, user_info_response=user_info_response)
+        self.logger.debug("Email found", extra={"email": email})
+
+        # Accept standard OIDC claims (sub, picture) as fallbacks for GitHub-specific ones.
+        provider_id = user_info_response.get("id") or user_info_response.get("sub")
+        avatar = user_info_response.get("avatar_url") or user_info_response.get("picture")
+
         super().set_user_data({
             "email": email,
             "user": {
-                "provider_id": user_info_response.get("id"),
+                "provider_id": provider_id,
                 "email": email,
-                "avatar": user_info_response.get("avatar_url"),
+                "avatar": avatar,
                 "first_name": user_info_response.get("name"),
                 "last_name": user_info_response.get("family_name"),
                 "is_password_autoset": True,

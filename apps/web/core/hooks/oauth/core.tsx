@@ -6,13 +6,11 @@
 
 // plane imports
 import { useSearchParams } from "next/navigation";
-import { useTheme } from "next-themes";
+import { LockKeyhole } from "lucide-react";
 import { API_BASE_URL } from "@plane/constants";
 import type { TOAuthConfigs, TOAuthOption } from "@plane/types";
 // assets
 import giteaLogo from "@/app/assets/logos/gitea-logo.svg?url";
-import GithubLightLogo from "@/app/assets/logos/github-black.png?url";
-import GithubDarkLogo from "@/app/assets/logos/github-dark.svg?url";
 import gitlabLogo from "@/app/assets/logos/gitlab-logo.svg?url";
 import googleLogo from "@/app/assets/logos/google-logo.svg?url";
 // hooks
@@ -23,8 +21,6 @@ export const useCoreOAuthConfig = (oauthActionText: string): TOAuthConfigs => {
   const searchParams = useSearchParams();
   // query params
   const next_path = searchParams.get("next_path");
-  // theme
-  const { resolvedTheme } = useTheme();
   // store hooks
   const { config } = useInstance();
   // derived values
@@ -47,15 +43,8 @@ export const useCoreOAuthConfig = (oauthActionText: string): TOAuthConfigs => {
     },
     {
       id: "github",
-      text: `${oauthActionText} with GitHub`,
-      icon: (
-        <img
-          src={resolvedTheme === "dark" ? GithubDarkLogo : GithubLightLogo}
-          height={18}
-          width={18}
-          alt="GitHub Logo"
-        />
-      ),
+      text: `${oauthActionText} with Company SSO`,
+      icon: <LockKeyhole height={18} width={18} />,
       onClick: () => {
         window.location.assign(`${API_BASE_URL}/auth/github/${next_path ? `?next_path=${next_path}` : ``}`);
       },
