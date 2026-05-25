@@ -71,6 +71,7 @@ class GitHubOAuthProvider(OauthAdapter):
             "redirect_uri": redirect_uri,
             "scope": self.scope,
             "state": state,
+            "response_type": "code",
         }
         auth_url = f"{authorize_base}?{urlencode(url_params)}"
         super().__init__(
