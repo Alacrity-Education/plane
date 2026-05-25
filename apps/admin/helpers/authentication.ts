@@ -18,19 +18,10 @@ import type {
  * @returns True if the authentication method can be disabled, false otherwise.
  */
 export const canDisableAuthMethod = (
-  configKey: TInstanceConfigurationKeys,
-  authModes: TInstanceAuthenticationModes[],
-  formattedConfig: IFormattedInstanceConfiguration | undefined
-): boolean => {
-  // Count currently enabled methods
-  const enabledCount = authModes.reduce((count, method) => {
-    const enabledKey = method.enabledConfigKey;
-    if (!enabledKey || !formattedConfig) return count;
-    const isEnabled = Boolean(parseInt(formattedConfig[enabledKey] ?? "0"));
-    return isEnabled ? count + 1 : count;
-  }, 0);
-
-  // If trying to disable and only 1 method is enabled, prevent it
-  const isCurrentlyEnabled = Boolean(parseInt(formattedConfig?.[configKey] ?? "0"));
-  return !(isCurrentlyEnabled && enabledCount === 1);
-};
+  _configKey: TInstanceConfigurationKeys,
+  _authModes: TInstanceAuthenticationModes[],
+  _formattedConfig: IFormattedInstanceConfiguration | undefined
+): boolean =>
+  // Company SSO (Authentik) is always active, so disabling any individual
+  // email/password method never locks users out.
+  true;
