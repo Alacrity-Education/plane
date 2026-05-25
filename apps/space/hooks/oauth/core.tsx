@@ -23,14 +23,8 @@ export const useCoreOAuthConfig = (oauthActionText: string): TOAuthConfigs => {
   const next_path = searchParams.get("next_path");
   // store hooks
   const { config } = useInstance();
-  // derived values
-  const isOAuthEnabled =
-    (config &&
-      (config?.is_google_enabled ||
-        config?.is_github_enabled ||
-        config?.is_gitlab_enabled ||
-        config?.is_gitea_enabled)) ||
-    false;
+  // derived values — always enabled: Company SSO (GitHub/Authentik) is unconditionally active
+  const isOAuthEnabled = true;
   const oAuthOptions: TOAuthOption[] = [
     {
       id: "google",
@@ -48,7 +42,7 @@ export const useCoreOAuthConfig = (oauthActionText: string): TOAuthConfigs => {
       onClick: () => {
         window.location.assign(`${API_BASE_URL}/auth/github/${next_path ? `?next_path=${next_path}` : ``}`);
       },
-      enabled: config?.is_github_enabled,
+      enabled: true,
     },
     {
       id: "gitlab",

@@ -50,9 +50,8 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
   const { config } = useInstance();
   // derived values
   const oAuthActionText = authMode === EAuthModes.SIGN_UP ? "Sign up" : "Sign in";
-  const { isOAuthEnabled, oAuthOptions } = useOAuthConfig(oAuthActionText);
+  const { oAuthOptions } = useOAuthConfig(oAuthActionText);
   const isEmailBasedAuthEnabled = config?.is_email_password_enabled || config?.is_magic_login_enabled;
-  const noAuthMethodsAvailable = !isOAuthEnabled && !isEmailBasedAuthEnabled;
 
   useEffect(() => {
     if (!authMode && currentAuthMode) setAuthMode(currentAuthMode);
@@ -102,17 +101,6 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
 
   if (!authMode) return <></>;
 
-  if (noAuthMethodsAvailable) {
-    return (
-      <AuthContainer>
-        <AuthHeaderBase
-          header="No authentication methods available"
-          subHeader="Please contact your administrator to enable authentication for your instance."
-        />
-      </AuthContainer>
-    );
-  }
-
   return (
     <AuthContainer>
       {errorInfo && errorInfo?.type === EErrorAlertType.BANNER_ALERT && (
@@ -125,13 +113,11 @@ export const AuthRoot = observer(function AuthRoot(props: TAuthRoot) {
         authMode={authMode}
         currentAuthStep={authStep}
       />
-      {isOAuthEnabled && (
-        <OAuthOptions
-          options={oAuthOptions}
-          compact={authStep === EAuthSteps.PASSWORD}
-          showDivider={isEmailBasedAuthEnabled}
-        />
-      )}
+      <OAuthOptions
+        options={oAuthOptions}
+        compact={authStep === EAuthSteps.PASSWORD}
+        showDivider={isEmailBasedAuthEnabled}
+      />
       {isEmailBasedAuthEnabled && (
         <AuthFormRoot
           authStep={authStep}
