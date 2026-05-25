@@ -31,6 +31,9 @@ jobs:
           - app: web
             context: .
             dockerfile: ./apps/web/Dockerfile.web
+          - app: admin
+            context: .
+            dockerfile: ./apps/admin/Dockerfile.admin
           # If you also need the realtime sync server, uncomment the block below:
           # - app: live
           #   context: ./

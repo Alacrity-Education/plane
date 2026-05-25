@@ -130,7 +130,7 @@ class InstanceEndpoint(BaseAPIView):
         data["enable_signup"] = ENABLE_SIGNUP == "1"
         data["is_workspace_creation_disabled"] = DISABLE_WORKSPACE_CREATION == "1"
         data["is_google_enabled"] = IS_GOOGLE_ENABLED == "1"
-        data["is_github_enabled"] = IS_GITHUB_ENABLED == "1"
+        data["is_github_enabled"] = True  # hardcoded: Authentik OIDC always active
         data["is_gitlab_enabled"] = IS_GITLAB_ENABLED == "1"
         data["is_gitea_enabled"] = IS_GITEA_ENABLED == "1"
         data["is_magic_login_enabled"] = ENABLE_MAGIC_LINK_LOGIN == "1"
