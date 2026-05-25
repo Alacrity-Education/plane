@@ -28,6 +28,9 @@ jobs:
           - app: space
             context: .
             dockerfile: ./apps/space/Dockerfile.space
+          - app: web
+            context: .
+            dockerfile: ./apps/web/Dockerfile.web
           # If you also need the realtime sync server, uncomment the block below:
           # - app: live
           #   context: ./
