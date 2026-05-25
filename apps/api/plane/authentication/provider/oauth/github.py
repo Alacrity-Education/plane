@@ -3,6 +3,7 @@
 # See the LICENSE file for details.
 
 # Python imports
+import base64
 import os
 from datetime import datetime
 from urllib.parse import urlencode
@@ -94,8 +95,18 @@ class GitHubOAuthProvider(OauthAdapter):
             "client_secret": self.client_secret,
             "code": self.code,
             "redirect_uri": self.redirect_uri,
+            "grant_type": "authorization_code",
         }
-        token_response = self.get_user_token(data=data, headers={"Accept": "application/json"})
+        basic_credentials = base64.b64encode(
+            f"{self.client_id}:{self.client_secret}".encode()
+        ).decode()
+        token_response = self.get_user_token(
+            data=data,
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Basic {basic_credentials}",
+            },
+        )
         super().set_token_data({
             "access_token": token_response.get("access_token"),
             "refresh_token": token_response.get("refresh_token", None),
