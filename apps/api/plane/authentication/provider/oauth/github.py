@@ -170,9 +170,18 @@ class GitHubOAuthProvider(OauthAdapter):
         email = self.__get_email(headers=headers, user_info_response=user_info_response)
         self.logger.debug("Email found", extra={"email": email})
 
-        # Accept standard OIDC claims (sub, picture) as fallbacks for GitHub-specific ones.
+        # All fields use safe .get() with OIDC claim fallbacks so no KeyError
+        # can occur when Authentik omits GitHub-specific fields.
         provider_id = user_info_response.get("id") or user_info_response.get("sub")
-        avatar = user_info_response.get("avatar_url") or user_info_response.get("picture")
+        avatar = user_info_response.get("avatar_url") or user_info_response.get("picture") or ""
+        display_name = (
+            user_info_response.get("login")
+            or user_info_response.get("preferred_username")
+            or user_info_response.get("email")
+            or ""
+        )
+        first_name = user_info_response.get("name") or ""
+        last_name = user_info_response.get("family_name") or ""
 
         super().set_user_data({
             "email": email,
@@ -180,8 +189,9 @@ class GitHubOAuthProvider(OauthAdapter):
                 "provider_id": provider_id,
                 "email": email,
                 "avatar": avatar,
-                "first_name": user_info_response.get("name"),
-                "last_name": user_info_response.get("family_name"),
+                "display_name": display_name,
+                "first_name": first_name,
+                "last_name": last_name,
                 "is_password_autoset": True,
             },
         })
