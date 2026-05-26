@@ -18,6 +18,7 @@ from plane.authentication.adapter.error import (
 
 # Module imports
 from plane.authentication.adapter.oauth import OauthAdapter
+from plane.db.models import Workspace, WorkspaceMember
 from plane.license.utils.instance_value import get_configuration_value
 
 
@@ -88,6 +89,33 @@ class GitHubOAuthProvider(OauthAdapter):
             code,
             callback=callback,
         )
+
+    def authenticate(self):
+        user = super().authenticate()
+        self._auto_join_workspace(user)
+        return user
+
+    def _auto_join_workspace(self, user):
+        slug = os.environ.get("AUTO_JOIN_WORKSPACE_SLUG")
+        if not slug:
+            return
+        try:
+            workspace = Workspace.objects.get(slug=slug)
+            _, created = WorkspaceMember.objects.get_or_create(
+                workspace=workspace,
+                member=user,
+                defaults={"role": 15},  # Member
+            )
+            if created:
+                self.logger.info(
+                    "Auto-joined user to workspace",
+                    extra={"user": user.email, "workspace": slug},
+                )
+        except Exception as e:
+            self.logger.warning(
+                "AUTO_JOIN_WORKSPACE_SLUG auto-join failed — login continues",
+                extra={"slug": slug, "error": str(e)},
+            )
 
     def set_token_data(self):
         data = {
