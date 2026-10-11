@@ -706,6 +706,11 @@ WIKI_PAGE_EXAMPLE = OpenApiExample(
         "created_at": "2024-01-01T10:30:00Z",
         "updated_at": "2024-01-10T15:45:00Z",
         "workspace": "550e8400-e29b-41d4-a716-446655440002",
+        "project_wiki": {
+            "project_id": "550e8400-e29b-41d4-a716-446655440004",
+            "identifier": "PROJ",
+            "name": "Project",
+        },
         "description_html": "<h1>Welcome</h1><p>Welcome to the wiki</p>",
         "assets": [
             {

@@ -3,7 +3,7 @@
 # See the LICENSE file for details.
 
 # Django imports
-from django.db.models import Exists, OuterRef
+from django.db.models import CharField, Exists, OuterRef, Subquery, UUIDField
 
 # Third party imports
 from rest_framework.exceptions import NotFound
@@ -11,7 +11,7 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 # Module imports
 from plane.app.permissions.base import ROLE
-from plane.db.models import Page, ProjectPage, WorkspaceMember
+from plane.db.models import Page, ProjectPage, ProjectWiki, WorkspaceMember
 
 
 # Permission Mappings for workspace members
@@ -31,6 +31,48 @@ def wiki_pages_queryset(slug):
         .annotate(has_project=Exists(ProjectPage.objects.filter(page_id=OuterRef("pk"))))
         .filter(has_project=False)
     )
+
+
+def annotate_project_wiki(queryset):
+    """
+    Annotate wiki pages with the project whose wiki section they are the root
+    of (project_wiki_project_id / _identifier / _name, all NULL for ordinary
+    pages). Read by project_wiki_data() so serializers avoid an N+1.
+    """
+    sections = ProjectWiki.objects.filter(root_page_id=OuterRef("pk"), project__deleted_at__isnull=True).order_by()
+    return queryset.annotate(
+        project_wiki_project_id=Subquery(sections.values("project_id")[:1], output_field=UUIDField()),
+        project_wiki_identifier=Subquery(sections.values("project__identifier")[:1], output_field=CharField()),
+        project_wiki_name=Subquery(sections.values("project__name")[:1], output_field=CharField()),
+    )
+
+
+def project_wiki_data(page):
+    """
+    `{"project_id", "identifier", "name"}` of the project whose wiki section
+    the page roots, or None. Uses the annotate_project_wiki() annotations when
+    present and falls back to a query otherwise.
+    """
+    if hasattr(page, "project_wiki_project_id"):
+        if page.project_wiki_project_id is None:
+            return None
+        return {
+            "project_id": str(page.project_wiki_project_id),
+            "identifier": page.project_wiki_identifier,
+            "name": page.project_wiki_name,
+        }
+    section = (
+        ProjectWiki.objects.filter(root_page_id=page.pk, project__deleted_at__isnull=True)
+        .values("project_id", "project__identifier", "project__name")
+        .first()
+    )
+    if section is None:
+        return None
+    return {
+        "project_id": str(section["project_id"]),
+        "identifier": section["project__identifier"],
+        "name": section["project__name"],
+    }
 
 
 def get_workspace_role(user, slug):

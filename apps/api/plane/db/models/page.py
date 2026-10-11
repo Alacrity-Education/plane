@@ -155,6 +155,44 @@ class ProjectPage(BaseModel):
         return f"{self.project.name} {self.page.name}"
 
 
+class ProjectWiki(BaseModel):
+    """
+    A project's section of the workspace wiki: links a project to the root
+    wiki page (a top-level Page(is_global=True) with no ProjectPage row) under
+    which that project's wiki pages live. Removing the link leaves the pages as
+    ordinary wiki pages.
+
+    Foreign keys (not OneToOne) so a soft-deleted link does not block a new one;
+    uniqueness among live rows is enforced by the partial constraints below.
+    """
+
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="project_wikis")
+    project = models.ForeignKey("db.Project", on_delete=models.CASCADE, related_name="wiki_sections")
+    root_page = models.ForeignKey("db.Page", on_delete=models.CASCADE, related_name="project_wiki_sections")
+
+    class Meta:
+        unique_together = [["project", "deleted_at"], ["root_page", "deleted_at"]]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="project_wiki_unique_project_when_deleted_at_null",
+            ),
+            models.UniqueConstraint(
+                fields=["root_page"],
+                condition=models.Q(deleted_at__isnull=True),
+                name="project_wiki_unique_root_page_when_deleted_at_null",
+            ),
+        ]
+        verbose_name = "Project Wiki"
+        verbose_name_plural = "Project Wikis"
+        db_table = "project_wikis"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.project_id} {self.root_page_id}"
+
+
 class PageVersion(BaseModel):
     workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="page_versions")
     page = models.ForeignKey("db.Page", on_delete=models.CASCADE, related_name="page_versions")

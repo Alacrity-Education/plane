@@ -11,7 +11,16 @@ from django.utils import timezone
 from rest_framework import status
 
 from plane.api.views import WikiPageDetailAPIEndpoint, WikiPageListAPIEndpoint
-from plane.db.models import FileAsset, Page, Project, ProjectMember, ProjectPage, User, WorkspaceMember
+from plane.db.models import (
+    FileAsset,
+    Page,
+    Project,
+    ProjectMember,
+    ProjectPage,
+    ProjectWiki,
+    User,
+    WorkspaceMember,
+)
 
 
 LIST_FIELDS = {
@@ -31,6 +40,7 @@ LIST_FIELDS = {
     "created_at",
     "updated_at",
     "workspace",
+    "project_wiki",
 }
 
 
@@ -321,6 +331,27 @@ class TestWikiPageDetailAPIEndpoint:
 
         response = api_key_client.get(detail_url(workspace.slug, foreign.id))
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.contract
+class TestWikiPageProjectWiki:
+    @pytest.mark.django_db
+    def test_project_wiki_on_root_and_null_elsewhere(self, api_key_client, workspace, root_page, child_page):
+        project = Project.objects.create(name="Feed Project", identifier="FEED", workspace=workspace)
+        ProjectWiki.objects.create(workspace=workspace, project=project, root_page=root_page)
+        expected = {"project_id": str(project.id), "identifier": "FEED", "name": "Feed Project"}
+
+        response = api_key_client.get(list_url(workspace.slug))
+
+        assert response.status_code == status.HTTP_200_OK
+        by_id = {str(item["id"]): item for item in response.data["results"]}
+        assert by_id[str(root_page.id)]["project_wiki"] == expected
+        assert by_id[str(child_page.id)]["project_wiki"] is None
+
+        detail = api_key_client.get(detail_url(workspace.slug, root_page.id))
+        assert detail.status_code == status.HTTP_200_OK
+        assert detail.data["project_wiki"] == expected
+        assert api_key_client.get(detail_url(workspace.slug, child_page.id)).data["project_wiki"] is None
 
 
 @pytest.mark.contract

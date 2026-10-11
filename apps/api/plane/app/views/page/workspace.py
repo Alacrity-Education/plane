@@ -40,6 +40,7 @@ from rest_framework.response import Response
 from plane.app.permissions.wiki_page import (
     ADMIN,
     WorkspacePagePermission,
+    annotate_project_wiki,
     get_workspace_role,
     wiki_pages_queryset,
 )
@@ -100,7 +101,7 @@ def annotated_wiki_pages(slug, user, order_by=None):
         .values("count")
     )
     return (
-        _visible_wiki_pages(slug, user)
+        annotate_project_wiki(_visible_wiki_pages(slug, user))
         .select_related("workspace")
         .select_related("owned_by")
         .prefetch_related("labels")

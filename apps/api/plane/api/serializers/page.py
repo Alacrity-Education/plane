@@ -7,8 +7,17 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 # Module imports
+from plane.app.permissions.wiki_page import project_wiki_data
 from plane.db.models import FileAsset, Page
 from .base import BaseSerializer
+
+
+class WikiPageProjectWikiSerializer(serializers.Serializer):
+    """Project whose wiki section a page is the root of (schema only)."""
+
+    project_id = serializers.UUIDField()
+    identifier = serializers.CharField()
+    name = serializers.CharField()
 
 
 class WikiPageSerializer(BaseSerializer):
@@ -18,12 +27,14 @@ class WikiPageSerializer(BaseSerializer):
     `parent` is exposed as a plain UUID (`source="parent_id"`) so that it stays
     out of BaseSerializer's `expand` map, which would otherwise try to render a
     Page through IssueLiteSerializer. `label_ids` and `sub_pages_count` come
-    from queryset annotations.
+    from queryset annotations. `project_wiki` is set on the root page of a
+    project's wiki section and null on every other page.
     """
 
     parent = serializers.UUIDField(source="parent_id", read_only=True, allow_null=True)
     label_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
     sub_pages_count = serializers.IntegerField(read_only=True)
+    project_wiki = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
@@ -44,8 +55,13 @@ class WikiPageSerializer(BaseSerializer):
             "created_at",
             "updated_at",
             "workspace",
+            "project_wiki",
         ]
         read_only_fields = fields
+
+    @extend_schema_field(WikiPageProjectWikiSerializer(allow_null=True))
+    def get_project_wiki(self, obj):
+        return project_wiki_data(obj)
 
 
 class WikiPageAssetSerializer(serializers.Serializer):

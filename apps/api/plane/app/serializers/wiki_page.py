@@ -9,9 +9,9 @@ from django.db.models import Q
 from rest_framework import serializers
 
 # Module imports
-from plane.app.permissions.wiki_page import wiki_pages_queryset
+from plane.app.permissions.wiki_page import project_wiki_data, wiki_pages_queryset
 from plane.app.serializers.page import PageSerializer
-from plane.db.models import Page, PageLabel
+from plane.db.models import Page, PageLabel, ProjectWiki
 from plane.utils.content_validator import validate_html_content
 
 # Guard against corrupt (cyclic) parent chains when walking up the tree
@@ -32,10 +32,31 @@ class WorkspacePageSerializer(PageSerializer):
     # Annotation-backed; labels are written through `labels`
     label_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
     project_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
+    # Project whose wiki section this page roots ({project_id, identifier, name}) or null
+    project_wiki = serializers.SerializerMethodField()
 
     class Meta(PageSerializer.Meta):
-        fields = PageSerializer.Meta.fields + ["sort_order", "is_global", "sub_pages_count", "is_published"]
+        fields = PageSerializer.Meta.fields + [
+            "sort_order",
+            "is_global",
+            "sub_pages_count",
+            "is_published",
+            "project_wiki",
+        ]
         read_only_fields = ["workspace", "owned_by", "is_global"]
+
+    def get_project_wiki(self, obj):
+        return project_wiki_data(obj)
+
+    def validate(self, attrs):
+        # A project wiki root stays a top-level page
+        if (
+            self.instance is not None
+            and attrs.get("parent") is not None
+            and ProjectWiki.objects.filter(root_page_id=self.instance.pk).exists()
+        ):
+            raise serializers.ValidationError({"parent": ["project wiki root cannot be moved"]})
+        return super().validate(attrs)
 
     def validate_sort_order(self, value):
         if value <= 0:
@@ -122,3 +143,24 @@ class WorkspacePageDetailSerializer(WorkspacePageSerializer):
         if not is_valid:
             raise serializers.ValidationError(error_message)
         return sanitized_html if sanitized_html is not None else value
+
+
+class ProjectWikiSerializer(serializers.ModelSerializer):
+    """A project's wiki section: the link from a project to its root wiki page."""
+
+    project_identifier = serializers.CharField(source="project.identifier", read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
+    root_page_name = serializers.CharField(source="root_page.name", read_only=True)
+
+    class Meta:
+        model = ProjectWiki
+        fields = [
+            "id",
+            "project",
+            "project_identifier",
+            "project_name",
+            "root_page",
+            "root_page_name",
+            "created_at",
+        ]
+        read_only_fields = fields

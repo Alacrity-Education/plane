@@ -22,6 +22,7 @@ from drf_spectacular.utils import OpenApiResponse
 # Module imports
 from plane.api.serializers import WikiPageSerializer, WikiPageDetailSerializer
 from plane.app.permissions import WorkspaceEntityPermission
+from plane.app.permissions.wiki_page import annotate_project_wiki
 from plane.db.models import Page, ProjectPage
 from plane.utils.order_queryset import PAGE_ORDER_BY_ALLOWLIST, sanitize_order_by
 from plane.utils.openapi import (
@@ -70,31 +71,31 @@ class WikiPageBaseAPIEndpoint(BaseAPIView):
     use_read_replica = True
 
     def get_queryset(self):
-        return (
+        pages = (
             Page.objects.filter(workspace__slug=self.kwargs.get("slug"))
             .filter(is_global=True, access=Page.PUBLIC_ACCESS, archived_at__isnull=True)
             .filter(~Exists(ProjectPage.objects.filter(page_id=OuterRef("pk"))))
-            .annotate(
-                sub_pages_count=Count(
-                    "child_page",
-                    filter=Q(
-                        child_page__deleted_at__isnull=True,
-                        child_page__archived_at__isnull=True,
-                    ),
+        )
+        return annotate_project_wiki(pages).annotate(
+            sub_pages_count=Count(
+                "child_page",
+                filter=Q(
+                    child_page__deleted_at__isnull=True,
+                    child_page__archived_at__isnull=True,
+                ),
+                distinct=True,
+            ),
+            label_ids=Coalesce(
+                ArrayAgg(
+                    "page_labels__label_id",
                     distinct=True,
-                ),
-                label_ids=Coalesce(
-                    ArrayAgg(
-                        "page_labels__label_id",
-                        distinct=True,
-                        filter=Q(
-                            page_labels__deleted_at__isnull=True,
-                            page_labels__label_id__isnull=False,
-                        ),
+                    filter=Q(
+                        page_labels__deleted_at__isnull=True,
+                        page_labels__label_id__isnull=False,
                     ),
-                    Value([], output_field=ArrayField(UUIDField())),
                 ),
-            )
+                Value([], output_field=ArrayField(UUIDField())),
+            ),
         )
 
 

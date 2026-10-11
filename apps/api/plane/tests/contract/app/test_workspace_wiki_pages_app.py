@@ -58,6 +58,7 @@ LIST_FIELDS = {
     "is_global",
     "sub_pages_count",
     "is_published",
+    "project_wiki",
 }
 
 
