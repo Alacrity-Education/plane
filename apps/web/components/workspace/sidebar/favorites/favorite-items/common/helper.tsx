@@ -15,6 +15,11 @@ export const generateFavoriteItemLink = (workspaceSlug: string, favorite: IFavor
     return `/${workspaceSlug}`;
   }
 
+  // page favorites without a project belong to the workspace wiki
+  if (favorite.entity_type === "page" && !favorite.project_id) {
+    return `/${workspaceSlug}/wiki/${favorite.entity_identifier}`;
+  }
+
   if (entityLinkDetails.itemLevel === "workspace") {
     return `/${workspaceSlug}/${entityLinkDetails.getLink(favorite)}`;
   } else if (entityLinkDetails.itemLevel === "project") {

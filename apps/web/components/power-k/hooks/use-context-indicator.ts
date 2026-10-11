@@ -9,6 +9,7 @@ import { useParams } from "next/navigation";
 import { getPageName } from "@plane/utils";
 // hooks
 import { EPageStoreType, usePageStore } from "@/hooks/store";
+import { useWorkspacePaths } from "@/hooks/use-workspace-paths";
 import { useCycle } from "@/hooks/store/use-cycle";
 import { useModule } from "@/hooks/store/use-module";
 // local imports
@@ -25,7 +26,8 @@ export const useContextIndicator = (args: TArgs): string | null => {
   // store hooks
   const { getCycleById } = useCycle();
   const { getModuleById } = useModule();
-  const { getPageById } = usePageStore(EPageStoreType.PROJECT);
+  const { isWikiPath } = useWorkspacePaths();
+  const { getPageById } = usePageStore(isWikiPath ? EPageStoreType.WORKSPACE : EPageStoreType.PROJECT);
   let indicator: string | undefined | null = null;
 
   switch (activeContext) {

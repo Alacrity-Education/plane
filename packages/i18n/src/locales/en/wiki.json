@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Nested pages require a paid plan. Upgrade to unlock."
+    },
+    "pages": {
+      "tabs": {
+        "all": "All",
+        "public": "Public",
+        "private": "Private",
+        "archived": "Archived"
+      },
+      "adding_page": "Adding",
+      "empty_state": {
+        "all": {
+          "description": "Create pages the whole workspace can find, from meeting notes to company-wide docs."
+        },
+        "public": {
+          "title": "No public pages yet",
+          "description": "Public pages are visible to everyone in this workspace."
+        },
+        "private": {
+          "title": "No private pages yet",
+          "description": "Private pages are only visible to you."
+        },
+        "archived": {
+          "title": "No archived pages yet",
+          "description": "Archive pages you no longer need. You can restore them anytime."
+        }
+      },
+      "not_found": {
+        "title": "Page not found",
+        "description": "The page you are trying to access doesn't exist or you don't have permission to view it.",
+        "cta": "View other pages"
+      }
     }
   }
 }

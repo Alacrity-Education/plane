@@ -8,8 +8,7 @@ import { observer } from "mobx-react";
 import useSWR from "swr";
 import type { TPageNavigationTabs } from "@plane/types";
 // hooks
-import type { EPageStoreType } from "@/hooks/store";
-import { usePageStore } from "@/hooks/store";
+import { EPageStoreType, usePageStore } from "@/hooks/store";
 // local imports
 import { PagesListHeaderRoot } from "./header";
 import { PagesListMainContent } from "./pages-list-main-content";
@@ -25,7 +24,9 @@ type TPageView = {
 export const PagesListView = observer(function PagesListView(props: TPageView) {
   const { children, pageType, projectId, storeType, workspaceSlug } = props;
   // store hooks
-  const { isAnyPageAvailable, fetchPagesList } = usePageStore(storeType);
+  const { isAnyPageAvailable } = usePageStore(storeType);
+  // this view is project scoped, so the pages list is always fetched through the project store
+  const { fetchPagesList } = usePageStore(EPageStoreType.PROJECT);
   // fetching pages list
   useSWR(
     workspaceSlug && projectId && pageType ? `PROJECT_PAGES_${projectId}` : null,

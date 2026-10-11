@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Trang lồng nhau yêu cầu gói trả phí. Nâng cấp để mở khóa."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Tất cả",
+        "public": "Công khai",
+        "private": "Riêng tư",
+        "archived": "Đã lưu trữ"
+      },
+      "adding_page": "Đang thêm",
+      "empty_state": {
+        "all": {
+          "description": "Tạo các trang mà cả không gian làm việc đều có thể tìm thấy, từ ghi chú cuộc họp đến tài liệu toàn công ty."
+        },
+        "public": {
+          "title": "Chưa có trang công khai nào",
+          "description": "Trang công khai hiển thị với mọi người trong không gian làm việc này."
+        },
+        "private": {
+          "title": "Chưa có trang riêng tư nào",
+          "description": "Trang riêng tư chỉ hiển thị với bạn."
+        },
+        "archived": {
+          "title": "Chưa có trang đã lưu trữ nào",
+          "description": "Lưu trữ các trang bạn không còn cần đến. Bạn có thể khôi phục chúng bất cứ lúc nào."
+        }
+      },
+      "not_found": {
+        "title": "Không tìm thấy trang",
+        "description": "Trang bạn đang cố truy cập không tồn tại hoặc bạn không có quyền xem trang này.",
+        "cta": "Xem các trang khác"
+      }
     }
   }
 }

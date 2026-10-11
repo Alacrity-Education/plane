@@ -4,4 +4,12 @@
  * See the LICENSE file for details.
  */
 
-export type TPageExtended = object;
+/**
+ * @description extra page fields used by workspace level (wiki) pages
+ */
+export type TPageExtended = {
+  parent?: string | null;
+  is_global?: boolean;
+  sort_order?: number;
+  sub_pages_count?: number;
+};

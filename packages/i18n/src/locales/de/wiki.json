@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Verschachtelte Seiten erfordern einen kostenpflichtigen Plan. Führen Sie ein Upgrade durch, um sie freizuschalten."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Alle",
+        "public": "Öffentlich",
+        "private": "Privat",
+        "archived": "Archiviert"
+      },
+      "adding_page": "Wird hinzugefügt",
+      "empty_state": {
+        "all": {
+          "description": "Erstellen Sie Seiten, die der gesamte Workspace finden kann – von Besprechungsnotizen bis zu unternehmensweiten Dokumenten."
+        },
+        "public": {
+          "title": "Noch keine öffentlichen Seiten",
+          "description": "Öffentliche Seiten sind für alle in diesem Workspace sichtbar."
+        },
+        "private": {
+          "title": "Noch keine privaten Seiten",
+          "description": "Private Seiten sind nur für Sie sichtbar."
+        },
+        "archived": {
+          "title": "Noch keine archivierten Seiten",
+          "description": "Archivieren Sie Seiten, die Sie nicht mehr benötigen. Sie können sie jederzeit wiederherstellen."
+        }
+      },
+      "not_found": {
+        "title": "Seite nicht gefunden",
+        "description": "Die Seite, auf die Sie zugreifen möchten, existiert nicht oder Sie haben keine Berechtigung, sie anzuzeigen.",
+        "cta": "Andere Seiten anzeigen"
+      }
     }
   }
 }

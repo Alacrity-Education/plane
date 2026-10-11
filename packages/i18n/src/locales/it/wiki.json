@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Le pagine annidate richiedono un piano a pagamento. Aggiorna per sbloccare."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Tutte",
+        "public": "Pubbliche",
+        "private": "Private",
+        "archived": "Archiviate"
+      },
+      "adding_page": "Aggiunta in corso",
+      "empty_state": {
+        "all": {
+          "description": "Crei pagine che l'intero spazio di lavoro può trovare, dalle note delle riunioni alla documentazione aziendale."
+        },
+        "public": {
+          "title": "Ancora nessuna pagina pubblica",
+          "description": "Le pagine pubbliche sono visibili a tutti in questo spazio di lavoro."
+        },
+        "private": {
+          "title": "Ancora nessuna pagina privata",
+          "description": "Le pagine private sono visibili solo a Lei."
+        },
+        "archived": {
+          "title": "Ancora nessuna pagina archiviata",
+          "description": "Archivi le pagine che non Le servono più. Può ripristinarle in qualsiasi momento."
+        }
+      },
+      "not_found": {
+        "title": "Pagina non trovata",
+        "description": "La pagina a cui sta tentando di accedere non esiste o non ha l'autorizzazione per visualizzarla.",
+        "cta": "Visualizza altre pagine"
+      }
     }
   }
 }

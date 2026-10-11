@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Vnorené stránky vyžadujú platený plán. Upgradujte a odomknite ich."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Všetky",
+        "public": "Verejné",
+        "private": "Súkromné",
+        "archived": "Archivované"
+      },
+      "adding_page": "Pridáva sa",
+      "empty_state": {
+        "all": {
+          "description": "Vytvárajte stránky, ktoré nájde celý pracovný priestor – od poznámok zo stretnutí po firemnú dokumentáciu."
+        },
+        "public": {
+          "title": "Zatiaľ žiadne verejné stránky",
+          "description": "Verejné stránky vidia všetci v tomto pracovnom priestore."
+        },
+        "private": {
+          "title": "Zatiaľ žiadne súkromné stránky",
+          "description": "Súkromné stránky vidíte iba Vy."
+        },
+        "archived": {
+          "title": "Zatiaľ žiadne archivované stránky",
+          "description": "Archivujte stránky, ktoré už nepotrebujete. Kedykoľvek ich môžete obnoviť."
+        }
+      },
+      "not_found": {
+        "title": "Stránka sa nenašla",
+        "description": "Stránka, ku ktorej sa pokúšate pristúpiť, neexistuje alebo nemáte oprávnenie na jej zobrazenie.",
+        "cta": "Zobraziť ďalšie stránky"
+      }
     }
   }
 }

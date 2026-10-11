@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "İç içe sayfalar ücretli bir plan gerektirir. Açmak için yükseltin."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Tümü",
+        "public": "Herkese açık",
+        "private": "Özel",
+        "archived": "Arşivlenen"
+      },
+      "adding_page": "Ekleniyor",
+      "empty_state": {
+        "all": {
+          "description": "Toplantı notlarından şirket genelindeki belgelere kadar tüm çalışma alanının bulabileceği sayfalar oluşturun."
+        },
+        "public": {
+          "title": "Henüz herkese açık sayfa yok",
+          "description": "Herkese açık sayfalar bu çalışma alanındaki herkes tarafından görülebilir."
+        },
+        "private": {
+          "title": "Henüz özel sayfa yok",
+          "description": "Özel sayfaları yalnızca siz görebilirsiniz."
+        },
+        "archived": {
+          "title": "Henüz arşivlenmiş sayfa yok",
+          "description": "Artık ihtiyacınız olmayan sayfaları arşivleyin. Bunları istediğiniz zaman geri yükleyebilirsiniz."
+        }
+      },
+      "not_found": {
+        "title": "Sayfa bulunamadı",
+        "description": "Erişmeye çalıştığınız sayfa mevcut değil veya görüntüleme izniniz yok.",
+        "cta": "Diğer sayfaları görüntüle"
+      }
     }
   }
 }

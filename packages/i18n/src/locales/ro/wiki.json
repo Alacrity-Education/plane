@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Paginile imbricate necesită un plan plătit. Actualizează pentru a debloca."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Toate",
+        "public": "Publice",
+        "private": "Private",
+        "archived": "Arhivate"
+      },
+      "adding_page": "Se adaugă",
+      "empty_state": {
+        "all": {
+          "description": "Creați pagini pe care întregul spațiu de lucru le poate găsi, de la note de ședință la documentație la nivelul companiei."
+        },
+        "public": {
+          "title": "Nu există încă pagini publice",
+          "description": "Paginile publice sunt vizibile pentru toți membrii acestui spațiu de lucru."
+        },
+        "private": {
+          "title": "Nu există încă pagini private",
+          "description": "Paginile private sunt vizibile doar pentru dumneavoastră."
+        },
+        "archived": {
+          "title": "Nu există încă pagini arhivate",
+          "description": "Arhivați paginile de care nu mai aveți nevoie. Le puteți restaura oricând."
+        }
+      },
+      "not_found": {
+        "title": "Pagina nu a fost găsită",
+        "description": "Pagina pe care încercați să o accesați nu există sau nu aveți permisiunea de a o vizualiza.",
+        "cta": "Vedeți alte pagini"
+      }
     }
   }
 }

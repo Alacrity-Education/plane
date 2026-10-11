@@ -26,12 +26,14 @@ import { copyTextToClipboard } from "@plane/utils";
 import type { TPowerKCommandConfig } from "@/components/power-k/core/types";
 // plane web imports
 import { EPageStoreType, usePageStore } from "@/hooks/store";
+import { useWorkspacePaths } from "@/hooks/use-workspace-paths";
 
 export const usePowerKPageContextBasedActions = (): TPowerKCommandConfig[] => {
   // navigation
   const { pageId } = useParams();
   // store hooks
-  const { getPageById } = usePageStore(EPageStoreType.PROJECT);
+  const { isWikiPath } = useWorkspacePaths();
+  const { getPageById } = usePageStore(isWikiPath ? EPageStoreType.WORKSPACE : EPageStoreType.PROJECT);
   // derived values
   const page = pageId ? getPageById(pageId.toString()) : null;
   const {

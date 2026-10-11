@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Geneste pagina's vereisen een betaald abonnement. Upgrade om te ontgrendelen."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Alle",
+        "public": "Openbaar",
+        "private": "Privé",
+        "archived": "Gearchiveerd"
+      },
+      "adding_page": "Toevoegen",
+      "empty_state": {
+        "all": {
+          "description": "Maak pagina's die de hele werkruimte kan vinden, van vergadernotities tot bedrijfsbrede documentatie."
+        },
+        "public": {
+          "title": "Nog geen openbare pagina's",
+          "description": "Openbare pagina's zijn zichtbaar voor iedereen in deze werkruimte."
+        },
+        "private": {
+          "title": "Nog geen privépagina's",
+          "description": "Privépagina's zijn alleen zichtbaar voor u."
+        },
+        "archived": {
+          "title": "Nog geen gearchiveerde pagina's",
+          "description": "Archiveer pagina's die u niet meer nodig hebt. U kunt ze op elk moment herstellen."
+        }
+      },
+      "not_found": {
+        "title": "Pagina niet gevonden",
+        "description": "De pagina die u probeert te openen bestaat niet of u hebt geen toestemming om deze te bekijken.",
+        "cta": "Andere pagina's bekijken"
+      }
     }
   }
 }

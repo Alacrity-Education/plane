@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "嵌套页面需要付费计划。升级以解锁。"
+    },
+    "pages": {
+      "tabs": {
+        "all": "全部",
+        "public": "公开",
+        "private": "私密",
+        "archived": "已归档"
+      },
+      "adding_page": "正在添加",
+      "empty_state": {
+        "all": {
+          "description": "创建整个工作区都能找到的页面，从会议记录到全公司文档。"
+        },
+        "public": {
+          "title": "暂无公开页面",
+          "description": "公开页面对此工作区中的所有人可见。"
+        },
+        "private": {
+          "title": "暂无私密页面",
+          "description": "私密页面仅对您可见。"
+        },
+        "archived": {
+          "title": "暂无已归档页面",
+          "description": "归档您不再需要的页面。您可以随时恢复它们。"
+        }
+      },
+      "not_found": {
+        "title": "未找到页面",
+        "description": "您尝试访问的页面不存在，或者您没有查看权限。",
+        "cta": "查看其他页面"
+      }
     }
   }
 }

@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Halaman bertingkat memerlukan paket berbayar. Tingkatkan untuk membukanya."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Semua",
+        "public": "Publik",
+        "private": "Pribadi",
+        "archived": "Diarsipkan"
+      },
+      "adding_page": "Menambahkan",
+      "empty_state": {
+        "all": {
+          "description": "Buat halaman yang dapat ditemukan oleh seluruh workspace, dari catatan rapat hingga dokumen perusahaan."
+        },
+        "public": {
+          "title": "Belum ada halaman publik",
+          "description": "Halaman publik dapat dilihat oleh semua orang di workspace ini."
+        },
+        "private": {
+          "title": "Belum ada halaman pribadi",
+          "description": "Halaman pribadi hanya dapat dilihat oleh Anda."
+        },
+        "archived": {
+          "title": "Belum ada halaman yang diarsipkan",
+          "description": "Arsipkan halaman yang tidak lagi Anda perlukan. Anda dapat memulihkannya kapan saja."
+        }
+      },
+      "not_found": {
+        "title": "Halaman tidak ditemukan",
+        "description": "Halaman yang Anda coba akses tidak ada atau Anda tidak memiliki izin untuk melihatnya.",
+        "cta": "Lihat halaman lain"
+      }
     }
   }
 }

@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "巢狀頁面需要付費方案。升級以解鎖。"
+    },
+    "pages": {
+      "tabs": {
+        "all": "全部",
+        "public": "公開",
+        "private": "私人",
+        "archived": "已封存"
+      },
+      "adding_page": "正在新增",
+      "empty_state": {
+        "all": {
+          "description": "建立整個工作區都能找到的頁面，從會議記錄到全公司文件。"
+        },
+        "public": {
+          "title": "尚無公開頁面",
+          "description": "公開頁面對此工作區中的所有人可見。"
+        },
+        "private": {
+          "title": "尚無私人頁面",
+          "description": "私人頁面僅對您可見。"
+        },
+        "archived": {
+          "title": "尚無已封存頁面",
+          "description": "封存您不再需要的頁面。您可以隨時還原它們。"
+        }
+      },
+      "not_found": {
+        "title": "找不到頁面",
+        "description": "您嘗試存取的頁面不存在，或您沒有檢視權限。",
+        "cta": "檢視其他頁面"
+      }
     }
   }
 }

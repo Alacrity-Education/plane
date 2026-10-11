@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Les pages imbriquées nécessitent un forfait payant. Mettez à niveau pour débloquer."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Toutes",
+        "public": "Publiques",
+        "private": "Privées",
+        "archived": "Archivées"
+      },
+      "adding_page": "Ajout en cours",
+      "empty_state": {
+        "all": {
+          "description": "Créez des pages que tout l’espace de travail peut retrouver, des notes de réunion à la documentation de l’entreprise."
+        },
+        "public": {
+          "title": "Aucune page publique pour l’instant",
+          "description": "Les pages publiques sont visibles par tous les membres de cet espace de travail."
+        },
+        "private": {
+          "title": "Aucune page privée pour l’instant",
+          "description": "Les pages privées ne sont visibles que par vous."
+        },
+        "archived": {
+          "title": "Aucune page archivée pour l’instant",
+          "description": "Archivez les pages dont vous n’avez plus besoin. Vous pouvez les restaurer à tout moment."
+        }
+      },
+      "not_found": {
+        "title": "Page introuvable",
+        "description": "La page à laquelle vous essayez d’accéder n’existe pas ou vous n’avez pas l’autorisation de la consulter.",
+        "cta": "Voir les autres pages"
+      }
     }
   }
 }

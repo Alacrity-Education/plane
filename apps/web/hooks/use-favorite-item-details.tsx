@@ -37,10 +37,16 @@ export const useFavoriteItemDetails = (workspaceSlug: string, favorite: IFavorit
   // additional details
   const { getAdditionalFavoriteItemDetails } = useAdditionalFavoriteItemDetails();
   // derived values
-  const pageDetail = usePage({
+  const projectPageDetail = usePage({
     pageId: favoriteItemId ?? "",
     storeType: EPageStoreType.PROJECT,
   });
+  const workspacePageDetail = usePage({
+    pageId: favoriteItemId ?? "",
+    storeType: EPageStoreType.WORKSPACE,
+  });
+  // page favorites without a project belong to the workspace wiki
+  const pageDetail = favorite.project_id ? projectPageDetail : workspacePageDetail;
   const viewDetails = getViewById(favoriteItemId ?? "");
   const cycleDetail = getCycleById(favoriteItemId ?? "");
   const moduleDetail = getModuleById(favoriteItemId ?? "");

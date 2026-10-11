@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Zagnieżdżone strony wymagają planu płatnego. Uaktualnij, aby odblokować."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Wszystkie",
+        "public": "Publiczne",
+        "private": "Prywatne",
+        "archived": "Zarchiwizowane"
+      },
+      "adding_page": "Dodawanie",
+      "empty_state": {
+        "all": {
+          "description": "Twórz strony, które znajdzie cały obszar roboczy – od notatek ze spotkań po dokumentację firmową."
+        },
+        "public": {
+          "title": "Brak publicznych stron",
+          "description": "Strony publiczne są widoczne dla wszystkich w tym obszarze roboczym."
+        },
+        "private": {
+          "title": "Brak prywatnych stron",
+          "description": "Strony prywatne są widoczne tylko dla Ciebie."
+        },
+        "archived": {
+          "title": "Brak zarchiwizowanych stron",
+          "description": "Archiwizuj strony, których już nie potrzebujesz. Możesz je przywrócić w dowolnym momencie."
+        }
+      },
+      "not_found": {
+        "title": "Nie znaleziono strony",
+        "description": "Strona, do której próbujesz uzyskać dostęp, nie istnieje lub nie masz uprawnień do jej wyświetlenia.",
+        "cta": "Zobacz inne strony"
+      }
     }
   }
 }

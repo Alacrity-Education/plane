@@ -108,6 +108,37 @@
     },
     "nested_pages_download_banner": {
       "title": "Las páginas anidadas requieren un plan de pago. Mejora para desbloquearlas."
+    },
+    "pages": {
+      "tabs": {
+        "all": "Todas",
+        "public": "Públicas",
+        "private": "Privadas",
+        "archived": "Archivadas"
+      },
+      "adding_page": "Agregando",
+      "empty_state": {
+        "all": {
+          "description": "Cree páginas que todo el espacio de trabajo pueda encontrar, desde notas de reuniones hasta documentación de toda la empresa."
+        },
+        "public": {
+          "title": "Aún no hay páginas públicas",
+          "description": "Las páginas públicas son visibles para todos en este espacio de trabajo."
+        },
+        "private": {
+          "title": "Aún no hay páginas privadas",
+          "description": "Las páginas privadas solo son visibles para usted."
+        },
+        "archived": {
+          "title": "Aún no hay páginas archivadas",
+          "description": "Archive las páginas que ya no necesite. Puede restaurarlas en cualquier momento."
+        }
+      },
+      "not_found": {
+        "title": "Página no encontrada",
+        "description": "La página a la que intenta acceder no existe o no tiene permiso para verla.",
+        "cta": "Ver otras páginas"
+      }
     }
   }
 }
