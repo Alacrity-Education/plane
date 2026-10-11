@@ -20,6 +20,33 @@ from plane.settings.redis import redis_instance
 from plane.license.models import Instance
 
 
+def _clear_auth_throttle_keys():
+    """Delete only the AuthenticationThrottle history keys from the shared cache.
+
+    DRF's SimpleRateThrottle stores request history under
+    ``throttle_<scope>_<ident>`` keys, so scoping the pattern to
+    ``throttle_authentication_`` removes just this throttle's entries instead
+    of wiping unrelated cache state.
+    """
+    cache.delete_pattern("throttle_authentication_*")
+
+
+@pytest.fixture(autouse=True)
+def _reset_auth_throttle_cache():
+    """Clear the auth throttle state around every test in this module.
+
+    The auth endpoints apply a per-IP throttle (AuthenticationThrottle) whose
+    request history lives in the Django cache. Because the test session reuses a
+    single cache, that count leaks across tests and trips RATE_LIMIT_EXCEEDED in
+    classes that don't reset it. This mirrors the per-class ``_clear_state``
+    fixtures already used by the throttle / verify-attempt classes, applied
+    module-wide so every auth test starts from a clean throttle state.
+    """
+    _clear_auth_throttle_keys()
+    yield
+    _clear_auth_throttle_keys()
+
+
 @pytest.fixture
 def setup_instance(db):
     """Create and configure an instance for authentication tests"""
@@ -458,12 +485,12 @@ class TestMagicSignInVerifyAttempts:
     @pytest.fixture(autouse=True)
     def _clear_state(self):
         """Reset throttle cache and magic-link redis state between tests in this class."""
-        cache.clear()
+        _clear_auth_throttle_keys()
         ri = redis_instance()
         ri.delete(f"magic_{self.EMAIL}")
         ri.delete(f"magic_{self.EMAIL}:verify_attempts")
         yield
-        cache.clear()
+        _clear_auth_throttle_keys()
         ri.delete(f"magic_{self.EMAIL}")
         ri.delete(f"magic_{self.EMAIL}:verify_attempts")
 
@@ -561,12 +588,12 @@ class TestMagicSignUpVerifyAttempts:
 
     @pytest.fixture(autouse=True)
     def _clear_state(self):
-        cache.clear()
+        _clear_auth_throttle_keys()
         ri = redis_instance()
         ri.delete(f"magic_{self.EMAIL}")
         ri.delete(f"magic_{self.EMAIL}:verify_attempts")
         yield
-        cache.clear()
+        _clear_auth_throttle_keys()
         ri.delete(f"magic_{self.EMAIL}")
         ri.delete(f"magic_{self.EMAIL}:verify_attempts")
 
@@ -592,13 +619,13 @@ class TestMagicSignUpVerifyAttempts:
 
 @pytest.mark.contract
 class TestAuthenticationThrottle:
-    """Per-IP throttle on the redirect-flow magic-link endpoints."""
+    """Per-IP throttle on the redirect-flow magic-link and password endpoints."""
 
     @pytest.fixture(autouse=True)
     def _clear_state(self):
-        cache.clear()
+        _clear_auth_throttle_keys()
         yield
-        cache.clear()
+        _clear_auth_throttle_keys()
 
     @pytest.mark.django_db
     def test_magic_sign_in_throttled(self, django_client, setup_instance):
@@ -626,3 +653,180 @@ class TestAuthenticationThrottle:
 
             response = django_client.post(url, {"email": "throttle-up@plane.so", "code": "000000"}, follow=False)
             assert "RATE_LIMIT_EXCEEDED" in response.url
+
+    @pytest.mark.django_db
+    def test_password_sign_in_throttled(self, django_client, setup_instance):
+        """The password sign-in endpoint is throttled per IP on the same scope."""
+        url = reverse("sign-in")
+        with patch.object(AuthenticationThrottle, "rate", "2/minute"):
+            for _ in range(2):
+                response = django_client.post(
+                    url, {"email": "throttle@plane.so", "password": "secret123"}, follow=False
+                )
+                assert response.status_code == 302
+                assert "RATE_LIMIT_EXCEEDED" not in response.url
+
+            # The 3rd request from the same IP within the window trips the throttle.
+            response = django_client.post(url, {"email": "throttle@plane.so", "password": "secret123"}, follow=False)
+            assert response.status_code == 302
+            assert "RATE_LIMIT_EXCEEDED" in response.url
+
+    @pytest.mark.django_db
+    def test_password_sign_up_throttled(self, django_client, setup_instance):
+        """The password sign-up endpoint trips on the same per-IP budget."""
+        url = reverse("sign-up")
+        with patch.object(AuthenticationThrottle, "rate", "1/minute"):
+            response = django_client.post(url, {"email": "throttle-up@plane.so", "password": "secret123"}, follow=False)
+            assert "RATE_LIMIT_EXCEEDED" not in response.url
+
+            response = django_client.post(url, {"email": "throttle-up@plane.so", "password": "secret123"}, follow=False)
+            assert "RATE_LIMIT_EXCEEDED" in response.url
+
+    @pytest.mark.django_db
+    def test_space_password_sign_in_throttled(self, django_client, setup_instance):
+        """The spaces password sign-in endpoint is throttled per IP."""
+        url = reverse("space-sign-in")
+        with patch.object(AuthenticationThrottle, "rate", "1/minute"):
+            response = django_client.post(url, {"email": "throttle@plane.so", "password": "secret123"}, follow=False)
+            assert "RATE_LIMIT_EXCEEDED" not in response.url
+
+            response = django_client.post(url, {"email": "throttle@plane.so", "password": "secret123"}, follow=False)
+            assert "RATE_LIMIT_EXCEEDED" in response.url
+
+    @pytest.mark.django_db
+    def test_space_password_sign_up_throttled(self, django_client, setup_instance):
+        """The spaces password sign-up endpoint trips on the same per-IP budget."""
+        url = reverse("space-sign-up")
+        with patch.object(AuthenticationThrottle, "rate", "1/minute"):
+            response = django_client.post(url, {"email": "throttle-up@plane.so", "password": "secret123"}, follow=False)
+            assert "RATE_LIMIT_EXCEEDED" not in response.url
+
+            response = django_client.post(url, {"email": "throttle-up@plane.so", "password": "secret123"}, follow=False)
+            assert "RATE_LIMIT_EXCEEDED" in response.url
+
+
+@pytest.mark.contract
+class TestBotUserLoginBlocked:
+    """Bot service accounts (is_bot=True) must never authenticate through the
+    interactive login flow.
+
+    Bots are internal identities (e.g. the WORKSPACE_SEED bot) that act only via
+    API tokens. Every interactive provider funnels through
+    Adapter.complete_login_or_signup(), which rejects bots with
+    BOT_USER_LOGIN_FORBIDDEN (5017). These are regression guards for that block.
+    """
+
+    BOT_EMAIL = "bot-login@plane.so"
+    HUMAN_EMAIL = "human-login@plane.so"
+    PASSWORD = "Str0ng-Pass!42"
+
+    @pytest.fixture(autouse=True)
+    def _clear_state(self):
+        """Reset throttle cache and the bot's magic-link redis state around each test."""
+        _clear_auth_throttle_keys()
+        ri = redis_instance()
+        ri.delete(f"magic_{self.BOT_EMAIL}")
+        ri.delete(f"magic_{self.BOT_EMAIL}:verify_attempts")
+        yield
+        _clear_auth_throttle_keys()
+        ri.delete(f"magic_{self.BOT_EMAIL}")
+        ri.delete(f"magic_{self.BOT_EMAIL}:verify_attempts")
+
+    @pytest.fixture
+    def bot_user(self, db):
+        """An active bot account with a known password so the credential check
+        passes and execution reaches the login chokepoint."""
+        user = User.objects.create(email=self.BOT_EMAIL, is_bot=True, is_active=True)
+        user.set_password(self.PASSWORD)
+        user.save()
+        return user
+
+    @pytest.fixture
+    def human_user(self, db):
+        """A normal (non-bot) account, identical apart from is_bot, as a control."""
+        user = User.objects.create(email=self.HUMAN_EMAIL, is_active=True)
+        user.set_password(self.PASSWORD)
+        user.save()
+        return user
+
+    @pytest.mark.django_db
+    def test_bot_password_sign_in_blocked(self, django_client, bot_user, setup_instance):
+        """Password sign-in with a bot's *correct* credentials is still rejected:
+        the block happens after credential verification, so no session is created."""
+        url = reverse("sign-in")
+        response = django_client.post(
+            url, {"email": self.BOT_EMAIL, "password": self.PASSWORD}, follow=False
+        )
+        assert response.status_code == 302
+        assert "BOT_USER_LOGIN_FORBIDDEN" in response.url
+        # The block must prevent authentication.
+        assert "_auth_user_id" not in django_client.session
+
+    @pytest.mark.django_db
+    @patch("plane.bgtasks.magic_link_code_task.magic_link.delay")
+    def test_bot_magic_sign_in_blocked(
+        self, mock_magic_link, django_client, api_client, bot_user, setup_instance
+    ):
+        """The same block applies via a second provider (magic code), proving the
+        guard sits at the shared chokepoint rather than in one provider."""
+        token = _generate_magic_token(api_client, self.BOT_EMAIL)
+        url = reverse("magic-sign-in")
+        response = django_client.post(url, {"email": self.BOT_EMAIL, "code": token}, follow=False)
+        assert response.status_code == 302
+        assert "BOT_USER_LOGIN_FORBIDDEN" in response.url
+        assert "_auth_user_id" not in django_client.session
+
+    @pytest.mark.django_db
+    def test_human_password_sign_in_allowed(self, django_client, human_user, setup_instance):
+        """Control: a normal user with the identical setup still signs in — the
+        guard is scoped strictly to is_bot and does not regress human logins."""
+        url = reverse("sign-in")
+        response = django_client.post(
+            url, {"email": self.HUMAN_EMAIL, "password": self.PASSWORD}, follow=False
+        )
+        assert response.status_code == 302
+        assert "BOT_USER_LOGIN_FORBIDDEN" not in response.url
+        assert "error_code" not in response.url
+        assert "_auth_user_id" in django_client.session
+
+
+@pytest.mark.contract
+class TestBotUserAdminSignInBlocked:
+    """A bot must not sign in to the instance-admin console either.
+
+    InstanceAdminSignInEndpoint mints its own session via user_login() outside
+    Adapter.complete_login_or_signup(), so it carries an independent is_bot
+    guard that rejects bots with ADMIN_AUTHENTICATION_FAILED before the admin
+    membership check. (Uses the literal path because license/urls.py reuses the
+    name "instance-admin-sign-in" for both sign-in and sign-up.)
+    """
+
+    ADMIN_SIGN_IN_PATH = "/api/instances/admins/sign-in/"
+    BOT_EMAIL = "admin-bot@plane.so"
+    PASSWORD = "Str0ng-Pass!42"
+
+    @pytest.fixture(autouse=True)
+    def _clear_state(self):
+        _clear_auth_throttle_keys()
+        yield
+        _clear_auth_throttle_keys()
+
+    @pytest.fixture
+    def bot_user(self, db):
+        user = User.objects.create(email=self.BOT_EMAIL, is_bot=True, is_active=True)
+        user.set_password(self.PASSWORD)
+        user.save()
+        return user
+
+    @pytest.mark.django_db
+    def test_bot_admin_sign_in_blocked(self, django_client, bot_user, setup_instance):
+        """A bot is rejected at the admin sign-in endpoint and no session is created,
+        even though it is active and the password is correct."""
+        response = django_client.post(
+            self.ADMIN_SIGN_IN_PATH,
+            {"email": self.BOT_EMAIL, "password": self.PASSWORD},
+            follow=False,
+        )
+        assert response.status_code == 302
+        assert "ADMIN_AUTHENTICATION_FAILED" in response.url
+        assert "_auth_user_id" not in django_client.session

@@ -10,8 +10,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 // plane internal packages
 import { API_BASE_URL } from "@plane/constants";
-import { Button, getButtonStyling } from "@plane/propel/button";
-import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import { Button } from "@makeplane/propel/components/button";
+import { setToast } from "@plane/blocks/toast";
 import type { IFormattedInstanceConfiguration, TInstanceGitlabAuthenticationConfigurationKeys } from "@plane/types";
 // components
 import { CodeBlock } from "@/components/common/code-block";
@@ -30,6 +30,11 @@ type Props = {
 };
 
 type GitlabConfigFormValues = Record<TInstanceGitlabAuthenticationConfigurationKeys, string>;
+
+const GITLAB_FORM_SWITCH_FIELD: TControllerSwitchFormField<GitlabConfigFormValues> = {
+  name: "ENABLE_GITLAB_SYNC",
+  label: "GitLab",
+};
 
 export function InstanceGitlabConfigForm(props: Props) {
   const { config } = props;
@@ -54,7 +59,7 @@ export function InstanceGitlabConfigForm(props: Props) {
 
   const originURL = !isEmpty(API_BASE_URL) ? API_BASE_URL : typeof window !== "undefined" ? window.location.origin : "";
 
-  const GITLAB_FORM_FIELDS: TControllerInputFormField[] = [
+  const GITLAB_FORM_FIELDS: TControllerInputFormField<GitlabConfigFormValues>[] = [
     {
       key: "GITLAB_HOST",
       type: "text",
@@ -76,7 +81,6 @@ export function InstanceGitlabConfigForm(props: Props) {
         <>
           Get this from your{" "}
           <a
-            tabIndex={-1}
             href="https://docs.gitlab.com/ee/integration/oauth_provider.html"
             target="_blank"
             className="text-accent-primary hover:underline"
@@ -99,7 +103,6 @@ export function InstanceGitlabConfigForm(props: Props) {
         <>
           The client secret is also found in your{" "}
           <a
-            tabIndex={-1}
             href="https://docs.gitlab.com/ee/integration/oauth_provider.html"
             target="_blank"
             className="text-accent-primary hover:underline"
@@ -116,11 +119,6 @@ export function InstanceGitlabConfigForm(props: Props) {
     },
   ];
 
-  const GITLAB_FORM_SWITCH_FIELD: TControllerSwitchFormField<GitlabConfigFormValues> = {
-    name: "ENABLE_GITLAB_SYNC",
-    label: "GitLab",
-  };
-
   const GITLAB_SERVICE_FIELD: TCopyField[] = [
     {
       key: "Callback_URL",
@@ -130,7 +128,6 @@ export function InstanceGitlabConfigForm(props: Props) {
         <>
           We will auto-generate this. Paste this into the <CodeBlock darkerShade>Redirect URI</CodeBlock> field of your{" "}
           <a
-            tabIndex={-1}
             href="https://docs.gitlab.com/ee/integration/oauth_provider.html"
             target="_blank"
             className="text-accent-primary hover:underline"
@@ -150,7 +147,7 @@ export function InstanceGitlabConfigForm(props: Props) {
     try {
       const response = await updateInstanceConfigurations(payload);
       setToast({
-        type: TOAST_TYPE.SUCCESS,
+        type: "success",
         title: "Done!",
         message: "Your GitLab authentication is configured. You should test it now.",
       });
@@ -201,16 +198,21 @@ export function InstanceGitlabConfigForm(props: Props) {
               <div className="flex items-center gap-4">
                 <Button
                   variant="primary"
-                  size="lg"
+                  size="md"
+                  stretch="auto"
                   onClick={(e) => void handleSubmit(onSubmit)(e)}
                   loading={isSubmitting}
                   disabled={!isDirty}
-                >
-                  {isSubmitting ? "Saving" : "Save changes"}
-                </Button>
-                <Link href="/authentication" className={getButtonStyling("secondary", "lg")} onClick={handleGoBack}>
-                  Go back
-                </Link>
+                  label={isSubmitting ? "Saving" : "Save changes"}
+                />
+                <Button
+                  variant="secondary"
+                  size="md"
+                  stretch="auto"
+                  nativeButton={false}
+                  render={<Link href="/authentication" onClick={handleGoBack} />}
+                  label="Go back"
+                />
               </div>
             </div>
           </div>

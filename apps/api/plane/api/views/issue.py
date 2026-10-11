@@ -80,7 +80,11 @@ from plane.db.models import (
 )
 from plane.settings.storage import S3Storage
 from plane.utils.path_validator import sanitize_filename
-from plane.utils.order_queryset import ACTIVITY_ORDER_BY_ALLOWLIST, sanitize_order_by
+from plane.utils.order_queryset import (
+    ACTIVITY_ORDER_BY_ALLOWLIST,
+    ISSUE_ORDER_BY_ALLOWLIST,
+    sanitize_order_by,
+)
 from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from .base import BaseAPIView
 from plane.utils.host import base_host
@@ -233,6 +237,10 @@ class WorkspaceIssueAPIEndpoint(BaseAPIView):
         This endpoint provides workspace-level access to work items.
         """
         if issue_identifier and project_identifier:
+            # The `<project_identifier>-<issue_identifier>` route also matches UUIDs;
+            # sequence_id is an integer, so anything else can't be a work item here.
+            if not issue_identifier.isdecimal():
+                return Response({"error": "Work item not found"}, status=status.HTTP_404_NOT_FOUND)
             issue = Issue.issue_objects.annotate(
                 sub_issues_count=Issue.issue_objects.filter(parent=OuterRef("id"))
                 .order_by()
@@ -310,6 +318,20 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
         Supports filtering, ordering, and field selection through query parameters.
         """
 
+        unsupported_filters = [param for param in ("pql", "filters") if request.GET.get(param)]
+        if unsupported_filters:
+            return Response(
+                {
+                    "pql": (
+                        "PQL and structured filters are not supported on this Plane edition. "
+                        "Remove the pql/filters parameter and filter results client-side, or use "
+                        "a Plane edition that supports work item query filtering."
+                    ),
+                    "unsupported_parameters": unsupported_filters,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         external_id = request.GET.get("external_id")
         external_source = request.GET.get("external_source")
 
@@ -329,7 +351,14 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
         priority_order = ["urgent", "high", "medium", "low", "none"]
         state_order = ["backlog", "unstarted", "started", "completed", "cancelled"]
 
-        order_by_param = request.GET.get("order_by", "-created_at")
+        # Reject any field not in the allowlist before it reaches .order_by().
+        # An unrecognised value is replaced with the safe default, preventing
+        # ORM order_by injection via relational traversal (GHSA-p885-6jpg-cr2p).
+        order_by_param = sanitize_order_by(
+            request.GET.get("order_by", "-created_at"),
+            ISSUE_ORDER_BY_ALLOWLIST,
+            default="-created_at",
+        )
 
         issue_queryset = (
             self.get_queryset()
@@ -479,6 +508,8 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
                 project_id=str(project_id),
                 current_instance=None,
                 epoch=int(timezone.now().timestamp()),
+                notification=True,
+                origin=base_host(request=request, is_app=True),
             )
 
             # Send the model activity
@@ -638,6 +669,8 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                         project_id=str(project_id),
                         current_instance=current_instance,
                         epoch=int(timezone.now().timestamp()),
+                        notification=True,
+                        origin=base_host(request=request, is_app=True),
                     )
                     # Send the model activity for webhook dispatch
                     model_activity.delay(
@@ -696,6 +729,8 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                         project_id=str(project_id),
                         current_instance=None,
                         epoch=int(timezone.now().timestamp()),
+                        notification=True,
+                        origin=base_host(request=request, is_app=True),
                     )
                     # Send the model activity for webhook dispatch
                     model_activity.delay(
@@ -781,6 +816,8 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                 project_id=str(project_id),
                 current_instance=current_instance,
                 epoch=int(timezone.now().timestamp()),
+                notification=True,
+                origin=base_host(request=request, is_app=True),
             )
             # Send the model activity for webhook dispatch
             model_activity.delay(
@@ -1274,10 +1311,13 @@ class IssueLinkDetailAPIEndpoint(BaseAPIView):
         issue_link = IssueLink.objects.get(workspace__slug=slug, project_id=project_id, issue_id=issue_id, pk=pk)
         requested_data = json.dumps(request.data, cls=DjangoJSONEncoder)
         current_instance = json.dumps(IssueLinkSerializer(issue_link).data, cls=DjangoJSONEncoder)
+        previous_url = issue_link.url
         serializer = IssueLinkSerializer(issue_link, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            crawl_work_item_link_title.delay(serializer.data.get("id"), serializer.data.get("url"))
+            updated_url = serializer.data.get("url")
+            if updated_url and updated_url != previous_url:
+                crawl_work_item_link_title.delay(serializer.data.get("id"), updated_url)
             issue_activity.delay(
                 type="link.activity.updated",
                 requested_data=requested_data,
@@ -1866,12 +1906,18 @@ class IssueAttachmentListCreateAPIEndpoint(BaseAPIView):
 
         name = sanitize_filename(request.data.get("name"))
         type = request.data.get("type", False)
-        size = request.data.get("size")
+        # Clients may send size as a numeric string ("53314").
+        # 1e400 parses as inf (OverflowError). Non-positive values must not
+        # reach the S3 content-length-range, which is [1, size].
+        try:
+            size = int(request.data.get("size") or 0)
+        except (TypeError, ValueError, OverflowError):
+            size = 0
         external_id = request.data.get("external_id")
         external_source = request.data.get("external_source")
 
         # Check if the request is valid
-        if not name or not size:
+        if not name or size <= 0:
             return Response(
                 {"error": "Invalid request.", "status": False},
                 status=status.HTTP_400_BAD_REQUEST,

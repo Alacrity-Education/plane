@@ -361,10 +361,6 @@ GITHUB_ACCESS_TOKEN = os.environ.get("GITHUB_ACCESS_TOKEN", False)
 ANALYTICS_SECRET_KEY = os.environ.get("ANALYTICS_SECRET_KEY", False)
 ANALYTICS_BASE_API = os.environ.get("ANALYTICS_BASE_API", False)
 
-# Posthog settings
-POSTHOG_API_KEY = os.environ.get("POSTHOG_API_KEY", False)
-POSTHOG_HOST = os.environ.get("POSTHOG_HOST", False)
-
 # Skip environment variable configuration
 SKIP_ENV_VAR = os.environ.get("SKIP_ENV_VAR", "1") == "1"
 
@@ -543,6 +539,21 @@ ATTACHMENT_MIME_TYPES = [
     # Markdown
     "text/markdown",
 ]
+
+# MIME types that browsers can execute as scripts when served inline.
+# These must always be served with Content-Disposition: attachment, even if they
+# somehow end up stored (e.g. uploaded before this restriction was added).
+SCRIPT_CAPABLE_MIME_TYPES: frozenset[str] = frozenset(
+    [
+        "image/svg+xml",  # SVG with onload / embedded <script> tags
+        "text/javascript",
+        "application/javascript",
+        "text/html",
+        "application/xhtml+xml",
+        "text/xml",
+        "application/xml",
+    ]
+)
 
 # Seed directory path
 SEED_DIR = os.path.join(BASE_DIR, "seeds")

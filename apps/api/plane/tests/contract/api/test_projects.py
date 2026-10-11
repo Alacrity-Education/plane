@@ -183,6 +183,51 @@ class TestProjectListCreateAPIEndpoint:
         # transaction.on_commit() callbacks only fire on a successful commit.
         mocked_activity.delay.assert_not_called()
 
+    @pytest.mark.django_db
+    def test_list_invalid_order_by_does_not_500(self, api_key_client, workspace, create_user):
+        """Regression for GHSA-p885-6jpg-cr2p (DoS half).
+
+        An unknown ``order_by`` field used to reach Django's ``.order_by()``
+        raw and raise a ``FieldError`` → HTTP 500. After the fix the value is
+        sanitized to the safe default and the endpoint returns 200.
+        """
+        Project.objects.create(
+            name="Ordered Project",
+            identifier="OP",
+            workspace=workspace,
+            created_by=create_user,
+        )
+        ProjectMember.objects.create(project=Project.objects.get(identifier="OP"), member=create_user, role=20)
+
+        url = self.get_url(workspace.slug)
+        response = api_key_client.get(url, {"order_by": "not_a_field"})
+
+        assert response.status_code == status.HTTP_200_OK, f"Got {response.status_code}: {response.data!r}"
+
+    @pytest.mark.django_db
+    def test_list_relational_order_by_injection_does_not_500(self, api_key_client, workspace, create_user):
+        """Regression for GHSA-p885-6jpg-cr2p (relational-traversal leak half).
+
+        Ordering by a related-table column (``created_by__password``) used to
+        reach ``.order_by()`` raw, forming a blind ordering oracle. After the
+        fix the value is not in ``PROJECT_ORDER_BY_ALLOWLIST`` and is replaced
+        with the safe default, so it can no longer influence SQL ordering.
+        (That the payload maps to the default is asserted deterministically in
+        tests/unit/utils/test_order_by_sanitize.py.)
+        """
+        project = Project.objects.create(
+            name="Oracle Project",
+            identifier="OR",
+            workspace=workspace,
+            created_by=create_user,
+        )
+        ProjectMember.objects.create(project=project, member=create_user, role=20)
+
+        url = self.get_url(workspace.slug)
+        response = api_key_client.get(url, {"order_by": "created_by__password"})
+
+        assert response.status_code == status.HTTP_200_OK, f"Got {response.status_code}: {response.data!r}"
+
     @pytest.mark.django_db(transaction=True)
     def test_response_still_201_when_broker_dispatch_fails(self, api_key_client, workspace, create_user):
         """If model_activity.delay raises *after* the atomic block has
@@ -214,3 +259,88 @@ class TestProjectListCreateAPIEndpoint:
         # The dispatch was attempted but its failure was swallowed by
         # transaction.on_commit(robust=True).
         mocked_activity.delay.assert_called_once()
+
+
+@pytest.mark.contract
+class TestProjectListExpand:
+    """Contract tests for ``?expand=`` on GET /api/v1/workspaces/{slug}/projects/.
+
+    Regression for https://github.com/makeplane/plane/issues/4639. ``updated_by``
+    originally came back as a bare UUID because it was missing from the expansion
+    mapper. Adding it was not enough: ``BaseModel.save`` leaves ``updated_by`` NULL
+    until a record is first updated, and expanding a null relation emitted ``{}``
+    rather than ``null``.
+    """
+
+    def get_url(self, workspace_slug):
+        return f"/api/v1/workspaces/{workspace_slug}/projects/"
+
+    def make_project(self, workspace, user, identifier, updated_by=None):
+        """Create a project with the audit columns set explicitly.
+
+        ``BaseModel.save()`` overwrites ``created_by``/``updated_by`` from the
+        current request user (there is none here), so the values have to be
+        written with a queryset update that bypasses ``save()``.
+        """
+        project = Project.objects.create(
+            name=f"Project {identifier}",
+            identifier=identifier,
+            workspace=workspace,
+            project_lead=user,
+        )
+        ProjectMember.objects.create(project=project, member=user, role=20)
+        Project.objects.filter(pk=project.pk).update(created_by=user, updated_by=updated_by)
+        project.refresh_from_db()
+        return project
+
+    def get_project(self, response, identifier):
+        results = response.json()["results"]
+        match = next((p for p in results if p["identifier"] == identifier), None)
+        assert match is not None, f"{identifier} missing from results: {[p['identifier'] for p in results]}"
+        return match
+
+    @pytest.mark.django_db
+    def test_expand_updated_by_returns_a_user_object(self, api_key_client, workspace, create_user):
+        """The exact request from the issue: expand=created_by,updated_by,project_lead."""
+        self.make_project(workspace, create_user, "EXP", updated_by=create_user)
+
+        response = api_key_client.get(
+            self.get_url(workspace.slug),
+            {"expand": "created_by,updated_by,project_lead"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK, f"Got {response.status_code}: {response.data!r}"
+        payload = self.get_project(response, "EXP")
+        for field in ("created_by", "updated_by", "project_lead"):
+            assert isinstance(payload[field], dict), f"{field} was not expanded: {payload[field]!r}"
+            assert payload[field]["id"] == str(create_user.id)
+            assert "display_name" in payload[field]
+
+    @pytest.mark.django_db
+    def test_expand_null_relation_returns_null(self, api_key_client, workspace, create_user):
+        """A project that has never been edited has updated_by = NULL.
+
+        Expanding it must stay ``null`` rather than becoming an empty object.
+        """
+        project = self.make_project(workspace, create_user, "NEW")
+        assert project.updated_by_id is None, "fixture precondition: updated_by is null"
+
+        response = api_key_client.get(
+            self.get_url(workspace.slug),
+            {"expand": "created_by,updated_by"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK, f"Got {response.status_code}: {response.data!r}"
+        payload = self.get_project(response, "NEW")
+        assert payload["updated_by"] is None
+        assert isinstance(payload["created_by"], dict)
+
+    @pytest.mark.django_db
+    def test_without_expand_updated_by_stays_a_plain_id(self, api_key_client, workspace, create_user):
+        self.make_project(workspace, create_user, "RAW", updated_by=create_user)
+
+        response = api_key_client.get(self.get_url(workspace.slug))
+
+        assert response.status_code == status.HTTP_200_OK, f"Got {response.status_code}: {response.data!r}"
+        payload = self.get_project(response, "RAW")
+        assert payload["updated_by"] == str(create_user.id)
