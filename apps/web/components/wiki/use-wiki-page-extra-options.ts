@@ -34,6 +34,8 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
   const pageId = page?.id;
   const isArchived = !!page?.archived_at;
   const isLocked = !!page?.is_locked;
+  // the root page of a project wiki section always stays at the top level
+  const isProjectWikiRoot = !!page?.project_wiki;
   const canCurrentUserMovePage = !!page?.canCurrentUserMovePage;
 
   return useMemo(
@@ -53,12 +55,26 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
           if (pageId) onMove(pageId);
         },
         title: t("page_actions.move_page.submit_button.default"),
-        description: isLocked ? t("wiki.pages.move_modal.locked") : undefined,
+        description: isProjectWikiRoot
+          ? t("wiki.project_section.move_disabled")
+          : isLocked
+            ? t("wiki.pages.move_modal.locked")
+            : undefined,
         icon: MovePageOutline,
-        disabled: isLocked,
+        disabled: isLocked || isProjectWikiRoot,
         shouldRender: !!pageId && canCurrentUserMovePage && !isArchived,
       },
     ],
-    [pageId, canCurrentUserCreatePage, canCurrentUserMovePage, isArchived, isLocked, onAddSubPage, onMove, t]
+    [
+      pageId,
+      canCurrentUserCreatePage,
+      canCurrentUserMovePage,
+      isArchived,
+      isLocked,
+      isProjectWikiRoot,
+      onAddSubPage,
+      onMove,
+      t,
+    ]
   );
 };

@@ -171,6 +171,25 @@
         "title": "\"{name}\" verplaatsen",
         "locked": "Ontgrendel de pagina om deze te verplaatsen"
       }
+    },
+    "project_section": {
+      "projects": "Projecten",
+      "expand_projects": "Projecten uitvouwen",
+      "collapse_projects": "Projecten samenvouwen",
+      "move_disabled": "Projectwikipagina's blijven op het hoogste niveau",
+      "open_in_wiki": "Openen in Wiki",
+      "create": "Projectwiki maken",
+      "creating": "Bezig met aanmaken",
+      "create_error": "De projectwiki kon niet worden gemaakt. Probeer het opnieuw.",
+      "empty_state": {
+        "title": "Dit project heeft nog geen wiki",
+        "description": "Maak een projectwiki om de documentatie van dit project in de werkruimte-Wiki onder Projecten te bewaren.",
+        "no_permission": "Vraag een projectbeheerder of projectlid om er een te maken."
+      },
+      "root_unavailable": {
+        "title": "Projectwiki niet beschikbaar",
+        "description": "De wikipagina van dit project is gearchiveerd of u hebt er geen toegang toe."
+      }
     }
   }
 }

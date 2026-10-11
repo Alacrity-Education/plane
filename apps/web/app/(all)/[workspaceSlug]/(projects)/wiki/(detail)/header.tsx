@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane imports
-import { PagesOutline } from "@makeplane/propel/icons";
+import { PagesOutline, ProjectsOutline } from "@makeplane/propel/icons";
 import { useTranslation } from "@plane/i18n";
 import type { BreadcrumbNavigationItem } from "@plane/blocks/breadcrumb";
 import { Breadcrumbs, BreadcrumbNavigationSelect } from "@plane/blocks/breadcrumb";
@@ -46,7 +46,14 @@ export const WikiPageDetailsHeader = observer(function WikiPageDetailsHeader() {
   });
   // derived values
   const workspacePageIds = getCurrentWorkspacePageIds();
-  const ancestorPages = (pageId ? getAncestorIds(pageId.toString()) : [])
+  const ancestorIds = pageId ? getAncestorIds(pageId.toString()) : [];
+  // a page inside a project wiki section is rendered as Wiki › Projects › PROJ › … › page,
+  // the section root page itself being represented by the project crumb
+  const projectRootIndex = ancestorIds.findIndex((ancestorId) => !!getPageById(ancestorId)?.project_wiki);
+  const projectRootPage = projectRootIndex >= 0 ? getPageById(ancestorIds[projectRootIndex]) : undefined;
+  const projectWiki = projectRootPage?.project_wiki ?? page?.project_wiki ?? null;
+  const ancestorPages = ancestorIds
+    .slice(projectRootIndex + 1)
     .map((ancestorId) => getPageById(ancestorId))
     .filter((ancestorPage) => !!ancestorPage?.id);
   // wiki actions
@@ -87,6 +94,28 @@ export const WikiPageDetailsHeader = observer(function WikiPageDetailsHeader() {
                 />
               }
             />
+            {projectWiki && (
+              <Breadcrumbs.Item
+                component={
+                  <BreadcrumbLink
+                    label={t("wiki.project_section.projects")}
+                    href={`/${workspaceSlug}/wiki`}
+                    icon={<ProjectsOutline className="h-4 w-4 text-tertiary" />}
+                  />
+                }
+              />
+            )}
+            {projectRootPage?.project_wiki && (
+              <Breadcrumbs.Item
+                component={
+                  <BreadcrumbLink
+                    label={projectRootPage.project_wiki.identifier}
+                    href={`/${workspaceSlug}/projects/${projectRootPage.project_wiki.project_id}/wiki`}
+                    icon={<SwitcherIcon logo_props={projectRootPage.logo_props} LabelIcon={PagesOutline} size={16} />}
+                  />
+                }
+              />
+            )}
             {ancestorPages.map((ancestorPage) => (
               <Breadcrumbs.Item
                 key={ancestorPage?.id}

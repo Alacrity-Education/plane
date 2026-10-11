@@ -171,6 +171,25 @@
         "title": "\"{name}\" sayfasını taşı",
         "locked": "Taşımak için sayfanın kilidini açın"
       }
+    },
+    "project_section": {
+      "projects": "Projeler",
+      "expand_projects": "Projeleri genişlet",
+      "collapse_projects": "Projeleri daralt",
+      "move_disabled": "Proje wiki sayfaları en üst düzeyde kalır",
+      "open_in_wiki": "Wiki'de aç",
+      "create": "Proje wiki'si oluştur",
+      "creating": "Oluşturuluyor",
+      "create_error": "Proje wiki'si oluşturulamadı. Lütfen tekrar deneyin.",
+      "empty_state": {
+        "title": "Bu projenin henüz bir wiki'si yok",
+        "description": "Bu projenin belgelerini çalışma alanı Wiki'sinde, Projeler altında tutmak için bir proje wiki'si oluşturun.",
+        "no_permission": "Oluşturması için bir proje yöneticisine veya üyesine başvurun."
+      },
+      "root_unavailable": {
+        "title": "Proje wiki'si kullanılamıyor",
+        "description": "Bu projenin wiki sayfası arşivlenmiş veya ona erişiminiz yok."
+      }
     }
   }
 }

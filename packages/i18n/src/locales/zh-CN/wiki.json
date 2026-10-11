@@ -171,6 +171,25 @@
         "title": "移动“{name}”",
         "locked": "请先解锁页面再移动"
       }
+    },
+    "project_section": {
+      "projects": "项目",
+      "expand_projects": "展开项目",
+      "collapse_projects": "收起项目",
+      "move_disabled": "项目 Wiki 页面始终位于顶层",
+      "open_in_wiki": "在 Wiki 中打开",
+      "create": "创建项目 Wiki",
+      "creating": "正在创建",
+      "create_error": "无法创建项目 Wiki，请重试。",
+      "empty_state": {
+        "title": "此项目还没有 Wiki",
+        "description": "创建项目 Wiki，将此项目的文档保存在工作区 Wiki 的“项目”下。",
+        "no_permission": "请联系项目管理员或成员创建。"
+      },
+      "root_unavailable": {
+        "title": "项目 Wiki 不可用",
+        "description": "此项目的 Wiki 页面已归档，或您没有访问权限。"
+      }
     }
   }
 }

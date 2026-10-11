@@ -171,6 +171,25 @@
         "title": "Przenieś „{name}”",
         "locked": "Odblokuj stronę, aby ją przenieść"
       }
+    },
+    "project_section": {
+      "projects": "Projekty",
+      "expand_projects": "Rozwiń projekty",
+      "collapse_projects": "Zwiń projekty",
+      "move_disabled": "Strony wiki projektów pozostają na najwyższym poziomie",
+      "open_in_wiki": "Otwórz w Wiki",
+      "create": "Utwórz wiki projektu",
+      "creating": "Tworzenie",
+      "create_error": "Nie udało się utworzyć wiki projektu. Spróbuj ponownie.",
+      "empty_state": {
+        "title": "Ten projekt nie ma jeszcze wiki",
+        "description": "Utwórz wiki projektu, aby przechowywać dokumentację tego projektu w Wiki przestrzeni roboczej, w sekcji Projekty.",
+        "no_permission": "Poproś administratora lub członka projektu o jego utworzenie."
+      },
+      "root_unavailable": {
+        "title": "Wiki projektu jest niedostępne",
+        "description": "Strona wiki tego projektu została zarchiwizowana lub nie masz do niej dostępu."
+      }
     }
   }
 }

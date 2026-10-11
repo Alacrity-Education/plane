@@ -9,7 +9,7 @@ import { makeObservable, observable, runInAction, action, reaction, computed } f
 import { computedFn } from "mobx-utils";
 // plane imports
 import { EUserPermissions } from "@plane/constants";
-import type { TPage, TPageFilters, TPageNavigationTabs } from "@plane/types";
+import type { TPage, TPageFilters, TPageNavigationTabs, TProjectWikiSection } from "@plane/types";
 import { filterPagesByPageType, getPageName, orderPages, shouldFilterPage } from "@plane/utils";
 // services
 import { WorkspacePageService } from "@/services/page";
@@ -40,6 +40,8 @@ export interface IWorkspacePageStore {
   data: Record<string, TWorkspacePage>; // pageId => Page
   error: TError | undefined;
   filters: TPageFilters;
+  // projectId => wiki section, null when the project has no section, undefined while not fetched yet
+  projectWikiSections: Record<string, TProjectWikiSection | null>;
   // computed
   isAnyPageAvailable: boolean;
   canCurrentUserCreatePage: boolean;
@@ -50,6 +52,8 @@ export interface IWorkspacePageStore {
   getPageById: (pageId: string) => TWorkspacePage | undefined;
   // tree helpers
   getRootPageIds: (pageType: TPageNavigationTabs) => string[];
+  getProjectWikiRootPageIds: (pageType: TPageNavigationTabs) => string[];
+  getProjectWikiRootId: (pageId: string) => string | undefined;
   getChildPageIds: (pageId: string, pageType: TPageNavigationTabs) => string[];
   getAncestorIds: (pageId: string) => string[];
   getDescendantIds: (pageId: string) => string[];
@@ -67,6 +71,10 @@ export interface IWorkspacePageStore {
   createPage: (pageData: Partial<TPage>) => Promise<TPage | undefined>;
   removePage: (params: { pageId: string; shouldSync?: boolean }) => Promise<void>;
   movePage: (workspaceSlug: string, pageId: string, parentId: string | null, sortOrder?: number) => Promise<void>;
+  // project wiki sections
+  fetchProjectWikiSection: (workspaceSlug: string, projectId: string) => Promise<TProjectWikiSection | null>;
+  createProjectWikiSection: (workspaceSlug: string, projectId: string) => Promise<TProjectWikiSection>;
+  removeProjectWikiSection: (workspaceSlug: string, projectId: string) => Promise<void>;
 }
 
 export class WorkspacePageStore implements IWorkspacePageStore {
@@ -79,6 +87,7 @@ export class WorkspacePageStore implements IWorkspacePageStore {
     sortKey: "updated_at",
     sortBy: "desc",
   };
+  projectWikiSections: Record<string, TProjectWikiSection | null> = {};
   // service
   service: WorkspacePageService;
   rootStore: CoreRootStore;
@@ -90,6 +99,7 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       data: observable,
       error: observable,
       filters: observable,
+      projectWikiSections: observable,
       // computed
       isAnyPageAvailable: computed,
       canCurrentUserCreatePage: computed,
@@ -103,6 +113,9 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       removePage: action,
       movePage: action,
       setDescendantsArchivedAt: action,
+      fetchProjectWikiSection: action,
+      createProjectWikiSection: action,
+      removeProjectWikiSection: action,
     });
     this.rootStore = store;
     // service
@@ -115,6 +128,7 @@ export class WorkspacePageStore implements IWorkspacePageStore {
         runInAction(() => {
           Object.values(this.data).forEach((page) => page.cleanup());
           this.data = {};
+          this.projectWikiSections = {};
           this.loader = "init-loader";
           this.error = undefined;
           this.filters.searchQuery = "";
@@ -223,6 +237,29 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       .map((page) => page.id)
       .filter((id): id is string => !!id);
   });
+
+  /**
+   * @description get the ids of the tree roots of a tab that are the root page of a project wiki section,
+   * ordered by project identifier
+   * @param {TPageNavigationTabs} pageType
+   */
+  getProjectWikiRootPageIds = computedFn((pageType: TPageNavigationTabs) =>
+    this.getRootPageIds(pageType)
+      .map((pageId) => this.getPageById(pageId))
+      .filter((page) => !!page?.project_wiki)
+      // oxlint-disable-next-line unicorn/no-array-sort -- sorting a freshly filtered array
+      .sort((a, b) => (a?.project_wiki?.identifier ?? "").localeCompare(b?.project_wiki?.identifier ?? ""))
+      .map((page) => page?.id)
+      .filter((id): id is string => !!id)
+  );
+
+  /**
+   * @description get the id of the project wiki root page a page belongs to (the page itself or one of its ancestors)
+   * @param {string} pageId
+   */
+  getProjectWikiRootId = computedFn((pageId: string) =>
+    [pageId, ...this.getAncestorIds(pageId)].find((id) => !!this.getPageById(id)?.project_wiki)
+  );
 
   /**
    * @description get the ids of the direct children of a page that are visible in a tab
@@ -518,5 +555,47 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       });
       throw error;
     }
+  };
+
+  /**
+   * @description fetch the wiki section of a project
+   * @param {string} workspaceSlug
+   * @param {string} projectId
+   */
+  fetchProjectWikiSection = async (workspaceSlug: string, projectId: string) => {
+    const section = await this.service.fetchProjectWikiSection(workspaceSlug, projectId);
+    runInAction(() => {
+      set(this.projectWikiSections, [projectId], section);
+    });
+    return section;
+  };
+
+  /**
+   * @description create the wiki section of a project and load its root page
+   * @param {string} workspaceSlug
+   * @param {string} projectId
+   */
+  createProjectWikiSection = async (workspaceSlug: string, projectId: string) => {
+    const section = await this.service.createProjectWikiSection(workspaceSlug, projectId);
+    runInAction(() => {
+      set(this.projectWikiSections, [projectId], section);
+    });
+    // load the new root page so that the tree and breadcrumbs pick it up
+    await this.fetchPageDetails(workspaceSlug, section.root_page, { trackVisit: false }).catch(() => undefined);
+    return section;
+  };
+
+  /**
+   * @description unlink the wiki section of a project, its pages stay in the wiki as regular pages
+   * @param {string} workspaceSlug
+   * @param {string} projectId
+   */
+  removeProjectWikiSection = async (workspaceSlug: string, projectId: string) => {
+    const rootPageId = this.projectWikiSections[projectId]?.root_page;
+    await this.service.removeProjectWikiSection(workspaceSlug, projectId);
+    runInAction(() => {
+      set(this.projectWikiSections, [projectId], null);
+      if (rootPageId) this.getPageById(rootPageId)?.mutateProperties({ project_wiki: null });
+    });
   };
 }

@@ -5,7 +5,7 @@
  */
 
 import { makeObservable, observable } from "mobx";
-import type { TPage, TPageExtended } from "@plane/types";
+import type { TPage, TPageExtended, TPageProjectWiki } from "@plane/types";
 import type { CoreRootStore } from "@/store/root.store";
 import type { TBasePageServices } from "@/store/pages/base-page";
 
@@ -19,6 +19,7 @@ export class ExtendedBasePage implements TExtendedPageInstance {
   is_global: boolean | undefined;
   sort_order: number | undefined;
   sub_pages_count: number | undefined;
+  project_wiki: TPageProjectWiki | null | undefined;
 
   // oxlint-disable-next-line no-unused-vars
   constructor(store: CoreRootStore, page: TPage, services: TBasePageServices) {
@@ -26,12 +27,14 @@ export class ExtendedBasePage implements TExtendedPageInstance {
     this.is_global = page?.is_global ?? undefined;
     this.sort_order = page?.sort_order ?? undefined;
     this.sub_pages_count = page?.sub_pages_count ?? undefined;
+    this.project_wiki = page?.project_wiki ?? null;
 
     makeObservable(this, {
       parent: observable.ref,
       is_global: observable.ref,
       sort_order: observable.ref,
       sub_pages_count: observable.ref,
+      project_wiki: observable.ref,
     });
   }
 
@@ -41,6 +44,7 @@ export class ExtendedBasePage implements TExtendedPageInstance {
       is_global: this.is_global,
       sort_order: this.sort_order,
       sub_pages_count: this.sub_pages_count,
+      project_wiki: this.project_wiki,
     };
   }
 }

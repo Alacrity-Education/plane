@@ -171,6 +171,25 @@
         "title": "移動「{name}」",
         "locked": "請先解除鎖定頁面再移動"
       }
+    },
+    "project_section": {
+      "projects": "專案",
+      "expand_projects": "展開專案",
+      "collapse_projects": "收合專案",
+      "move_disabled": "專案 Wiki 頁面固定在最上層",
+      "open_in_wiki": "在 Wiki 中開啟",
+      "create": "建立專案 Wiki",
+      "creating": "正在建立",
+      "create_error": "無法建立專案 Wiki，請再試一次。",
+      "empty_state": {
+        "title": "此專案還沒有 Wiki",
+        "description": "建立專案 Wiki，將此專案的文件保存在工作區 Wiki 的「專案」下。",
+        "no_permission": "請聯絡專案管理員或成員建立。"
+      },
+      "root_unavailable": {
+        "title": "專案 Wiki 無法使用",
+        "description": "此專案的 Wiki 頁面已封存，或您沒有存取權限。"
+      }
     }
   }
 }

@@ -6,10 +6,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react";
+import { ChevronRightOutline, ProjectsOutline } from "@makeplane/propel/icons";
 // plane imports
 import { EPageAccess } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import type { TPageNavigationTabs } from "@plane/types";
-import { calculateTotalFilters } from "@plane/utils";
+import { calculateTotalFilters, cn } from "@plane/utils";
 // components
 import { ListLayout } from "@/components/core/list";
 // hooks
@@ -38,6 +40,61 @@ const writeExpandedPageIds = (workspaceSlug: string, pageIds: string[]) => {
     // storage can be unavailable (private mode, quota), the tree then simply forgets its state
   }
 };
+
+const getProjectsGroupStorageKey = (workspaceSlug: string) => `wiki_tree_${workspaceSlug}_projects_collapsed`;
+
+const readIsProjectsGroupCollapsed = (workspaceSlug: string): boolean => {
+  try {
+    return window.localStorage.getItem(getProjectsGroupStorageKey(workspaceSlug)) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const writeIsProjectsGroupCollapsed = (workspaceSlug: string, isCollapsed: boolean) => {
+  try {
+    window.localStorage.setItem(getProjectsGroupStorageKey(workspaceSlug), String(isCollapsed));
+  } catch {
+    // storage can be unavailable (private mode, quota), the group then simply forgets its state
+  }
+};
+
+type TWikiProjectsGroupHeaderProps = {
+  count: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+};
+
+/**
+ * @description header of the virtual "Projects" group that holds the root pages of the project wiki sections
+ */
+function WikiProjectsGroupHeader(props: TWikiProjectsGroupHeaderProps) {
+  const { count, isExpanded, onToggle } = props;
+  // plane hooks
+  const { t } = useTranslation();
+
+  return (
+    <div className="border-b border-subtle bg-layer-transparent" data-testid="wiki-projects-group">
+      <button
+        type="button"
+        className="flex min-h-[44px] w-full items-center gap-1.5 px-page-x text-left text-13 font-medium text-secondary hover:bg-layer-transparent-hover"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        aria-label={
+          isExpanded ? t("wiki.project_section.collapse_projects") : t("wiki.project_section.expand_projects")
+        }
+        data-testid="wiki-projects-group-toggle"
+      >
+        <span className="grid size-5 flex-shrink-0 place-items-center text-tertiary">
+          <ChevronRightOutline className={cn("size-3.5 transition-transform", { "rotate-90": isExpanded })} />
+        </span>
+        <ProjectsOutline className="size-4 flex-shrink-0 text-tertiary" />
+        <span className="truncate">{t("wiki.project_section.projects")}</span>
+        <span className="flex-shrink-0 text-11 text-tertiary">{count}</span>
+      </button>
+    </div>
+  );
+}
 
 type TWikiTreeNodeProps = {
   pageId: string;
@@ -92,32 +149,45 @@ const WikiTreeNode = observer(function WikiTreeNode(props: TWikiTreeNodeProps) {
 type Props = {
   pageType: TPageNavigationTabs;
   workspaceSlug: string;
+  // scopes the tree to a single page and its sub-pages (project wiki section), the root is expanded by default
+  rootPageId?: string;
 };
 
 /**
- * @description wiki home list: a nested tree of pages, or a flat list for the archived tab and while searching/filtering
+ * @description wiki home list: a nested tree of pages, or a flat list for the archived tab and while searching/filtering.
+ * Project wiki section roots are grouped under a virtual "Projects" group at the top of the tree.
  */
 export const WikiTree = observer(function WikiTree(props: Props) {
-  const { pageType, workspaceSlug } = props;
+  const { pageType, workspaceSlug, rootPageId } = props;
   // store hooks
-  const { filters, getRootPageIds, getChildPageIds, getCurrentProjectFilteredPageIdsByTab } = usePageStore(
-    EPageStoreType.WORKSPACE
-  );
+  const { filters, getRootPageIds, getProjectWikiRootPageIds, getChildPageIds, getCurrentProjectFilteredPageIdsByTab } =
+    usePageStore(EPageStoreType.WORKSPACE);
   // states
   const [expandedPageIds, setExpandedPageIds] = useState<string[]>(() => readExpandedPageIds(workspaceSlug));
+  const [isProjectsGroupCollapsed, setIsProjectsGroupCollapsed] = useState<boolean>(() =>
+    readIsProjectsGroupCollapsed(workspaceSlug)
+  );
   const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [movePageId, setMovePageId] = useState<string | undefined>(undefined);
   // derived values
+  const isScoped = !!rootPageId;
   const isFlatList =
-    pageType === "archived" ||
-    filters.searchQuery.trim().length > 0 ||
-    calculateTotalFilters(filters.filters ?? {}) > 0;
-  const pageIds = isFlatList ? (getCurrentProjectFilteredPageIdsByTab(pageType) ?? []) : getRootPageIds(pageType);
+    !isScoped &&
+    (pageType === "archived" ||
+      filters.searchQuery.trim().length > 0 ||
+      calculateTotalFilters(filters.filters ?? {}) > 0);
+  const projectRootPageIds = isScoped || isFlatList ? [] : getProjectWikiRootPageIds(pageType);
+  const pageIds = isScoped
+    ? [rootPageId]
+    : isFlatList
+      ? (getCurrentProjectFilteredPageIdsByTab(pageType) ?? [])
+      : getRootPageIds(pageType).filter((pageId) => !projectRootPageIds.includes(pageId));
 
   // the expanded state is stored per workspace
   useEffect(() => {
     setExpandedPageIds(readExpandedPageIds(workspaceSlug));
+    setIsProjectsGroupCollapsed(readIsProjectsGroupCollapsed(workspaceSlug));
   }, [workspaceSlug]);
 
   const updateExpandedPageIds = useCallback(
@@ -138,6 +208,18 @@ export const WikiTree = observer(function WikiTree(props: Props) {
     },
     [updateExpandedPageIds]
   );
+
+  // a scoped tree opens on its root page
+  useEffect(() => {
+    expandPage(rootPageId ?? null);
+  }, [rootPageId, expandPage]);
+
+  const handleToggleProjectsGroup = useCallback(() => {
+    setIsProjectsGroupCollapsed((prev) => {
+      writeIsProjectsGroupCollapsed(workspaceSlug, !prev);
+      return !prev;
+    });
+  }, [workspaceSlug]);
 
   const handleToggle = useCallback(
     (pageId: string) =>
@@ -174,6 +256,29 @@ export const WikiTree = observer(function WikiTree(props: Props) {
         workspaceSlug={workspaceSlug}
       />
       <ListLayout>
+        {projectRootPageIds.length > 0 && (
+          <>
+            <WikiProjectsGroupHeader
+              count={projectRootPageIds.length}
+              isExpanded={!isProjectsGroupCollapsed}
+              onToggle={handleToggleProjectsGroup}
+            />
+            {!isProjectsGroupCollapsed &&
+              projectRootPageIds.map((pageId) => (
+                <WikiTreeNode
+                  key={pageId}
+                  pageId={pageId}
+                  depth={1}
+                  pageType={pageType}
+                  expandedPageIds={expandedPageIds}
+                  ancestorIds={[]}
+                  onToggle={handleToggle}
+                  onAddSubPage={handleAddSubPage}
+                  onMove={handleMove}
+                />
+              ))}
+          </>
+        )}
         {isFlatList
           ? pageIds.map((pageId) => (
               <WikiTreeRow

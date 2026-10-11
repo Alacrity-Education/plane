@@ -91,6 +91,16 @@ export const useNavigationItems = ({
         sortOrder: 5,
       },
       {
+        i18n_key: "sidebar.wiki",
+        key: "wiki",
+        name: "Wiki",
+        href: `/${workspaceSlug}/projects/${projectId}/wiki`,
+        icon: PagesOutline,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 6,
+      },
+      {
         i18n_key: "sidebar.intake",
         key: "intake",
         name: "Intake",
@@ -98,7 +108,7 @@ export const useNavigationItems = ({
         icon: IntakeOutline,
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
         shouldRender: !!project?.inbox_view,
-        sortOrder: 6,
+        sortOrder: 7,
       },
     ],
     [project]

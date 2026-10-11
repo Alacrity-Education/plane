@@ -128,6 +128,16 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         sortOrder: 5,
       },
       {
+        i18n_key: "sidebar.wiki",
+        key: "wiki",
+        name: "Wiki",
+        href: `/${workspaceSlug}/projects/${projectId}/wiki`,
+        icon: PagesOutline,
+        access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
+        shouldRender: true,
+        sortOrder: 6,
+      },
+      {
         i18n_key: "sidebar.intake",
         key: "intake",
         name: "Intake",
@@ -135,7 +145,7 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         icon: IntakeOutline,
         access: [EUserPermissions.ADMIN, EUserPermissions.MEMBER, EUserPermissions.GUEST],
         shouldRender: project?.inbox_view ?? false,
-        sortOrder: 6,
+        sortOrder: 7,
       },
     ],
     [project]
@@ -191,7 +201,12 @@ export const ProjectNavigation = observer(function ProjectNavigation(props: TPro
         const shouldShowCount = item.key === "intake" && (project.intake_count ?? 0) > 0;
 
         return (
-          <Link key={item.key} href={item.href} onClick={handleProjectClick}>
+          <Link
+            key={item.key}
+            href={item.href}
+            onClick={handleProjectClick}
+            data-testid={item.key === "wiki" ? "project-wiki-nav" : undefined}
+          >
             <SidebarNavItem isActive={!!isActive(item)}>
               <div className="flex w-full items-center justify-between gap-1.5 py-[1px]">
                 <div className="flex items-center gap-1.5">

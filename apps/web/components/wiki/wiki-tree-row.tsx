@@ -70,7 +70,7 @@ export const WikiTreeRow = observer(function WikiTreeRow(props: Props) {
 
   if (!page) return null;
   // derived values
-  const { name, logo_props, getRedirectionLink } = page;
+  const { name, logo_props, project_wiki, getRedirectionLink } = page;
   const pageName = getPageName(name);
   const itemLink = getRedirectionLink();
   const hasToggle = isExpanded !== undefined;
@@ -105,7 +105,7 @@ export const WikiTreeRow = observer(function WikiTreeRow(props: Props) {
             target="_self"
             onClick={() => router.push(itemLink)}
           >
-            <div className="flex items-center gap-4 truncate">
+            <div className={cn("flex items-center truncate", project_wiki ? "gap-2" : "gap-4")}>
               <span className="flex flex-shrink-0 items-center">
                 {logo_props?.in_use ? (
                   <Logo logo={logo_props} size={16} type="lucide" />
@@ -113,6 +113,16 @@ export const WikiTreeRow = observer(function WikiTreeRow(props: Props) {
                   <PagesOutline className="h-4 w-4 text-tertiary" />
                 )}
               </span>
+              {project_wiki && (
+                <Tooltip label={project_wiki.name} disabled={isMobile}>
+                  <span
+                    className="flex-shrink-0 rounded-sm bg-layer-2 px-1.5 py-0.5 text-11 font-medium text-secondary"
+                    data-testid="wiki-project-badge"
+                  >
+                    {project_wiki.identifier}
+                  </span>
+                </Tooltip>
+              )}
               <Tooltip label={pageName} layout="stacked" disabled={isMobile}>
                 <span className="truncate text-13">{pageName}</span>
               </Tooltip>

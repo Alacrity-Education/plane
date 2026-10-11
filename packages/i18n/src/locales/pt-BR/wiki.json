@@ -171,6 +171,25 @@
         "title": "Mover \"{name}\"",
         "locked": "Desbloqueie a página para movê-la"
       }
+    },
+    "project_section": {
+      "projects": "Projetos",
+      "expand_projects": "Expandir projetos",
+      "collapse_projects": "Recolher projetos",
+      "move_disabled": "As páginas wiki de projetos ficam no nível superior",
+      "open_in_wiki": "Abrir na Wiki",
+      "create": "Criar wiki do projeto",
+      "creating": "Criando",
+      "create_error": "Não foi possível criar a wiki do projeto. Tente novamente.",
+      "empty_state": {
+        "title": "Este projeto ainda não tem wiki",
+        "description": "Crie uma wiki do projeto para manter a documentação deste projeto na Wiki do espaço de trabalho, em Projetos.",
+        "no_permission": "Peça a um administrador ou membro do projeto para criá-la."
+      },
+      "root_unavailable": {
+        "title": "Wiki do projeto indisponível",
+        "description": "A página wiki deste projeto está arquivada ou você não tem acesso a ela."
+      }
     }
   }
 }

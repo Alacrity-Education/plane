@@ -142,6 +142,11 @@ export const WikiPageParentPicker = observer(function WikiPageParentPicker(props
                   <PagesOutline className="size-4 text-tertiary" />
                 )}
               </span>
+              {page.project_wiki && (
+                <span className="flex-shrink-0 rounded-sm bg-layer-2 px-1 text-11 font-medium text-secondary">
+                  {page.project_wiki.identifier}
+                </span>
+              )}
               <span className="flex-grow truncate">{pageName}</span>
               {disabledReason ? (
                 <span className="flex-shrink-0 text-11 text-tertiary">{disabledReason}</span>

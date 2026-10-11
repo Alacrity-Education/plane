@@ -26,6 +26,15 @@ export const extendedRoutes: RouteConfigEntry[] = [
         layout("./(all)/[workspaceSlug]/(projects)/wiki/(detail)/layout.tsx", [
           route(":workspaceSlug/wiki/:pageId", "./(all)/[workspaceSlug]/(projects)/wiki/(detail)/[pageId]/page.tsx"),
         ]),
+        // Project wiki section
+        layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/layout.tsx", [
+          layout("./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/wiki/layout.tsx", [
+            route(
+              ":workspaceSlug/projects/:projectId/wiki",
+              "./(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/wiki/page.tsx"
+            ),
+          ]),
+        ]),
       ]),
     ]),
   ]),

@@ -171,6 +171,25 @@
         "title": "Di chuyển \"{name}\"",
         "locked": "Mở khóa trang để di chuyển"
       }
+    },
+    "project_section": {
+      "projects": "Dự án",
+      "expand_projects": "Mở rộng dự án",
+      "collapse_projects": "Thu gọn dự án",
+      "move_disabled": "Các trang wiki của dự án luôn ở cấp cao nhất",
+      "open_in_wiki": "Mở trong Wiki",
+      "create": "Tạo wiki dự án",
+      "creating": "Đang tạo",
+      "create_error": "Không thể tạo wiki dự án. Vui lòng thử lại.",
+      "empty_state": {
+        "title": "Dự án này chưa có wiki",
+        "description": "Tạo wiki dự án để lưu tài liệu của dự án này trong Wiki của không gian làm việc, trong mục Dự án.",
+        "no_permission": "Hãy nhờ quản trị viên hoặc thành viên dự án tạo wiki."
+      },
+      "root_unavailable": {
+        "title": "Wiki dự án không khả dụng",
+        "description": "Trang wiki của dự án này đã được lưu trữ hoặc bạn không có quyền truy cập."
+      }
     }
   }
 }

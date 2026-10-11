@@ -171,6 +171,25 @@
         "title": "「{name}」を移動",
         "locked": "移動するにはページのロックを解除してください"
       }
+    },
+    "project_section": {
+      "projects": "プロジェクト",
+      "expand_projects": "プロジェクトを展開",
+      "collapse_projects": "プロジェクトを折りたたむ",
+      "move_disabled": "プロジェクトの Wiki ページはトップレベルに固定されます",
+      "open_in_wiki": "Wiki で開く",
+      "create": "プロジェクト Wiki を作成",
+      "creating": "作成中",
+      "create_error": "プロジェクト Wiki を作成できませんでした。もう一度お試しください。",
+      "empty_state": {
+        "title": "このプロジェクトにはまだ Wiki がありません",
+        "description": "プロジェクト Wiki を作成すると、このプロジェクトのドキュメントをワークスペース Wiki の「プロジェクト」にまとめられます。",
+        "no_permission": "プロジェクトの管理者またはメンバーに作成を依頼してください。"
+      },
+      "root_unavailable": {
+        "title": "プロジェクト Wiki を利用できません",
+        "description": "このプロジェクトの Wiki ページはアーカイブされているか、アクセス権がありません。"
+      }
     }
   }
 }

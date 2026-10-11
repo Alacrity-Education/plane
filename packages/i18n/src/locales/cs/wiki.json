@@ -171,6 +171,25 @@
         "title": "Přesunout „{name}“",
         "locked": "Pro přesunutí stránku odemkněte"
       }
+    },
+    "project_section": {
+      "projects": "Projekty",
+      "expand_projects": "Rozbalit projekty",
+      "collapse_projects": "Sbalit projekty",
+      "move_disabled": "Wiki stránky projektů zůstávají na nejvyšší úrovni",
+      "open_in_wiki": "Otevřít ve Wiki",
+      "create": "Vytvořit wiki projektu",
+      "creating": "Vytváření",
+      "create_error": "Wiki projektu se nepodařilo vytvořit. Zkuste to prosím znovu.",
+      "empty_state": {
+        "title": "Tento projekt zatím nemá wiki",
+        "description": "Vytvořte wiki projektu a uchovávejte dokumentaci tohoto projektu ve Wiki pracovního prostoru v sekci Projekty.",
+        "no_permission": "Požádejte správce nebo člena projektu, aby ji vytvořil."
+      },
+      "root_unavailable": {
+        "title": "Wiki projektu není k dispozici",
+        "description": "Wiki stránka tohoto projektu je archivovaná nebo k ní nemáte přístup."
+      }
     }
   }
 }

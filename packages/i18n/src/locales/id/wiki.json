@@ -171,6 +171,25 @@
         "title": "Pindahkan \"{name}\"",
         "locked": "Buka kunci halaman untuk memindahkannya"
       }
+    },
+    "project_section": {
+      "projects": "Projek",
+      "expand_projects": "Bentangkan projek",
+      "collapse_projects": "Ciutkan projek",
+      "move_disabled": "Halaman wiki projek tetap berada di tingkat teratas",
+      "open_in_wiki": "Buka di Wiki",
+      "create": "Buat wiki projek",
+      "creating": "Membuat",
+      "create_error": "Wiki projek tidak dapat dibuat. Silakan coba lagi.",
+      "empty_state": {
+        "title": "Projek ini belum memiliki wiki",
+        "description": "Buat wiki projek untuk menyimpan dokumentasi projek ini di Wiki ruang kerja, di bawah Projek.",
+        "no_permission": "Minta admin atau anggota projek untuk membuatnya."
+      },
+      "root_unavailable": {
+        "title": "Wiki projek tidak tersedia",
+        "description": "Halaman wiki projek ini diarsipkan atau Anda tidak memiliki akses ke halaman tersebut."
+      }
     }
   }
 }

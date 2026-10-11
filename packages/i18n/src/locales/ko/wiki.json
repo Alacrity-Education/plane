@@ -171,6 +171,25 @@
         "title": "\"{name}\" 이동",
         "locked": "이동하려면 페이지 잠금을 해제하세요"
       }
+    },
+    "project_section": {
+      "projects": "프로젝트",
+      "expand_projects": "프로젝트 펼치기",
+      "collapse_projects": "프로젝트 접기",
+      "move_disabled": "프로젝트 위키 페이지는 최상위에 유지됩니다",
+      "open_in_wiki": "위키에서 열기",
+      "create": "프로젝트 위키 만들기",
+      "creating": "생성 중",
+      "create_error": "프로젝트 위키를 만들 수 없습니다. 다시 시도해 주세요.",
+      "empty_state": {
+        "title": "이 프로젝트에는 아직 위키가 없습니다",
+        "description": "프로젝트 위키를 만들어 이 프로젝트의 문서를 워크스페이스 위키의 프로젝트 아래에 보관하세요.",
+        "no_permission": "프로젝트 관리자나 멤버에게 생성을 요청하세요."
+      },
+      "root_unavailable": {
+        "title": "프로젝트 위키를 사용할 수 없습니다",
+        "description": "이 프로젝트의 위키 페이지가 보관되었거나 접근 권한이 없습니다."
+      }
     }
   }
 }

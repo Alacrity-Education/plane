@@ -171,6 +171,25 @@
         "title": "„{name}“ verschieben",
         "locked": "Entsperren Sie die Seite, um sie zu verschieben"
       }
+    },
+    "project_section": {
+      "projects": "Projekte",
+      "expand_projects": "Projekte ausklappen",
+      "collapse_projects": "Projekte einklappen",
+      "move_disabled": "Projekt-Wiki-Seiten bleiben auf der obersten Ebene",
+      "open_in_wiki": "Im Wiki öffnen",
+      "create": "Projekt-Wiki erstellen",
+      "creating": "Wird erstellt",
+      "create_error": "Das Projekt-Wiki konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "empty_state": {
+        "title": "Dieses Projekt hat noch kein Wiki",
+        "description": "Erstellen Sie ein Projekt-Wiki, um die Dokumentation dieses Projekts im Workspace-Wiki unter Projekte abzulegen.",
+        "no_permission": "Bitten Sie einen Projektadministrator oder ein Projektmitglied, eines zu erstellen."
+      },
+      "root_unavailable": {
+        "title": "Projekt-Wiki nicht verfügbar",
+        "description": "Die Wiki-Seite dieses Projekts ist archiviert oder Sie haben keinen Zugriff darauf."
+      }
     }
   }
 }

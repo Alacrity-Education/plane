@@ -171,6 +171,25 @@
         "title": "Mută „{name}”",
         "locked": "Deblocați pagina pentru a o muta"
       }
+    },
+    "project_section": {
+      "projects": "Proiecte",
+      "expand_projects": "Extinde proiectele",
+      "collapse_projects": "Restrânge proiectele",
+      "move_disabled": "Paginile wiki ale proiectelor rămân la nivelul superior",
+      "open_in_wiki": "Deschide în Wiki",
+      "create": "Creează wiki-ul proiectului",
+      "creating": "Se creează",
+      "create_error": "Wiki-ul proiectului nu a putut fi creat. Vă rugăm să încercați din nou.",
+      "empty_state": {
+        "title": "Acest proiect nu are încă un wiki",
+        "description": "Creați un wiki al proiectului pentru a păstra documentația acestui proiect în Wiki-ul spațiului de lucru, la Proiecte.",
+        "no_permission": "Cereți unui administrator sau membru al proiectului să îl creeze."
+      },
+      "root_unavailable": {
+        "title": "Wiki-ul proiectului nu este disponibil",
+        "description": "Pagina wiki a acestui proiect este arhivată sau nu aveți acces la ea."
+      }
     }
   }
 }

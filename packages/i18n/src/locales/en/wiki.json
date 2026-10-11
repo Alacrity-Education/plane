@@ -171,6 +171,25 @@
         "title": "Move \"{name}\"",
         "locked": "Unlock the page to move it"
       }
+    },
+    "project_section": {
+      "projects": "Projects",
+      "expand_projects": "Expand projects",
+      "collapse_projects": "Collapse projects",
+      "move_disabled": "Project wiki pages stay at the top level",
+      "open_in_wiki": "Open in Wiki",
+      "create": "Create project wiki",
+      "creating": "Creating",
+      "create_error": "The project wiki could not be created. Please try again.",
+      "empty_state": {
+        "title": "This project has no wiki yet",
+        "description": "Create a project wiki to keep this project's docs in the workspace Wiki, under Projects.",
+        "no_permission": "Ask a project admin or member to create one."
+      },
+      "root_unavailable": {
+        "title": "Project wiki unavailable",
+        "description": "The wiki page of this project is archived or you don't have access to it."
+      }
     }
   }
 }

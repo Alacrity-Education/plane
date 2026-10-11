@@ -6,7 +6,7 @@
 
 // plane imports
 import { API_BASE_URL } from "@plane/constants";
-import type { TDocumentPayload, TPage, TPageNavigationTabs } from "@plane/types";
+import type { TDocumentPayload, TPage, TPageNavigationTabs, TProjectWikiSection } from "@plane/types";
 // services
 import { APIService } from "@/services/api.service";
 
@@ -160,6 +160,44 @@ export class WorkspacePageService extends APIService {
   async duplicate(workspaceSlug: string, pageId: string): Promise<TPage> {
     return this.post(`${this.getBasePath(workspaceSlug)}/pages/${pageId}/duplicate/`)
       .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  private getProjectWikiPath(workspaceSlug: string, projectId: string) {
+    return `/api/workspaces/${workspaceSlug}/projects/${projectId}/wiki/`;
+  }
+
+  /**
+   * @description fetch the wiki section of a project, null when the project has no section (404)
+   */
+  async fetchProjectWikiSection(workspaceSlug: string, projectId: string): Promise<TProjectWikiSection | null> {
+    return this.get(this.getProjectWikiPath(workspaceSlug, projectId))
+      .then((response) => response?.data ?? null)
+      .catch((error) => {
+        if (error?.response?.status === 404) return null;
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * @description create the wiki section of a project (a top level wiki page named after the project)
+   */
+  async createProjectWikiSection(workspaceSlug: string, projectId: string): Promise<TProjectWikiSection> {
+    return this.post(this.getProjectWikiPath(workspaceSlug, projectId))
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * @description unlink the wiki section of a project, its pages are kept
+   */
+  async removeProjectWikiSection(workspaceSlug: string, projectId: string): Promise<void> {
+    return this.delete(this.getProjectWikiPath(workspaceSlug, projectId))
+      .then(() => undefined)
       .catch((error) => {
         throw error?.response?.data;
       });
