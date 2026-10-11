@@ -18,6 +18,7 @@ import {
   ListOutline,
   MinusSquareOutline,
   NumberedListOutline,
+  PenToolOutline,
   QuoteOutline,
   TableEditorOutline,
   TextOutline,
@@ -36,6 +37,7 @@ import {
   toggleTextColor,
   toggleBackgroundColor,
   insertImage,
+  insertExcalidraw,
   insertCallout,
   setText,
   openEmojiPicker,
@@ -298,6 +300,19 @@ export const getSlashCommandFilteredSections =
         command: ({ editor, range }: CommandProps) => insertImage({ editor, event: "insert", range }),
         section: "general",
         pushAfter: "code",
+      });
+    }
+    if (!disabledExtensions?.includes("excalidraw")) {
+      internalAdditionalOptions.push({
+        commandKey: "excalidraw",
+        key: "excalidraw",
+        title: "Drawing",
+        icon: <PenToolOutline className="size-3.5" />,
+        description: "Insert an Excalidraw drawing",
+        searchTerms: ["excalidraw", "draw", "drawing", "sketch", "diagram", "whiteboard", "canvas"],
+        command: ({ editor, range }: CommandProps) => insertExcalidraw({ editor, range }),
+        section: "general",
+        pushAfter: "image",
       });
     }
 

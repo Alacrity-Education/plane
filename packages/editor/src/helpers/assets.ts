@@ -10,6 +10,7 @@ import type { ADDITIONAL_EXTENSIONS } from "@plane/utils";
 import { CORE_EXTENSIONS } from "@plane/utils";
 // extensions
 import { getImageBlockId } from "@/extensions/custom-image/utils";
+import { getExcalidrawBlockId } from "@/extensions/excalidraw/utils";
 // plane editor imports
 import { ADDITIONAL_ASSETS_META_DATA_RECORD } from "@/constants/assets";
 // types
@@ -40,6 +41,17 @@ export const CORE_ASSETS_META_DATA_RECORD: Partial<
       size: 0,
       src: attrs?.src,
       type: CORE_EXTENSIONS.CUSTOM_IMAGE,
+    };
+  },
+  [CORE_EXTENSIONS.EXCALIDRAW]: (attrs) => {
+    if (!attrs?.src) return;
+    return {
+      href: `#${getExcalidrawBlockId(attrs?.id ?? "")}`,
+      id: attrs?.id,
+      name: `drawing-${attrs?.id}`,
+      size: 0,
+      src: attrs?.src,
+      type: CORE_EXTENSIONS.EXCALIDRAW,
     };
   },
   ...ADDITIONAL_ASSETS_META_DATA_RECORD,

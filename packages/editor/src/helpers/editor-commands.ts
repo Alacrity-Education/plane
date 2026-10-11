@@ -130,6 +130,14 @@ export const insertImage = ({
   return editor?.chain().focus().insertImageComponent(imageOptions).run();
 };
 
+export const insertExcalidraw = ({ editor, pos, range }: { editor: Editor; pos?: number | null; range?: Range }) => {
+  // the drawing node is only registered in the document editor
+  if (!editor.schema.nodes[CORE_EXTENSIONS.EXCALIDRAW]) return false;
+  const chain = editor.chain().focus();
+  if (range) chain.deleteRange(range);
+  return chain.insertExcalidrawComponent(typeof pos === "number" ? { pos } : {}).run();
+};
+
 export const unsetLinkEditor = (editor: Editor) => {
   editor.chain().focus().unsetLink().run();
 };

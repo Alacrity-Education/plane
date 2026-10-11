@@ -48,6 +48,7 @@ export enum CORE_EXTENSIONS {
   UTILITY = "utility",
   WORK_ITEM_EMBED = "issue-embed-component",
   EMOJI = "emoji",
+  EXCALIDRAW = "excalidrawComponent",
   UNIQUE_ID = "uniqueID",
 }
 
@@ -74,4 +75,5 @@ export const BLOCK_NODE_TYPES = [
   CORE_EXTENSIONS.CUSTOM_IMAGE,
   CORE_EXTENSIONS.CALLOUT,
   CORE_EXTENSIONS.WORK_ITEM_EMBED,
+  CORE_EXTENSIONS.EXCALIDRAW,
 ];

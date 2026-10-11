@@ -27,7 +27,7 @@ export const useParseEditorContent = (args: TArgs) => {
       const doc = parser.parseFromString(htmlContent, "text/html");
       const imageMetaData: TCustomComponentsMetaData["file_assets"] = [];
       // process image components
-      const imageComponents = doc.querySelectorAll("image-component");
+      const imageComponents = doc.querySelectorAll("image-component, excalidraw-component");
       imageComponents.forEach((element) => {
         const src = element.getAttribute("src");
         if (src) {

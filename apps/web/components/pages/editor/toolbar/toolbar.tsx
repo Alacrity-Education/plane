@@ -51,9 +51,20 @@ const ToolbarItem = React.memo(function ToolbarItem(props: ToolbarItemProps) {
   return (
     <Tooltip label={item.name} shortcut={item.shortcut?.join(" + ")}>
       {isInsertAction ? (
-        <ToolbarButton aria-label={item.name} icon={icon} onClick={handleClick} />
+        <ToolbarButton
+          aria-label={item.name}
+          data-testid={`editor-toolbar-${item.renderKey}`}
+          icon={icon}
+          onClick={handleClick}
+        />
       ) : (
-        <ToolbarToggle aria-label={item.name} icon={icon} pressed={!!isActive} onPressedChange={handleClick} />
+        <ToolbarToggle
+          aria-label={item.name}
+          data-testid={`editor-toolbar-${item.renderKey}`}
+          icon={icon}
+          pressed={!!isActive}
+          onPressedChange={handleClick}
+        />
       )}
     </Tooltip>
   );

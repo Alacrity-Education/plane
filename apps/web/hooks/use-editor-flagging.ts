@@ -38,11 +38,11 @@ export const useEditorFlagging = (_props: TEditorFlaggingHookProps): TEditorFlag
     flagged: [],
   },
   liteText: {
-    disabled: ["ai", "collaboration-cursor"],
+    disabled: ["ai", "collaboration-cursor", "excalidraw"],
     flagged: [],
   },
   richText: {
-    disabled: ["ai", "collaboration-cursor"],
+    disabled: ["ai", "collaboration-cursor", "excalidraw"],
     flagged: [],
   },
 });

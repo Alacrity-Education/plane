@@ -43,4 +43,6 @@ const imageComponentHandler: AssetDuplicationHandler = ({ element, originalHtml 
 
 export const assetDuplicationHandlers: Record<string, AssetDuplicationHandler> = {
   "image-component": imageComponentHandler,
+  // drawings share the image attribute contract (id, src, status)
+  "excalidraw-component": imageComponentHandler,
 };

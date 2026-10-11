@@ -7,6 +7,7 @@
 import type { HocuspocusProvider } from "@hocuspocus/provider";
 import type { AnyExtension } from "@tiptap/core";
 import { SlashCommands } from "@/extensions";
+import { ExcalidrawExtension } from "@/extensions/excalidraw/extension";
 // types
 import type { IEditorProps, TExtensions, TUserDetails } from "@/types";
 
@@ -29,6 +30,10 @@ const extensionRegistry: TDocumentEditorAdditionalExtensionsRegistry[] = [
     isEnabled: (disabledExtensions) => !disabledExtensions.includes("slash-commands"),
     getExtension: ({ disabledExtensions, flaggedExtensions }) =>
       SlashCommands({ disabledExtensions, flaggedExtensions }),
+  },
+  {
+    isEnabled: (disabledExtensions) => !disabledExtensions.includes("excalidraw"),
+    getExtension: ({ fileHandler, isEditable }) => ExcalidrawExtension({ fileHandler, isEditable }),
   },
 ];
 

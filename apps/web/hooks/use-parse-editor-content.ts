@@ -97,8 +97,8 @@ export const useParseEditorContent = (args: TArgs) => {
           codeElement.replaceWith(span);
         }
       });
-      // handle image-component elements
-      const imageComponents = doc.querySelectorAll("image-component");
+      // handle image-component elements (drawings are PNG assets too)
+      const imageComponents = doc.querySelectorAll("image-component, excalidraw-component");
       if (noAssets) {
         // if no assets is enabled, remove the image component elements
         imageComponents.forEach((component) => component.remove());
@@ -196,8 +196,8 @@ export const useParseEditorContent = (args: TArgs) => {
           }
         }
       });
-      // replace the matched image components with <img src={src} >
-      const imageComponentRegex = /<image-component[^>]*src="([^"]+)"[^>]*>[^]*<\/image-component>/g;
+      // replace the matched image components (and drawings) with <img src={src} >
+      const imageComponentRegex = /<(image-component|excalidraw-component)[^>]*src="([^"]+)"[^>]*>[^]*?<\/\1>/g;
       const imgTagRegex = /<img[^>]*src="([^"]+)"[^>]*\/?>/g;
       if (noAssets) {
         // remove all image components
@@ -206,7 +206,7 @@ export const useParseEditorContent = (args: TArgs) => {
         // replace the matched image components with <img src={src} >
         parsedMarkdownContent = parsedMarkdownContent.replace(
           imageComponentRegex,
-          (_match, src) => `<img src="${src}" >`
+          (_match, _tag, src) => `<img src="${src}" >`
         );
       }
       // remove all issue-embed components
@@ -222,8 +222,8 @@ export const useParseEditorContent = (args: TArgs) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlContent, "text/html");
       const filesMetaData: TCustomComponentsMetaData["file_assets"] = [];
-      // process image components
-      const imageComponents = doc.querySelectorAll("image-component");
+      // process image components and drawings
+      const imageComponents = doc.querySelectorAll("image-component, excalidraw-component");
       imageComponents.forEach((element) => {
         const src = element.getAttribute("src");
         if (src) {

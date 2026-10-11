@@ -21,6 +21,7 @@ import {
   ItalicOutline,
   ListOutline,
   NumberedListOutline,
+  PenToolOutline,
   QuoteOutline,
   StrikethroughOutline,
   TableEditorOutline,
@@ -161,9 +162,10 @@ export const USER_ACTION_ITEMS: ToolbarMenuItem<"quote" | "code">[] = [
   { itemKey: "code", renderKey: "code", name: "Code", icon: CodeOutline, editors: ["lite", "document"] },
 ];
 
-export const COMPLEX_ITEMS: ToolbarMenuItem<"table" | "image">[] = [
+export const COMPLEX_ITEMS: ToolbarMenuItem<"table" | "image" | "excalidraw">[] = [
   { itemKey: "table", renderKey: "table", name: "Table", icon: TableEditorOutline, editors: ["document"] },
   { itemKey: "image", renderKey: "image", name: "Image", icon: ImageOutline, editors: ["lite", "document"] },
+  { itemKey: "excalidraw", renderKey: "excalidraw", name: "Drawing", icon: PenToolOutline, editors: ["document"] },
 ];
 
 export const IMAGE_ITEM = COMPLEX_ITEMS.find((item): item is ToolbarMenuItem<"image"> => item.itemKey === "image")!;

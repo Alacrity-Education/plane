@@ -1,3 +1,6 @@
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Excalidraw fonts, copied from the package by vite.config.ts
+public/excalidraw-assets/

@@ -31,11 +31,11 @@ export const useEditorFlagging = (_anchor: string): TEditorFlaggingHookReturnTyp
     flagged: [],
   },
   liteText: {
-    disabled: [],
+    disabled: ["excalidraw"],
     flagged: [],
   },
   richText: {
-    disabled: [],
+    disabled: ["excalidraw"],
     flagged: [],
   },
 });

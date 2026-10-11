@@ -14,6 +14,10 @@ import { isStaleAssetErrorMessage, recoverFromStaleAsset } from "@/lib/stale-ass
 
 void polyfills;
 
+// Excalidraw (page drawings) loads its fonts from here; the folder is copied from the package by
+// the `excalidraw-assets` plugin in vite.config.ts. Excalidraw falls back to its CDN for missing fonts.
+(window as Window & { EXCALIDRAW_ASSET_PATH?: string }).EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";
+
 // Production-only: in dev these errors come from the dev server itself (restarts,
 // stale optimized deps) and auto-reloading would mask them.
 if (import.meta.env.PROD) {

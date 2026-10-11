@@ -14,7 +14,7 @@ export type TEditorImageAsset = {
   id: string;
   name: string;
   src: string;
-  type: CORE_EXTENSIONS.IMAGE | CORE_EXTENSIONS.CUSTOM_IMAGE;
+  type: CORE_EXTENSIONS.IMAGE | CORE_EXTENSIONS.CUSTOM_IMAGE | CORE_EXTENSIONS.EXCALIDRAW;
 };
 
 export type TEditorAsset = TEditorImageAsset | TAdditionalEditorAsset;

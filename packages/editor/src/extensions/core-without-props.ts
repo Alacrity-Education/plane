@@ -18,6 +18,7 @@ import { CustomColorExtension } from "./custom-color";
 import { CustomImageExtensionConfig } from "./custom-image/extension-config";
 import { CustomLinkExtension } from "./custom-link";
 import { EmojiExtension } from "./emoji/extension";
+import { ExcalidrawExtensionConfig } from "./excalidraw/extension-config";
 import { CustomHorizontalRule } from "./horizontal-rule";
 import { ImageExtensionConfig } from "./image";
 import { CustomMentionExtensionConfig } from "./mentions/extension-config";
@@ -60,6 +61,8 @@ export const CoreEditorExtensionsWithoutProps = [
   CustomTextAlignExtension,
   CustomCalloutExtensionConfig,
   CustomColorExtension,
+  // document-only in the browser, but registered here so HTML <-> binary conversions keep drawings for both variants
+  ExcalidrawExtensionConfig,
   ...CoreEditorAdditionalExtensionsWithoutProps,
 ];
 

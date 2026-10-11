@@ -163,7 +163,8 @@ export function BlockMenu(props: Props) {
       label: "Duplicate",
       isDisabled:
         editor.state.selection.content().content.firstChild?.type.name === CORE_EXTENSIONS.IMAGE ||
-        editor.isActive(CORE_EXTENSIONS.CUSTOM_IMAGE),
+        editor.isActive(CORE_EXTENSIONS.CUSTOM_IMAGE) ||
+        editor.isActive(CORE_EXTENSIONS.EXCALIDRAW),
       onClick: (_e) => {
         try {
           const { state } = editor;

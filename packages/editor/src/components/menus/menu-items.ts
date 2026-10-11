@@ -23,6 +23,7 @@ import {
   MinusSquareOutline,
   NumberedListOutline,
   PaletteOutline,
+  PenToolOutline,
   QuoteOutline,
   StrikethroughOutline,
   TableOutline,
@@ -34,6 +35,7 @@ import type { ComponentType, SVGProps } from "react";
 import { CORE_EXTENSIONS } from "@/constants/extension";
 // helpers
 import {
+  insertExcalidraw,
   insertHorizontalRule,
   insertImage,
   insertTableCommand,
@@ -197,6 +199,14 @@ export const ImageItem = (editor: Editor): EditorMenuItem<"image"> => ({
   icon: ImageOutline,
 });
 
+export const ExcalidrawItem = (editor: Editor): EditorMenuItem<"excalidraw"> => ({
+  key: "excalidraw",
+  name: "Drawing",
+  isActive: () => editor?.isActive(CORE_EXTENSIONS.EXCALIDRAW),
+  command: () => insertExcalidraw({ editor, pos: editor.state.selection.from }),
+  icon: PenToolOutline,
+});
+
 export const HorizontalRuleItem = (editor: Editor): EditorMenuItem<"divider"> =>
   ({
     key: "divider",
@@ -276,6 +286,7 @@ export const getEditorMenuItems = (editor: Editor | null): EditorMenuItem<TEdito
     QuoteItem(editor),
     TableItem(editor),
     ImageItem(editor),
+    ExcalidrawItem(editor),
     HorizontalRuleItem(editor),
     LinkItem(editor),
     TextColorItem(editor),

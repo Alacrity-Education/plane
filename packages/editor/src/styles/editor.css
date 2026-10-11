@@ -506,3 +506,8 @@ span[data-name][data-type="emoji"] img {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* excalidraw drawings are exported on a transparent, light background; invert them for dark themes */
+[data-theme*="dark"] .editor-excalidraw-image {
+  filter: invert(93%) hue-rotate(180deg);
+}
