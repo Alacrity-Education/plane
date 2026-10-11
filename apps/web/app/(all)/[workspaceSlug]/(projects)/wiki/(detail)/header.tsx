@@ -22,6 +22,7 @@ import { PageHeaderActions } from "@/components/pages/header/actions";
 import { PageSyncingBadge } from "@/components/pages/header/syncing-badge";
 import { CreateWikiPageModal } from "@/components/wiki/modals/create-wiki-page-modal";
 import { MoveWikiPageModal } from "@/components/wiki/modals/move-page-modal";
+import { MoveToProjectWikiModal } from "@/components/wiki/modals/move-to-project-wiki-modal";
 import { useWikiPageExtraOptions } from "@/components/wiki/use-wiki-page-extra-options";
 // hooks
 import { EPageStoreType, usePage, usePageStore } from "@/hooks/store";
@@ -38,6 +39,7 @@ export const WikiPageDetailsHeader = observer(function WikiPageDetailsHeader() {
   // states
   const [subPageParentId, setSubPageParentId] = useState<string | null>(null);
   const [movePageId, setMovePageId] = useState<string | undefined>(undefined);
+  const [moveToProjectPageId, setMoveToProjectPageId] = useState<string | undefined>(undefined);
   // store hooks
   const { getPageById, getAncestorIds, getCurrentWorkspacePageIds } = usePageStore(storeType);
   const page = usePage({
@@ -59,7 +61,13 @@ export const WikiPageDetailsHeader = observer(function WikiPageDetailsHeader() {
   // wiki actions
   const handleAddSubPage = useCallback((targetPageId: string) => setSubPageParentId(targetPageId), []);
   const handleMove = useCallback((targetPageId: string) => setMovePageId(targetPageId), []);
-  const extraOptions = useWikiPageExtraOptions({ page, onAddSubPage: handleAddSubPage, onMove: handleMove });
+  const handleMoveToProject = useCallback((targetPageId: string) => setMoveToProjectPageId(targetPageId), []);
+  const extraOptions = useWikiPageExtraOptions({
+    page,
+    onAddSubPage: handleAddSubPage,
+    onMove: handleMove,
+    onMoveToProject: handleMoveToProject,
+  });
 
   const switcherOptions = workspacePageIds
     .map<BreadcrumbNavigationItem | undefined>((id) => {
@@ -162,6 +170,12 @@ export const WikiPageDetailsHeader = observer(function WikiPageDetailsHeader() {
           isOpen={!!movePageId}
           onClose={() => setMovePageId(undefined)}
           pageId={movePageId}
+          workspaceSlug={workspaceSlug?.toString() ?? ""}
+        />
+        <MoveToProjectWikiModal
+          isOpen={!!moveToProjectPageId}
+          onClose={() => setMoveToProjectPageId(undefined)}
+          pageId={moveToProjectPageId}
           workspaceSlug={workspaceSlug?.toString() ?? ""}
         />
       </Header.RightItem>

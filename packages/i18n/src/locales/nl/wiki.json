@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Projectwiki niet beschikbaar",
         "description": "De wikipagina van dit project is gearchiveerd of u hebt er geen toegang toe."
+      },
+      "add_sub_page": "Subpagina toevoegen",
+      "options": "Opties projectwiki",
+      "unlink": "Projectwiki ontkoppelen",
+      "unlink_modal": {
+        "title": "Projectwiki ontkoppelen?",
+        "description": "De pagina's van deze projectwiki blijven behouden als gewone wikipagina's: de hoofdpagina wordt een pagina op het hoogste niveau in de Wiki. U kunt later een nieuwe projectwiki maken.",
+        "confirm": "Ontkoppelen"
+      },
+      "unlink_success": "Projectwiki ontkoppeld. De pagina's blijven in de Wiki.",
+      "unlink_error": "De projectwiki kon niet worden ontkoppeld. Probeer het opnieuw.",
+      "move_to_project": {
+        "title": "Verplaatsen naar projectwiki",
+        "search_placeholder": "Projecten zoeken",
+        "empty": "Nog geen enkel project heeft een wiki",
+        "submit": "Verplaatsen",
+        "success": "Pagina verplaatst naar de projectwiki.",
+        "error": "De pagina kon niet naar de projectwiki worden verplaatst. Probeer het opnieuw."
+      },
+      "move_out": {
+        "label": "Uit projectwiki verplaatsen",
+        "success": "Pagina uit de projectwiki verplaatst.",
+        "error": "De pagina kon niet uit de projectwiki worden verplaatst. Probeer het opnieuw."
       }
     }
   }

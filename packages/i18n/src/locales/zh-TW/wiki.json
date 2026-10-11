@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "專案 Wiki 無法使用",
         "description": "此專案的 Wiki 頁面已封存，或您沒有存取權限。"
+      },
+      "add_sub_page": "新增子頁面",
+      "options": "專案 Wiki 選項",
+      "unlink": "取消連結專案 Wiki",
+      "unlink_modal": {
+        "title": "取消連結專案 Wiki？",
+        "description": "此專案 Wiki 的頁面將保留為一般 Wiki 頁面：其根頁面將成為 Wiki 中的最上層頁面。您之後可以建立新的專案 Wiki。",
+        "confirm": "取消連結"
+      },
+      "unlink_success": "已取消連結專案 Wiki。其頁面仍保留在 Wiki 中。",
+      "unlink_error": "無法取消連結專案 Wiki，請再試一次。",
+      "move_to_project": {
+        "title": "移至專案 Wiki",
+        "search_placeholder": "搜尋專案",
+        "empty": "尚無專案擁有 Wiki",
+        "submit": "移動",
+        "success": "頁面已移至專案 Wiki。",
+        "error": "無法將頁面移至專案 Wiki，請再試一次。"
+      },
+      "move_out": {
+        "label": "移出專案 Wiki",
+        "success": "頁面已移出專案 Wiki。",
+        "error": "無法將頁面移出專案 Wiki，請再試一次。"
       }
     }
   }

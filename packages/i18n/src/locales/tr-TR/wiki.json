@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Proje wiki'si kullanılamıyor",
         "description": "Bu projenin wiki sayfası arşivlenmiş veya ona erişiminiz yok."
+      },
+      "add_sub_page": "Alt sayfa ekle",
+      "options": "Proje wiki'si seçenekleri",
+      "unlink": "Proje wiki'si bağlantısını kaldır",
+      "unlink_modal": {
+        "title": "Proje wiki'si bağlantısı kaldırılsın mı?",
+        "description": "Bu proje wiki'sinin sayfaları normal wiki sayfaları olarak korunur: kök sayfası Wiki'de en üst düzey bir sayfa olur. Daha sonra yeni bir proje wiki'si oluşturabilirsiniz.",
+        "confirm": "Bağlantıyı kaldır"
+      },
+      "unlink_success": "Proje wiki'si bağlantısı kaldırıldı. Sayfaları Wiki'de kalır.",
+      "unlink_error": "Proje wiki'si bağlantısı kaldırılamadı. Lütfen tekrar deneyin.",
+      "move_to_project": {
+        "title": "Proje wiki'sine taşı",
+        "search_placeholder": "Proje ara",
+        "empty": "Henüz hiçbir projenin wiki'si yok",
+        "submit": "Taşı",
+        "success": "Sayfa proje wiki'sine taşındı.",
+        "error": "Sayfa proje wiki'sine taşınamadı. Lütfen tekrar deneyin."
+      },
+      "move_out": {
+        "label": "Proje wiki'sinden çıkar",
+        "success": "Sayfa proje wiki'sinden çıkarıldı.",
+        "error": "Sayfa proje wiki'sinden çıkarılamadı. Lütfen tekrar deneyin."
       }
     }
   }

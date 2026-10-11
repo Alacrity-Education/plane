@@ -53,7 +53,7 @@ export interface IWorkspacePageStore {
   // tree helpers
   getRootPageIds: (pageType: TPageNavigationTabs) => string[];
   getProjectWikiRootPageIds: (pageType: TPageNavigationTabs) => string[];
-  getProjectWikiRootId: (pageId: string) => string | undefined;
+  getProjectWikiRootForPage: (pageId: string) => string | null;
   getChildPageIds: (pageId: string, pageType: TPageNavigationTabs) => string[];
   getAncestorIds: (pageId: string) => string[];
   getDescendantIds: (pageId: string) => string[];
@@ -254,11 +254,13 @@ export class WorkspacePageStore implements IWorkspacePageStore {
   );
 
   /**
-   * @description get the id of the project wiki root page a page belongs to (the page itself or one of its ancestors)
+   * @description get the id of the project wiki root page a page belongs to (the page itself or one of its loaded
+   * ancestors), null when the page is not inside a project wiki section
    * @param {string} pageId
    */
-  getProjectWikiRootId = computedFn((pageId: string) =>
-    [pageId, ...this.getAncestorIds(pageId)].find((id) => !!this.getPageById(id)?.project_wiki)
+  getProjectWikiRootForPage = computedFn(
+    (pageId: string): string | null =>
+      [pageId, ...this.getAncestorIds(pageId)].find((id) => !!this.getPageById(id)?.project_wiki) ?? null
   );
 
   /**

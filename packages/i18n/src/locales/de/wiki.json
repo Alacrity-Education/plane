@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Projekt-Wiki nicht verfügbar",
         "description": "Die Wiki-Seite dieses Projekts ist archiviert oder Sie haben keinen Zugriff darauf."
+      },
+      "add_sub_page": "Unterseite hinzufügen",
+      "options": "Optionen des Projekt-Wikis",
+      "unlink": "Projekt-Wiki trennen",
+      "unlink_modal": {
+        "title": "Projekt-Wiki trennen?",
+        "description": "Die Seiten dieses Projekt-Wikis bleiben als normale Wiki-Seiten erhalten: Die Stammseite wird zu einer Seite der obersten Ebene im Wiki. Sie können später ein neues Projekt-Wiki erstellen.",
+        "confirm": "Trennen"
+      },
+      "unlink_success": "Projekt-Wiki getrennt. Die Seiten bleiben im Wiki erhalten.",
+      "unlink_error": "Das Projekt-Wiki konnte nicht getrennt werden. Bitte versuchen Sie es erneut.",
+      "move_to_project": {
+        "title": "In Projekt-Wiki verschieben",
+        "search_placeholder": "Projekte suchen",
+        "empty": "Noch kein Projekt hat ein Wiki",
+        "submit": "Verschieben",
+        "success": "Seite in das Projekt-Wiki verschoben.",
+        "error": "Die Seite konnte nicht in das Projekt-Wiki verschoben werden. Bitte versuchen Sie es erneut."
+      },
+      "move_out": {
+        "label": "Aus dem Projekt-Wiki verschieben",
+        "success": "Seite aus dem Projekt-Wiki verschoben.",
+        "error": "Die Seite konnte nicht aus dem Projekt-Wiki verschoben werden. Bitte versuchen Sie es erneut."
       }
     }
   }

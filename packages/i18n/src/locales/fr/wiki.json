@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki du projet indisponible",
         "description": "La page wiki de ce projet est archivée ou vous n’y avez pas accès."
+      },
+      "add_sub_page": "Ajouter une sous-page",
+      "options": "Options du wiki du projet",
+      "unlink": "Dissocier le wiki du projet",
+      "unlink_modal": {
+        "title": "Dissocier le wiki du projet ?",
+        "description": "Les pages de ce wiki de projet sont conservées comme pages de wiki normales : sa page racine devient une page de premier niveau dans le Wiki. Vous pourrez créer un nouveau wiki de projet plus tard.",
+        "confirm": "Dissocier"
+      },
+      "unlink_success": "Wiki du projet dissocié. Ses pages sont conservées dans le Wiki.",
+      "unlink_error": "Le wiki du projet n’a pas pu être dissocié. Veuillez réessayer.",
+      "move_to_project": {
+        "title": "Déplacer vers le wiki d’un projet",
+        "search_placeholder": "Rechercher des projets",
+        "empty": "Aucun projet n’a encore de wiki",
+        "submit": "Déplacer",
+        "success": "Page déplacée vers le wiki du projet.",
+        "error": "La page n’a pas pu être déplacée vers le wiki du projet. Veuillez réessayer."
+      },
+      "move_out": {
+        "label": "Sortir du wiki du projet",
+        "success": "Page sortie du wiki du projet.",
+        "error": "La page n’a pas pu être sortie du wiki du projet. Veuillez réessayer."
       }
     }
   }

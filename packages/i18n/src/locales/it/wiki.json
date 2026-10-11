@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki del progetto non disponibile",
         "description": "La pagina wiki di questo progetto è archiviata oppure non ha accesso a essa."
+      },
+      "add_sub_page": "Aggiungi sottopagina",
+      "options": "Opzioni della wiki del progetto",
+      "unlink": "Scollega wiki del progetto",
+      "unlink_modal": {
+        "title": "Scollegare la wiki del progetto?",
+        "description": "Le pagine di questa wiki del progetto vengono mantenute come normali pagine wiki: la pagina radice diventa una pagina di primo livello nella Wiki. Potrà creare una nuova wiki del progetto in seguito.",
+        "confirm": "Scollega"
+      },
+      "unlink_success": "Wiki del progetto scollegata. Le sue pagine restano nella Wiki.",
+      "unlink_error": "Impossibile scollegare la wiki del progetto. Riprovi.",
+      "move_to_project": {
+        "title": "Sposta nella wiki di un progetto",
+        "search_placeholder": "Cerca progetti",
+        "empty": "Nessun progetto ha ancora una wiki",
+        "submit": "Sposta",
+        "success": "Pagina spostata nella wiki del progetto.",
+        "error": "Impossibile spostare la pagina nella wiki del progetto. Riprovi."
+      },
+      "move_out": {
+        "label": "Sposta fuori dalla wiki del progetto",
+        "success": "Pagina spostata fuori dalla wiki del progetto.",
+        "error": "Impossibile spostare la pagina fuori dalla wiki del progetto. Riprovi."
       }
     }
   }

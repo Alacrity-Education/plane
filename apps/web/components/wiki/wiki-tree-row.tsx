@@ -29,6 +29,8 @@ const WIKI_ROW_OPTIONS_ORDER: TPageActions[] = [
   "make-a-copy",
   "add-sub-page",
   "move",
+  "move-to-project-wiki",
+  "move-out-of-project-wiki",
   "toggle-lock",
   "toggle-access",
   "archive-restore",
@@ -48,6 +50,7 @@ type Props = {
   onToggle?: (pageId: string) => void;
   onAddSubPage: (pageId: string) => void;
   onMove: (pageId: string) => void;
+  onMoveToProject: (pageId: string) => void;
 };
 
 /**
@@ -55,7 +58,7 @@ type Props = {
  * but keeps the toggle outside of the row link
  */
 export const WikiTreeRow = observer(function WikiTreeRow(props: Props) {
-  const { pageId, depth, childCount, isExpanded, onToggle, onAddSubPage, onMove } = props;
+  const { pageId, depth, childCount, isExpanded, onToggle, onAddSubPage, onMove, onMoveToProject } = props;
   // refs
   const parentRef = useRef<HTMLDivElement>(null);
   // router
@@ -66,7 +69,7 @@ export const WikiTreeRow = observer(function WikiTreeRow(props: Props) {
   const page = usePage({ pageId, storeType: EPageStoreType.WORKSPACE });
   const { isMobile } = usePlatformOS();
   // wiki actions
-  const extraOptions = useWikiPageExtraOptions({ page, onAddSubPage, onMove });
+  const extraOptions = useWikiPageExtraOptions({ page, onAddSubPage, onMove, onMoveToProject });
 
   if (!page) return null;
   // derived values

@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki-ul proiectului nu este disponibil",
         "description": "Pagina wiki a acestui proiect este arhivată sau nu aveți acces la ea."
+      },
+      "add_sub_page": "Adaugă subpagină",
+      "options": "Opțiuni wiki proiect",
+      "unlink": "Dezleagă wiki-ul proiectului",
+      "unlink_modal": {
+        "title": "Dezlegați wiki-ul proiectului?",
+        "description": "Paginile acestui wiki de proiect sunt păstrate ca pagini wiki obișnuite: pagina rădăcină devine o pagină de nivel superior în Wiki. Puteți crea un nou wiki de proiect mai târziu.",
+        "confirm": "Dezleagă"
+      },
+      "unlink_success": "Wiki-ul proiectului a fost dezlegat. Paginile sale rămân în Wiki.",
+      "unlink_error": "Wiki-ul proiectului nu a putut fi dezlegat. Vă rugăm să încercați din nou.",
+      "move_to_project": {
+        "title": "Mută în wiki-ul unui proiect",
+        "search_placeholder": "Caută proiecte",
+        "empty": "Niciun proiect nu are încă un wiki",
+        "submit": "Mută",
+        "success": "Pagina a fost mutată în wiki-ul proiectului.",
+        "error": "Pagina nu a putut fi mutată în wiki-ul proiectului. Vă rugăm să încercați din nou."
+      },
+      "move_out": {
+        "label": "Scoate din wiki-ul proiectului",
+        "success": "Pagina a fost scoasă din wiki-ul proiectului.",
+        "error": "Pagina nu a putut fi scoasă din wiki-ul proiectului. Vă rugăm să încercați din nou."
       }
     }
   }

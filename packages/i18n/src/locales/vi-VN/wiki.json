@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki dự án không khả dụng",
         "description": "Trang wiki của dự án này đã được lưu trữ hoặc bạn không có quyền truy cập."
+      },
+      "add_sub_page": "Thêm trang con",
+      "options": "Tùy chọn wiki dự án",
+      "unlink": "Hủy liên kết wiki dự án",
+      "unlink_modal": {
+        "title": "Hủy liên kết wiki dự án?",
+        "description": "Các trang của wiki dự án này được giữ lại như các trang wiki thông thường: trang gốc sẽ trở thành trang cấp cao nhất trong Wiki. Bạn có thể tạo wiki dự án mới sau.",
+        "confirm": "Hủy liên kết"
+      },
+      "unlink_success": "Đã hủy liên kết wiki dự án. Các trang vẫn được giữ trong Wiki.",
+      "unlink_error": "Không thể hủy liên kết wiki dự án. Vui lòng thử lại.",
+      "move_to_project": {
+        "title": "Chuyển vào wiki dự án",
+        "search_placeholder": "Tìm kiếm dự án",
+        "empty": "Chưa có dự án nào có wiki",
+        "submit": "Chuyển",
+        "success": "Đã chuyển trang vào wiki dự án.",
+        "error": "Không thể chuyển trang vào wiki dự án. Vui lòng thử lại."
+      },
+      "move_out": {
+        "label": "Chuyển ra khỏi wiki dự án",
+        "success": "Đã chuyển trang ra khỏi wiki dự án.",
+        "error": "Không thể chuyển trang ra khỏi wiki dự án. Vui lòng thử lại."
       }
     }
   }

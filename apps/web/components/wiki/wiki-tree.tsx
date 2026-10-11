@@ -19,6 +19,7 @@ import { EPageStoreType, usePageStore } from "@/hooks/store";
 // local imports
 import { CreateWikiPageModal } from "./modals/create-wiki-page-modal";
 import { MoveWikiPageModal } from "./modals/move-page-modal";
+import { MoveToProjectWikiModal } from "./modals/move-to-project-wiki-modal";
 import { WikiTreeRow } from "./wiki-tree-row";
 
 const getExpandedStorageKey = (workspaceSlug: string) => `wiki_tree_${workspaceSlug}`;
@@ -106,10 +107,12 @@ type TWikiTreeNodeProps = {
   onToggle: (pageId: string) => void;
   onAddSubPage: (pageId: string) => void;
   onMove: (pageId: string) => void;
+  onMoveToProject: (pageId: string) => void;
 };
 
 const WikiTreeNode = observer(function WikiTreeNode(props: TWikiTreeNodeProps) {
-  const { pageId, depth, pageType, expandedPageIds, ancestorIds, onToggle, onAddSubPage, onMove } = props;
+  const { pageId, depth, pageType, expandedPageIds, ancestorIds, onToggle, onAddSubPage, onMove, onMoveToProject } =
+    props;
   // store hooks
   const { getChildPageIds } = usePageStore(EPageStoreType.WORKSPACE);
   // derived values
@@ -127,6 +130,7 @@ const WikiTreeNode = observer(function WikiTreeNode(props: TWikiTreeNodeProps) {
         onToggle={onToggle}
         onAddSubPage={onAddSubPage}
         onMove={onMove}
+        onMoveToProject={onMoveToProject}
       />
       {isExpanded &&
         childPageIds.map((childId) => (
@@ -140,6 +144,7 @@ const WikiTreeNode = observer(function WikiTreeNode(props: TWikiTreeNodeProps) {
             onToggle={onToggle}
             onAddSubPage={onAddSubPage}
             onMove={onMove}
+            onMoveToProject={onMoveToProject}
           />
         ))}
     </>
@@ -170,6 +175,7 @@ export const WikiTree = observer(function WikiTree(props: Props) {
   const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [movePageId, setMovePageId] = useState<string | undefined>(undefined);
+  const [moveToProjectPageId, setMoveToProjectPageId] = useState<string | undefined>(undefined);
   // derived values
   const isScoped = !!rootPageId;
   const isFlatList =
@@ -239,6 +245,8 @@ export const WikiTree = observer(function WikiTree(props: Props) {
 
   const handleMove = useCallback((pageId: string) => setMovePageId(pageId), []);
 
+  const handleMoveToProject = useCallback((pageId: string) => setMoveToProjectPageId(pageId), []);
+
   return (
     <>
       <CreateWikiPageModal
@@ -253,6 +261,13 @@ export const WikiTree = observer(function WikiTree(props: Props) {
         onClose={() => setMovePageId(undefined)}
         onMoved={expandPage}
         pageId={movePageId}
+        workspaceSlug={workspaceSlug}
+      />
+      <MoveToProjectWikiModal
+        isOpen={!!moveToProjectPageId}
+        onClose={() => setMoveToProjectPageId(undefined)}
+        onMoved={expandPage}
+        pageId={moveToProjectPageId}
         workspaceSlug={workspaceSlug}
       />
       <ListLayout>
@@ -275,6 +290,7 @@ export const WikiTree = observer(function WikiTree(props: Props) {
                   onToggle={handleToggle}
                   onAddSubPage={handleAddSubPage}
                   onMove={handleMove}
+                  onMoveToProject={handleMoveToProject}
                 />
               ))}
           </>
@@ -288,6 +304,7 @@ export const WikiTree = observer(function WikiTree(props: Props) {
                 childCount={getChildPageIds(pageId, pageType).length}
                 onAddSubPage={handleAddSubPage}
                 onMove={handleMove}
+                onMoveToProject={handleMoveToProject}
               />
             ))
           : pageIds.map((pageId) => (
@@ -301,6 +318,7 @@ export const WikiTree = observer(function WikiTree(props: Props) {
                 onToggle={handleToggle}
                 onAddSubPage={handleAddSubPage}
                 onMove={handleMove}
+                onMoveToProject={handleMoveToProject}
               />
             ))}
       </ListLayout>

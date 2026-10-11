@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki projek tidak tersedia",
         "description": "Halaman wiki projek ini diarsipkan atau Anda tidak memiliki akses ke halaman tersebut."
+      },
+      "add_sub_page": "Tambah subhalaman",
+      "options": "Opsi wiki projek",
+      "unlink": "Lepaskan wiki projek",
+      "unlink_modal": {
+        "title": "Lepaskan wiki projek?",
+        "description": "Halaman wiki projek ini tetap disimpan sebagai halaman wiki biasa: halaman akarnya menjadi halaman tingkat teratas di Wiki. Anda dapat membuat wiki projek baru nanti.",
+        "confirm": "Lepaskan"
+      },
+      "unlink_success": "Wiki projek dilepaskan. Halamannya tetap ada di Wiki.",
+      "unlink_error": "Wiki projek tidak dapat dilepaskan. Silakan coba lagi.",
+      "move_to_project": {
+        "title": "Pindahkan ke wiki projek",
+        "search_placeholder": "Cari projek",
+        "empty": "Belum ada projek yang memiliki wiki",
+        "submit": "Pindahkan",
+        "success": "Halaman dipindahkan ke wiki projek.",
+        "error": "Halaman tidak dapat dipindahkan ke wiki projek. Silakan coba lagi."
+      },
+      "move_out": {
+        "label": "Keluarkan dari wiki projek",
+        "success": "Halaman dikeluarkan dari wiki projek.",
+        "error": "Halaman tidak dapat dikeluarkan dari wiki projek. Silakan coba lagi."
       }
     }
   }

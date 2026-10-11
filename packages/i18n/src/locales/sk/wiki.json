@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki projektu nie je k dispozícii",
         "description": "Wiki stránka tohto projektu je archivovaná alebo k nej nemáte prístup."
+      },
+      "add_sub_page": "Pridať podstránku",
+      "options": "Možnosti wiki projektu",
+      "unlink": "Odpojiť wiki projektu",
+      "unlink_modal": {
+        "title": "Odpojiť wiki projektu?",
+        "description": "Stránky tejto wiki projektu zostanú zachované ako bežné stránky wiki: jej koreňová stránka sa stane stránkou najvyššej úrovne vo Wiki. Novú wiki projektu môžete vytvoriť neskôr.",
+        "confirm": "Odpojiť"
+      },
+      "unlink_success": "Wiki projektu bola odpojená. Jej stránky zostávajú vo Wiki.",
+      "unlink_error": "Wiki projektu sa nepodarilo odpojiť. Skúste to prosím znova.",
+      "move_to_project": {
+        "title": "Presunúť do wiki projektu",
+        "search_placeholder": "Hľadať projekty",
+        "empty": "Žiadny projekt zatiaľ nemá wiki",
+        "submit": "Presunúť",
+        "success": "Stránka bola presunutá do wiki projektu.",
+        "error": "Stránku sa nepodarilo presunúť do wiki projektu. Skúste to prosím znova."
+      },
+      "move_out": {
+        "label": "Presunúť z wiki projektu",
+        "success": "Stránka bola presunutá z wiki projektu.",
+        "error": "Stránku sa nepodarilo presunúť z wiki projektu. Skúste to prosím znova."
       }
     }
   }

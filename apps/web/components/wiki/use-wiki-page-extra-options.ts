@@ -4,9 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import { useMemo } from "react";
-import { AddPageOutline, MovePageOutline } from "@makeplane/propel/icons";
+import { useCallback, useMemo } from "react";
+import { useParams } from "next/navigation";
+import { AddPageOutline, LogOutOutline, MovePageOutline, ProjectsOutline } from "@makeplane/propel/icons";
 // plane imports
+import { setToast } from "@plane/blocks/toast";
 import { useTranslation } from "@plane/i18n";
 // components
 import type { TPageActionsMenuItem } from "@/components/pages/dropdowns";
@@ -19,24 +21,50 @@ type TArgs = {
   page: TPageInstance | undefined;
   onAddSubPage: (pageId: string) => void;
   onMove: (pageId: string) => void;
+  onMoveToProject: (pageId: string) => void;
 };
 
 /**
- * @description wiki only page actions ("Add sub-page" and "Move"), injected into PageActions via extraOptions
+ * @description wiki only page actions ("Add sub-page", "Move" and the project wiki moves),
+ * injected into PageActions via extraOptions
  */
 export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => {
-  const { page, onAddSubPage, onMove } = args;
+  const { page, onAddSubPage, onMove, onMoveToProject } = args;
+  // router
+  const { workspaceSlug } = useParams();
   // plane hooks
   const { t } = useTranslation();
   // store hooks
-  const { canCurrentUserCreatePage } = usePageStore(EPageStoreType.WORKSPACE);
+  const { canCurrentUserCreatePage, getProjectWikiRootForPage, movePage } = usePageStore(EPageStoreType.WORKSPACE);
   // derived values
   const pageId = page?.id;
   const isArchived = !!page?.archived_at;
   const isLocked = !!page?.is_locked;
   // the root page of a project wiki section always stays at the top level
   const isProjectWikiRoot = !!page?.project_wiki;
+  // root page of the project wiki section the page is nested in (null when it is not inside a section)
+  const projectWikiRootId = pageId && !isProjectWikiRoot ? getProjectWikiRootForPage(pageId) : null;
+  const isInsideProjectWiki = !!projectWikiRootId;
   const canCurrentUserMovePage = !!page?.canCurrentUserMovePage;
+
+  // moving a page out of a project wiki section makes it a top level page (with its own sub-pages)
+  const handleMoveOutOfProjectWiki = useCallback(async () => {
+    if (!pageId || !workspaceSlug) return;
+    try {
+      await movePage(workspaceSlug.toString(), pageId, null);
+      setToast({
+        type: "success",
+        title: t("toast.success"),
+        message: t("wiki.project_section.move_out.success"),
+      });
+    } catch (error) {
+      setToast({
+        type: "error",
+        title: t("toast.error"),
+        message: (error as { error?: string } | undefined)?.error || t("wiki.project_section.move_out.error"),
+      });
+    }
+  }, [pageId, workspaceSlug, movePage, t]);
 
   return useMemo(
     (): TPageActionsMenuItem[] => [
@@ -64,6 +92,28 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
         disabled: isLocked || isProjectWikiRoot,
         shouldRender: !!pageId && canCurrentUserMovePage && !isArchived,
       },
+      {
+        key: "move-to-project-wiki",
+        action: () => {
+          if (pageId) onMoveToProject(pageId);
+        },
+        title: t("wiki.project_section.move_to_project.title"),
+        description: isLocked ? t("wiki.pages.move_modal.locked") : undefined,
+        icon: ProjectsOutline,
+        disabled: isLocked,
+        shouldRender: !!pageId && canCurrentUserMovePage && !isArchived && !isProjectWikiRoot && !isInsideProjectWiki,
+      },
+      {
+        key: "move-out-of-project-wiki",
+        action: () => {
+          void handleMoveOutOfProjectWiki();
+        },
+        title: t("wiki.project_section.move_out.label"),
+        description: isLocked ? t("wiki.pages.move_modal.locked") : undefined,
+        icon: LogOutOutline,
+        disabled: isLocked,
+        shouldRender: !!pageId && canCurrentUserMovePage && !isArchived && isInsideProjectWiki,
+      },
     ],
     [
       pageId,
@@ -72,8 +122,11 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
       isArchived,
       isLocked,
       isProjectWikiRoot,
+      isInsideProjectWiki,
       onAddSubPage,
       onMove,
+      onMoveToProject,
+      handleMoveOutOfProjectWiki,
       t,
     ]
   );

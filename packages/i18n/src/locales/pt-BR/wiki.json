@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki do projeto indisponível",
         "description": "A página wiki deste projeto está arquivada ou você não tem acesso a ela."
+      },
+      "add_sub_page": "Adicionar subpágina",
+      "options": "Opções da wiki do projeto",
+      "unlink": "Desvincular wiki do projeto",
+      "unlink_modal": {
+        "title": "Desvincular a wiki do projeto?",
+        "description": "As páginas desta wiki do projeto são mantidas como páginas comuns da wiki: a página raiz se torna uma página de nível superior na Wiki. Você pode criar uma nova wiki do projeto depois.",
+        "confirm": "Desvincular"
+      },
+      "unlink_success": "Wiki do projeto desvinculada. As páginas continuam na Wiki.",
+      "unlink_error": "Não foi possível desvincular a wiki do projeto. Tente novamente.",
+      "move_to_project": {
+        "title": "Mover para a wiki de um projeto",
+        "search_placeholder": "Pesquisar projetos",
+        "empty": "Nenhum projeto tem wiki ainda",
+        "submit": "Mover",
+        "success": "Página movida para a wiki do projeto.",
+        "error": "Não foi possível mover a página para a wiki do projeto. Tente novamente."
+      },
+      "move_out": {
+        "label": "Tirar da wiki do projeto",
+        "success": "Página retirada da wiki do projeto.",
+        "error": "Não foi possível tirar a página da wiki do projeto. Tente novamente."
       }
     }
   }

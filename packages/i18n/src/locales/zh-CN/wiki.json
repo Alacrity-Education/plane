@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "项目 Wiki 不可用",
         "description": "此项目的 Wiki 页面已归档，或您没有访问权限。"
+      },
+      "add_sub_page": "添加子页面",
+      "options": "项目 Wiki 选项",
+      "unlink": "取消关联项目 Wiki",
+      "unlink_modal": {
+        "title": "取消关联项目 Wiki？",
+        "description": "此项目 Wiki 的页面将保留为普通 Wiki 页面：其根页面将成为 Wiki 中的顶级页面。您之后可以创建新的项目 Wiki。",
+        "confirm": "取消关联"
+      },
+      "unlink_success": "已取消关联项目 Wiki。其页面仍保留在 Wiki 中。",
+      "unlink_error": "无法取消关联项目 Wiki，请重试。",
+      "move_to_project": {
+        "title": "移动到项目 Wiki",
+        "search_placeholder": "搜索项目",
+        "empty": "还没有项目拥有 Wiki",
+        "submit": "移动",
+        "success": "页面已移动到项目 Wiki。",
+        "error": "无法将页面移动到项目 Wiki，请重试。"
+      },
+      "move_out": {
+        "label": "移出项目 Wiki",
+        "success": "页面已移出项目 Wiki。",
+        "error": "无法将页面移出项目 Wiki，请重试。"
       }
     }
   }

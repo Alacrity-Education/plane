@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "プロジェクト Wiki を利用できません",
         "description": "このプロジェクトの Wiki ページはアーカイブされているか、アクセス権がありません。"
+      },
+      "add_sub_page": "サブページを追加",
+      "options": "プロジェクト Wiki のオプション",
+      "unlink": "プロジェクト Wiki のリンクを解除",
+      "unlink_modal": {
+        "title": "プロジェクト Wiki のリンクを解除しますか？",
+        "description": "このプロジェクト Wiki のページは通常の Wiki ページとして保持され、ルートページは Wiki の最上位ページになります。新しいプロジェクト Wiki は後で作成できます。",
+        "confirm": "リンクを解除"
+      },
+      "unlink_success": "プロジェクト Wiki のリンクを解除しました。ページは Wiki に残ります。",
+      "unlink_error": "プロジェクト Wiki のリンクを解除できませんでした。もう一度お試しください。",
+      "move_to_project": {
+        "title": "プロジェクト Wiki に移動",
+        "search_placeholder": "プロジェクトを検索",
+        "empty": "Wiki があるプロジェクトはまだありません",
+        "submit": "移動",
+        "success": "ページをプロジェクト Wiki に移動しました。",
+        "error": "ページをプロジェクト Wiki に移動できませんでした。もう一度お試しください。"
+      },
+      "move_out": {
+        "label": "プロジェクト Wiki から移動",
+        "success": "ページをプロジェクト Wiki の外に移動しました。",
+        "error": "ページをプロジェクト Wiki の外に移動できませんでした。もう一度お試しください。"
       }
     }
   }

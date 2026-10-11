@@ -54,7 +54,9 @@ export type TPageActions =
   | "version-history"
   | "export"
   | "move"
-  | "add-sub-page";
+  | "add-sub-page"
+  | "move-to-project-wiki"
+  | "move-out-of-project-wiki";
 
 export type TPageActionsMenuItem = TContextMenuItem & { key: TPageActions };
 

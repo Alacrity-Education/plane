@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Wiki projektu jest niedostępne",
         "description": "Strona wiki tego projektu została zarchiwizowana lub nie masz do niej dostępu."
+      },
+      "add_sub_page": "Dodaj podstronę",
+      "options": "Opcje wiki projektu",
+      "unlink": "Odłącz wiki projektu",
+      "unlink_modal": {
+        "title": "Odłączyć wiki projektu?",
+        "description": "Strony tej wiki projektu zostaną zachowane jako zwykłe strony wiki: jej strona główna stanie się stroną najwyższego poziomu w Wiki. Nową wiki projektu można utworzyć później.",
+        "confirm": "Odłącz"
+      },
+      "unlink_success": "Wiki projektu została odłączona. Jej strony pozostają w Wiki.",
+      "unlink_error": "Nie udało się odłączyć wiki projektu. Spróbuj ponownie.",
+      "move_to_project": {
+        "title": "Przenieś do wiki projektu",
+        "search_placeholder": "Szukaj projektów",
+        "empty": "Żaden projekt nie ma jeszcze wiki",
+        "submit": "Przenieś",
+        "success": "Strona została przeniesiona do wiki projektu.",
+        "error": "Nie udało się przenieść strony do wiki projektu. Spróbuj ponownie."
+      },
+      "move_out": {
+        "label": "Przenieś poza wiki projektu",
+        "success": "Strona została przeniesiona poza wiki projektu.",
+        "error": "Nie udało się przenieść strony poza wiki projektu. Spróbuj ponownie."
       }
     }
   }

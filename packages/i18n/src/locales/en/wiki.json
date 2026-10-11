@@ -189,6 +189,29 @@
       "root_unavailable": {
         "title": "Project wiki unavailable",
         "description": "The wiki page of this project is archived or you don't have access to it."
+      },
+      "add_sub_page": "Add sub-page",
+      "options": "Project wiki options",
+      "unlink": "Unlink project wiki",
+      "unlink_modal": {
+        "title": "Unlink project wiki?",
+        "description": "The pages of this project wiki are kept as regular wiki pages: its root page becomes a top-level page in the Wiki. You can create a new project wiki later.",
+        "confirm": "Unlink"
+      },
+      "unlink_success": "Project wiki unlinked. Its pages are kept in the Wiki.",
+      "unlink_error": "The project wiki could not be unlinked. Please try again.",
+      "move_to_project": {
+        "title": "Move to project wiki",
+        "search_placeholder": "Search projects",
+        "empty": "No project has a wiki yet",
+        "submit": "Move",
+        "success": "Page moved to the project wiki.",
+        "error": "The page could not be moved to the project wiki. Please try again."
+      },
+      "move_out": {
+        "label": "Move out of project wiki",
+        "success": "Page moved out of the project wiki.",
+        "error": "The page could not be moved out of the project wiki. Please try again."
       }
     }
   }
