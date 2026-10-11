@@ -35,6 +35,15 @@ COMPONENT_MAP = {
             "entity_identifier": m.get("src"),
         },
     },
+    # Excalidraw drawing: `src` is the FileAsset id of the scene-bearing PNG
+    "excalidraw-component": {
+        "attributes": ["id", "src"],
+        "extract": lambda m: {
+            "entity_name": "excalidraw",
+            "entity_type": None,
+            "entity_identifier": m.get("src"),
+        },
+    },
 }
 
 component_map = {

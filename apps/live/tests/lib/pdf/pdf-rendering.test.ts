@@ -707,6 +707,43 @@ describe("PDF Rendering Integration", () => {
     });
   });
 
+  describe("excalidrawComponent", () => {
+    const DRAWING_ID = "8b1d2e47-5c3f-4e2a-b7d9-1c2b3a4d5e22";
+    // 1x1 transparent PNG
+    const PNG_DATA_URL =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+    const drawingDoc = (): TipTapDocument => ({
+      type: "doc",
+      content: [
+        {
+          type: "excalidrawComponent",
+          attrs: { id: "node-1", src: DRAWING_ID, width: "100%", alignment: "left", status: "uploaded" },
+        },
+        { type: "paragraph", content: [{ type: "text", text: "After drawing" }] },
+      ],
+    });
+
+    it("renders an unresolved drawing as an image placeholder like imageComponent", async () => {
+      const buffer = await renderPlaneDocToPdfBuffer(drawingDoc());
+      const text = await extractPdfText(buffer);
+
+      expect(text).toContain(`[Image: ${DRAWING_ID.slice(0, 8)}...]`);
+      expect(text).toContain("After drawing");
+    });
+
+    it("renders a resolved drawing PNG", async () => {
+      const buffer = await renderPlaneDocToPdfBuffer(drawingDoc(), {
+        metadata: { resolvedImageUrls: { [DRAWING_ID]: PNG_DATA_URL } },
+      });
+      const text = await extractPdfText(buffer);
+
+      expect(buffer.length).toBeGreaterThan(0);
+      expect(text).not.toContain("[Image:");
+      expect(text).toContain("After drawing");
+    });
+  });
+
   describe("noAssets option", () => {
     it("should render text but skip images when noAssets is true", async () => {
       const doc: TipTapDocument = {

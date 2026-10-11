@@ -34,30 +34,68 @@ def get_entity_id_field(entity_type, entity_id):
     return entity_mapping.get(entity_type, {})
 
 
-def extract_asset_ids(html, tag):
+# Editor components whose attributes reference FileAsset ids, per tag.
+# `excalidraw-component.src` is the PNG (with the embedded scene) of a drawing.
+ASSET_ATTRS = {
+    "image-component": ["src"],
+    "excalidraw-component": ["src"],
+}
+
+
+def extract_all_asset_ids(html, asset_attrs=None):
+    """Return the asset ids referenced by any asset-bearing component, in
+    document order and without duplicates."""
+    asset_attrs = ASSET_ATTRS if asset_attrs is None else asset_attrs
     try:
-        soup = BeautifulSoup(html, "html.parser")
-        return [tag.get("src") for tag in soup.find_all(tag) if tag.get("src")]
+        soup = BeautifulSoup(html or "", "html.parser")
+        asset_ids = []
+        for element in soup.find_all(list(asset_attrs.keys())):
+            for attr in asset_attrs.get(element.name, []):
+                value = element.get(attr)
+                if value and value not in asset_ids:
+                    asset_ids.append(value)
+        return asset_ids
     except Exception as e:
         log_exception(e)
         return []
 
 
-def replace_asset_ids(html, tag, duplicated_assets):
+def replace_all_asset_ids(html, duplicated_assets, asset_attrs=None):
+    """Rewrite every asset-bearing attribute from old to new asset ids."""
+    asset_attrs = ASSET_ATTRS if asset_attrs is None else asset_attrs
     try:
-        soup = BeautifulSoup(html, "html.parser")
-        for mention_tag in soup.find_all(tag):
-            for asset in duplicated_assets:
-                if mention_tag.get("src") == asset["old_asset_id"]:
-                    mention_tag["src"] = asset["new_asset_id"]
+        id_map = {asset["old_asset_id"]: asset["new_asset_id"] for asset in duplicated_assets}
+        soup = BeautifulSoup(html or "", "html.parser")
+        for element in soup.find_all(list(asset_attrs.keys())):
+            for attr in asset_attrs.get(element.name, []):
+                value = element.get(attr)
+                if value in id_map:
+                    element[attr] = id_map[value]
         return str(soup)
     except Exception as e:
         log_exception(e)
         return html
 
 
-def update_description(entity, duplicated_assets, tag):
-    updated_html = replace_asset_ids(entity.description_html, tag, duplicated_assets)
+def extract_asset_ids(html, tag):
+    """Backwards-compatible single-tag wrapper around extract_all_asset_ids."""
+    return extract_all_asset_ids(html, {tag: ASSET_ATTRS.get(tag, ["src"])})
+
+
+def replace_asset_ids(html, tag, duplicated_assets):
+    """Backwards-compatible single-tag wrapper around replace_all_asset_ids."""
+    return replace_all_asset_ids(html, duplicated_assets, {tag: ASSET_ATTRS.get(tag, ["src"])})
+
+
+def update_description(entity, duplicated_assets, tag=None):
+    """Rewrite the entity's description_html with the duplicated asset ids.
+
+    With ``tag=None`` every component in ASSET_ATTRS is rewritten.
+    """
+    if tag is None:
+        updated_html = replace_all_asset_ids(entity.description_html, duplicated_assets)
+    else:
+        updated_html = replace_asset_ids(entity.description_html, tag, duplicated_assets)
     entity.description_html = updated_html
     entity.save()
     return updated_html
@@ -89,7 +127,15 @@ def copy_assets(entity, entity_identifier, project_id, asset_ids, user_id):
     duplicated_assets = []
     workspace = entity.workspace
     storage = S3Storage()
-    original_assets = FileAsset.objects.filter(workspace=workspace, project_id=project_id, id__in=asset_ids)
+    # Ignore non-UUID src values (e.g. legacy external image URLs) so one bad
+    # reference cannot make the whole lookup raise.
+    valid_asset_ids = []
+    for asset_id in asset_ids:
+        try:
+            valid_asset_ids.append(uuid.UUID(str(asset_id)))
+        except ValueError:
+            continue
+    original_assets = FileAsset.objects.filter(workspace=workspace, project_id=project_id, id__in=valid_asset_ids)
 
     for original_asset in original_assets:
         destination_key = f"{workspace.id}/{uuid.uuid4().hex}-{original_asset.attributes.get('name')}"
@@ -126,7 +172,7 @@ def copy_s3_objects_of_description_and_assets(entity_name, entity_identifier, pr
     """
     Step 1: Extract asset ids from the description_html of the entity
     Step 2: Duplicate the assets
-    Step 3: Update the description_html of the entity with the new asset ids (change the src of img tag)
+    Step 3: Update the description_html of the entity with the new asset ids (the src of image/excalidraw components)
     Step 4: Request the live server to generate the description_binary and description for the entity
 
     """
@@ -136,11 +182,11 @@ def copy_s3_objects_of_description_and_assets(entity_name, entity_identifier, pr
             raise ValueError(f"Unsupported entity_name: {entity_name}")
 
         entity = model_class.objects.get(id=entity_identifier)
-        asset_ids = extract_asset_ids(entity.description_html, "image-component")
+        asset_ids = extract_all_asset_ids(entity.description_html)
 
         duplicated_assets = copy_assets(entity, entity_identifier, project_id, asset_ids, user_id)
 
-        updated_html = update_description(entity, duplicated_assets, "image-component")
+        updated_html = update_description(entity, duplicated_assets)
 
         external_data = sync_with_external_service(entity_name, updated_html)
 

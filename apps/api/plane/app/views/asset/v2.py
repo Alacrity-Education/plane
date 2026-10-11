@@ -484,6 +484,18 @@ class WorkspaceFileAssetEndpoint(BaseAPIView):
             disposition="attachment",
             filename=asset.attributes.get("name"),
         )
+        # Clients that need the bytes (e.g. reloading an Excalidraw scene) cannot
+        # follow the redirect with credentials across origins, so hand them the
+        # signed URL to fetch anonymously instead.
+        if request.GET.get("response") == "json":
+            return Response(
+                {
+                    "asset_id": str(asset.id),
+                    "asset_url": signed_url,
+                    "asset_name": asset.attributes.get("name"),
+                    "asset_type": asset.attributes.get("type"),
+                }
+            )
         # Redirect to the signed URL
         return HttpResponseRedirect(signed_url)
 
@@ -691,6 +703,17 @@ class ProjectAssetEndpoint(BaseAPIView):
             disposition="attachment",
             filename=asset.attributes.get("name"),
         )
+        # See WorkspaceFileAssetEndpoint.get: hand out the signed URL for an
+        # anonymous fetch when the caller needs the bytes.
+        if request.GET.get("response") == "json":
+            return Response(
+                {
+                    "asset_id": str(asset.id),
+                    "asset_url": signed_url,
+                    "asset_name": asset.attributes.get("name"),
+                    "asset_type": asset.attributes.get("type"),
+                }
+            )
         # Redirect to the signed URL
         return HttpResponseRedirect(signed_url)
 

@@ -88,6 +88,64 @@ const getFlexAlignStyle = (textAlign: string | null | undefined): Style => {
   return {};
 };
 
+/**
+ * Renders an asset-backed image node (imageComponent, excalidrawComponent):
+ * `src` is an asset id resolved through ctx.metadata.resolvedImageUrls.
+ */
+const renderImageAsset = (node: TipTapNode, ctx: PDFRenderContext): ReactElement => {
+  if (ctx.metadata?.noAssets) {
+    return <View key={ctx.getKey()} />;
+  }
+
+  const assetId = (node.attrs?.src as string) || "";
+  const rawWidth = node.attrs?.width;
+  // Percentage widths (e.g. drawings default to "100%") are kept as-is;
+  // pixel widths ("35px" / 35) become numbers.
+  const isPercentWidth = typeof rawWidth === "string" && rawWidth.trim().endsWith("%");
+  const width = isPercentWidth
+    ? undefined
+    : typeof rawWidth === "string"
+      ? parseInt(rawWidth, 10)
+      : (rawWidth as number | undefined);
+  const alignment = (node.attrs?.alignment as string) || "left";
+
+  if (!assetId) {
+    return <View key={ctx.getKey()} />;
+  }
+
+  let resolvedSrc = assetId;
+  if (ctx.metadata?.resolvedImageUrls && ctx.metadata.resolvedImageUrls[assetId]) {
+    resolvedSrc = ctx.metadata.resolvedImageUrls[assetId];
+  }
+
+  const alignmentStyle =
+    alignment === "center"
+      ? { alignItems: "center" as const }
+      : alignment === "right"
+        ? { alignItems: "flex-end" as const }
+        : { alignItems: "flex-start" as const };
+
+  if (!resolvedSrc.startsWith("http") && !resolvedSrc.startsWith("data:")) {
+    return (
+      <View key={ctx.getKey()} style={[pdfStyles.imagePlaceholder, alignmentStyle]}>
+        <Text style={pdfStyles.imagePlaceholderText}>[Image: {assetId.slice(0, 8)}...]</Text>
+      </View>
+    );
+  }
+
+  const imageStyle = isPercentWidth
+    ? { width: (rawWidth as string).trim(), maxHeight: 500 }
+    : width && !isNaN(width)
+      ? { width, maxHeight: 500 }
+      : { maxWidth: 400, maxHeight: 500 };
+
+  return (
+    <View key={ctx.getKey()} style={[{ width: "100%" }, alignmentStyle]}>
+      <Image src={resolvedSrc} style={[pdfStyles.image, imageStyle]} />
+    </View>
+  );
+};
+
 export const nodeRenderers: NodeRendererRegistry = {
   doc: (_node: TipTapNode, children: ReactElement[], ctx: PDFRenderContext): ReactElement => (
     <View key={ctx.getKey()}>{children}</View>
@@ -282,48 +340,12 @@ export const nodeRenderers: NodeRendererRegistry = {
     );
   },
 
-  imageComponent: (node: TipTapNode, _children: ReactElement[], ctx: PDFRenderContext): ReactElement => {
-    if (ctx.metadata?.noAssets) {
-      return <View key={ctx.getKey()} />;
-    }
+  imageComponent: (node: TipTapNode, _children: ReactElement[], ctx: PDFRenderContext): ReactElement =>
+    renderImageAsset(node, ctx),
 
-    const assetId = (node.attrs?.src as string) || "";
-    const rawWidth = node.attrs?.width;
-    const width = typeof rawWidth === "string" ? parseInt(rawWidth, 10) : (rawWidth as number | undefined);
-    const alignment = (node.attrs?.alignment as string) || "left";
-
-    if (!assetId) {
-      return <View key={ctx.getKey()} />;
-    }
-
-    let resolvedSrc = assetId;
-    if (ctx.metadata?.resolvedImageUrls && ctx.metadata.resolvedImageUrls[assetId]) {
-      resolvedSrc = ctx.metadata.resolvedImageUrls[assetId];
-    }
-
-    const alignmentStyle =
-      alignment === "center"
-        ? { alignItems: "center" as const }
-        : alignment === "right"
-          ? { alignItems: "flex-end" as const }
-          : { alignItems: "flex-start" as const };
-
-    if (!resolvedSrc.startsWith("http") && !resolvedSrc.startsWith("data:")) {
-      return (
-        <View key={ctx.getKey()} style={[pdfStyles.imagePlaceholder, alignmentStyle]}>
-          <Text style={pdfStyles.imagePlaceholderText}>[Image: {assetId.slice(0, 8)}...]</Text>
-        </View>
-      );
-    }
-
-    const imageStyle = width && !isNaN(width) ? { width, maxHeight: 500 } : { maxWidth: 400, maxHeight: 500 };
-
-    return (
-      <View key={ctx.getKey()} style={[{ width: "100%" }, alignmentStyle]}>
-        <Image src={resolvedSrc} style={[pdfStyles.image, imageStyle]} />
-      </View>
-    );
-  },
+  // Excalidraw drawings are stored as a PNG asset (with the scene embedded)
+  excalidrawComponent: (node: TipTapNode, _children: ReactElement[], ctx: PDFRenderContext): ReactElement =>
+    renderImageAsset(node, ctx),
 
   calloutComponent: (node: TipTapNode, children: ReactElement[], ctx: PDFRenderContext): ReactElement => {
     const backgroundKey = (node.attrs?.["data-background"] as string) || "gray";

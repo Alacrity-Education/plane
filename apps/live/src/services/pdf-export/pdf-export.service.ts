@@ -32,6 +32,9 @@ type TipTapNode = {
   content?: TipTapNode[];
 };
 
+/** Node types whose `src` attribute references an image asset */
+const IMAGE_ASSET_NODE_TYPES = new Set(["imageComponent", "image", "excalidrawComponent"]);
+
 /**
  * PDF Export Service
  */
@@ -44,13 +47,14 @@ export class PdfExportService extends Effect.Service<PdfExportService>()("PdfExp
       input.documentType ?? (input.projectId ? "project_page" : "workspace_page"),
 
     /**
-     * Extracts image asset IDs from document content
+     * Extracts image asset IDs from document content, including Excalidraw
+     * drawings (their `src` is the asset id of the scene-bearing PNG)
      */
     extractImageAssetIds: (doc: TipTapNode): string[] => {
       const assetIds: string[] = [];
 
       const traverse = (node: TipTapNode) => {
-        if ((node.type === "imageComponent" || node.type === "image") && node.attrs?.src) {
+        if (IMAGE_ASSET_NODE_TYPES.has(node.type) && node.attrs?.src) {
           const src = node.attrs.src as string;
           if (src && !src.startsWith("http") && !src.startsWith("data:")) {
             assetIds.push(src);

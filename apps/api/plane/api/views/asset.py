@@ -448,7 +448,10 @@ class GenericAssetEndpoint(BaseAPIView):
             # Force attachment disposition for script-capable MIME types (e.g. SVG)
             # to prevent same-origin XSS when the asset URL shares the app's origin
             # (default MinIO self-hosted setup).
-            storage = S3Storage(request=request, is_server=True)
+            # Consumers of the external API (e.g. a docs-site build) download from
+            # outside the network, so sign against the public host, not the
+            # internal MinIO endpoint that `is_server` would select.
+            storage = S3Storage(request=request)
             asset_mime_type = (asset.attributes.get("type") or "").split(";")[0].strip().lower()
             disposition = (
                 "attachment" if asset_mime_type in settings.SCRIPT_CAPABLE_MIME_TYPES else "inline"

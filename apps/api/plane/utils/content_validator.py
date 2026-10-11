@@ -75,6 +75,8 @@ CUSTOM_TAGS = {
     "label",
     "input",
     "image-component",
+    "excalidraw-component",
+    "issue-embed-component",
 }
 ALLOWED_TAGS = nh3.ALLOWED_TAGS | CUSTOM_TAGS
 
@@ -133,7 +135,27 @@ ATTRIBUTES = {
         "alt",
         "title",
     },
+    # Excalidraw drawing block: `src` is the FileAsset id of a PNG that
+    # carries the embedded scene (same shape as image-component).
+    "excalidraw-component": {
+        "id",
+        "src",
+        "width",
+        "height",
+        "aspectRatio",
+        "aspectratio",
+        "alignment",
+        "status",
+    },
     "mention-component": {"id", "entity_identifier", "entity_name"},
+    # Work item embed (packages/editor work-item-embed extension-config.ts)
+    "issue-embed-component": {
+        "id",
+        "entity_identifier",
+        "entity_name",
+        "project_identifier",
+        "workspace_identifier",
+    },
     "th": {
         "colspan",
         "rowspan",
