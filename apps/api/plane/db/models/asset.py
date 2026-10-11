@@ -98,6 +98,10 @@ class FileAsset(BaseModel):
             self.EntityTypeContext.PAGE_DESCRIPTION,
             self.EntityTypeContext.DRAFT_ISSUE_DESCRIPTION,
         ]:
+            # Project-less description assets (e.g. workspace wiki pages) are
+            # served by the workspace-level asset endpoint.
+            if self.project_id is None:
+                return f"/api/assets/v2/workspaces/{self.workspace.slug}/{self.id}/"
             return f"/api/assets/v2/workspaces/{self.workspace.slug}/projects/{self.project_id}/{self.id}/"
 
         return None

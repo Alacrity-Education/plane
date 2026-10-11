@@ -8,3 +8,4 @@ venv
 # Host bytecode (patterns are anchored to the context root, hence **/).
 **/__pycache__
 **/*.pyc
+.ruff_cache
