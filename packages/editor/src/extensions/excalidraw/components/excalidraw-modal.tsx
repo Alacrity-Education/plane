@@ -47,11 +47,17 @@ const getSceneFingerprint = (elements: readonly OrderedExcalidrawElement[]) => {
   return `${elements.length}:${liveCount}:${versionSum}`;
 };
 
+// Anything Escape should dismiss inside Excalidraw before it is allowed to close the modal:
+// an active drawing tool (e.g. arrow), an element being created or edited, open UI, or a selection.
 const hasOpenExcalidrawUi = (appState: AppState) =>
+  (appState.activeTool?.type && appState.activeTool.type !== "selection") ||
   !!appState.editingTextElement ||
   !!appState.newElement ||
   !!appState.multiElement ||
   !!appState.editingLinearElement ||
+  !!appState.selectedLinearElement ||
+  !!appState.editingGroupId ||
+  !!appState.croppingElementId ||
   !!appState.openDialog ||
   !!appState.openMenu ||
   !!appState.openPopup ||
@@ -223,6 +229,10 @@ function ExcalidrawModalWithoutPortal(props: Props) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      // only react to Escape pressed inside this modal
+      if (event.target instanceof Node && modalRef.current && !modalRef.current.contains(event.target)) return;
+      // Excalidraw's own text editor and its Escape handling come first
+      if (event.target instanceof HTMLTextAreaElement) return;
       const appState = apiRef.current?.getAppState();
       if (appState && hasOpenExcalidrawUi(appState)) return;
       event.preventDefault();
@@ -265,16 +275,13 @@ function ExcalidrawModalWithoutPortal(props: Props) {
       role="dialog"
       aria-modal="true"
       aria-label="Drawing editor"
-      // keep React events from bubbling (through the portal) into the editor's node view
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-      onPaste={(e) => e.stopPropagation()}
-      onCopy={(e) => e.stopPropagation()}
-      onCut={(e) => e.stopPropagation()}
-      onDragStart={(e) => e.stopPropagation()}
-      onDrop={(e) => e.stopPropagation()}
+      // The modal is portaled, so React events still bubble into the editor's React tree.
+      // EditorContent re-focuses ProseMirror on any React onFocus, which steals focus from
+      // Excalidraw's text editor, so focus events are stopped here. Nothing else is stopped:
+      // React's stopPropagation runs at the app root and would also silence the window- and
+      // document-level listeners Excalidraw relies on (pointerup to finish shapes, paste, ...).
+      onFocus={(e) => e.stopPropagation()}
+      onBlur={(e) => e.stopPropagation()}
     >
       <div className="flex h-12 flex-shrink-0 items-center justify-between gap-4 border-b border-subtle-1 px-4">
         <h2 className="truncate text-14 font-medium text-primary">Drawing</h2>
