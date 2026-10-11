@@ -15,6 +15,8 @@ const SAME = [
   "<ul><li><p>a</p></li><li><p>b</p></li></ul><ol><li><p>c</p></li></ol>",
   '<pre><code class="language-ts">const a = 1;</code></pre>',
   '<image-component src="asset-1"></image-component><image-component src="unknown"></image-component>',
+  '<excalidraw-component id="d1" src="asset-1" width="100%" height="auto" aspectratio="1.5" alignment="left" status="uploaded"></excalidraw-component><excalidraw-component src="unknown"></excalidraw-component>',
+  '<p>before</p><excalidraw-component src="asset-1"></excalidraw-component><image-component src="asset-1"></image-component>',
   '<p><mention-component entity_identifier="user-1" entity_name="user_mention"></mention-component></p>',
   '<img src="https://x/y.png" alt="Alt">',
   "<table><tbody><tr><th><p>h</p></th></tr><tr><td><p>c</p></td></tr></tbody></table>",
@@ -25,6 +27,12 @@ const SAME = [
 describe("vendored markdown-parser parity with packages/utils", () => {
   it.each(SAME)("%s", (html) => {
     expect(vendored({ description_html: html, metaData })).toBe(upstream({ description_html: html, metaData }));
+  });
+
+  it("excalidraw-component renders its PNG file asset like an image; unknown assets are dropped", () => {
+    const html =
+      '<excalidraw-component src="asset-1" status="uploaded"></excalidraw-component><excalidraw-component src="unknown"></excalidraw-component>';
+    expect(vendored({ description_html: html, metaData })).toBe("![diagram.png](/assets/asset-1)\n");
   });
 
   it("documented fix: legacy <img> without a usable alt is kept", () => {

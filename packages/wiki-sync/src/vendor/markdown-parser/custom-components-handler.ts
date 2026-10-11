@@ -18,14 +18,18 @@ export const parseCustomComponents = (args: TArgs): Record<string, Handle> => {
 
   const getFileAssetDetails = (id: string) => metaData.file_assets.find((asset) => asset.id === id);
 
+  const fileAssetImage: Handle = (_state, node) => {
+    const properties = node.properties || {};
+    const src = String(properties.src);
+    const fileAssetDetails = getFileAssetDetails(src);
+    if (!src || !fileAssetDetails) return createTextNode("");
+    return createTextNode(`![${fileAssetDetails.name}](${fileAssetDetails.url})`);
+  };
+
   return {
-    "image-component": (_state, node) => {
-      const properties = node.properties || {};
-      const src = String(properties.src);
-      const fileAssetDetails = getFileAssetDetails(src);
-      if (!src || !fileAssetDetails) return createTextNode("");
-      return createTextNode(`![${fileAssetDetails.name}](${fileAssetDetails.url})`);
-    },
+    "image-component": fileAssetImage,
+    // Excalidraw drawings are exported as a PNG file asset, rendered like an image.
+    "excalidraw-component": fileAssetImage,
     img: (_state, node) => {
       const properties = node.properties || {};
       const src = String(properties.src);

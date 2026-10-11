@@ -118,6 +118,7 @@ describe("runSync (temp dir)", () => {
     await runSync(options(await CountingSource.fromFile(FIXTURE)));
     expect(await listFiles(join(root, "wiki"))).toEqual([
       "contributing.md",
+      "diagrams.md",
       "engineering/_category_.json",
       "engineering/index.md",
       "engineering/onboarding.md",
@@ -139,7 +140,17 @@ describe("runSync (temp dir)", () => {
       "projects/web/release-notes.md",
       "smoke-fixture-mdx-check.md",
     ]);
-    expect(await listFiles(join(root, "static/wiki-assets"))).toEqual(["aaaaaaaa-0000-4000-8000-000000000001.png"]);
+    expect(await listFiles(join(root, "static/wiki-assets"))).toEqual([
+      "aaaaaaaa-0000-4000-8000-000000000001.png",
+      "aaaaaaaa-0000-4000-8000-000000000002.png",
+    ]);
+    const diagrams = await readFile(join(root, "wiki/diagrams.md"), "utf8");
+    expect(diagrams).toContain("![system-overview.png](/wiki-assets/aaaaaaaa-0000-4000-8000-000000000002.png)");
+    expect(diagrams).toContain("![diagram.png](/wiki-assets/aaaaaaaa-0000-4000-8000-000000000001.png)");
+    // the drawing whose asset does not exist is dropped, the rest of the page is kept
+    expect(diagrams).not.toContain("aaaaaaaa-0000-4000-8000-000000000099");
+    expect(diagrams).toContain("The last drawing has no stored asset and is dropped.");
+    expect(logs.some((l) => l.startsWith("warn: asset aaaaaaaa-0000-4000-8000-000000000099"))).toBe(true);
     const smoke = await readFile(join(root, "wiki/smoke-fixture-mdx-check.md"), "utf8");
     expect(smoke).toContain("![diagram.png](/wiki-assets/aaaaaaaa-0000-4000-8000-000000000001.png)");
     expect(smoke).toContain("Owner: @jane");
@@ -147,7 +158,7 @@ describe("runSync (temp dir)", () => {
       "See [Onboarding](/wiki/engineering/onboarding) and [Runbooks](/wiki/engineering/runbooks)."
     );
     const manifest = await readManifest(join(root, ".wiki-cache/manifest.json"));
-    expect(Object.keys(manifest.pages)).toHaveLength(15);
+    expect(Object.keys(manifest.pages)).toHaveLength(16);
     expect(manifest.files).toEqual(["projects/_category_.json"]);
     expect(manifest.pages["00000002-0000-4000-8000-000000000002"]).toMatchObject({
       file: "engineering/index.md",
@@ -165,12 +176,12 @@ describe("runSync (temp dir)", () => {
     const second = new CountingSource(fixture, FIXTURE_DIR);
     const result = await runSync(options(second));
     expect(second.getPageCalls).toEqual([changed.id]);
-    expect(result.skipped).toBe(14);
+    expect(result.skipped).toBe(15);
     expect(await readFile(join(root, "wiki/engineering/onboarding.md"), "utf8")).toContain("Updated onboarding.");
 
     const third = new CountingSource(fixture, FIXTURE_DIR);
     await runSync(options(third, { force: true }));
-    expect(third.getPageCalls).toHaveLength(15);
+    expect(third.getPageCalls).toHaveLength(16);
   });
 
   it("re-renders everything when the link map changes (a rename moves a link target)", async () => {
@@ -179,7 +190,7 @@ describe("runSync (temp dir)", () => {
     fixture.pages.find((p) => p.name === "Runbooks")!.name = "Playbooks";
     const source = new CountingSource(fixture, FIXTURE_DIR);
     await runSync(options(source));
-    expect(source.getPageCalls).toHaveLength(15);
+    expect(source.getPageCalls).toHaveLength(16);
     expect(await readFile(join(root, "wiki/smoke-fixture-mdx-check.md"), "utf8")).toContain(
       "(/wiki/engineering/playbooks)"
     );
@@ -190,9 +201,9 @@ describe("runSync (temp dir)", () => {
     await writeFile(join(root, "wiki/hand-written.md"), "# mine\n");
 
     const fixture = await loadFixture();
-    // drop the Runbooks subtree and the smoke page (with its image)
+    // drop the Runbooks subtree, the smoke page and the diagrams page (with their images)
     fixture.pages = fixture.pages.filter(
-      (p) => !["Runbooks", "Deploy checklist"].includes(p.name) && !p.name.startsWith("Smoke")
+      (p) => !["Runbooks", "Deploy checklist", "Diagrams"].includes(p.name) && !p.name.startsWith("Smoke")
     );
     const result = await runSync(options(new CountingSource(fixture, FIXTURE_DIR)));
 
@@ -209,6 +220,7 @@ describe("runSync (temp dir)", () => {
         "engineering/runbooks/deploy-checklist.md",
         "smoke-fixture-mdx-check.md",
         "/wiki-assets/aaaaaaaa-0000-4000-8000-000000000001.png",
+        "/wiki-assets/aaaaaaaa-0000-4000-8000-000000000002.png",
       ])
     );
   });
@@ -302,7 +314,7 @@ describe("runSync (temp dir)", () => {
       const linked = new CountingSource(fixture, FIXTURE_DIR);
       const first = await runSync(options(linked));
       // the link map changed, so every page is re-rendered
-      expect(linked.getPageCalls).toHaveLength(15);
+      expect(linked.getPageCalls).toHaveLength(16);
       let files = await listFiles(join(root, "wiki"));
       expect(files).toEqual(expect.arrayContaining(["projects/con/index.md", "projects/con/_category_.json"]));
       expect(files).not.toContain("contributing.md");
@@ -312,7 +324,7 @@ describe("runSync (temp dir)", () => {
       contributing.project_wiki = null;
       const unlinked = new CountingSource(fixture, FIXTURE_DIR);
       const second = await runSync(options(unlinked));
-      expect(unlinked.getPageCalls).toHaveLength(15);
+      expect(unlinked.getPageCalls).toHaveLength(16);
       files = await listFiles(join(root, "wiki"));
       expect(files).toContain("contributing.md");
       expect(files.filter((f) => f.startsWith("projects/con"))).toEqual([]);
@@ -320,7 +332,7 @@ describe("runSync (temp dir)", () => {
       expect(second.removed.toSorted()).toEqual(["projects/con/_category_.json", "projects/con/index.md"]);
       // a second identical run touches nothing
       const third = new CountingSource(fixture, FIXTURE_DIR);
-      expect((await runSync(options(third))).skipped).toBe(15);
+      expect((await runSync(options(third))).skipped).toBe(16);
       expect(third.getPageCalls).toEqual([]);
     });
 
@@ -351,7 +363,7 @@ describe("runSync (temp dir)", () => {
       };
       const source = new CountingSource(fixture, FIXTURE_DIR);
       await runSync(options(source));
-      expect(source.getPageCalls).toHaveLength(15);
+      expect(source.getPageCalls).toHaveLength(16);
       // sorted by sort_order: Web App (1500) keeps "mob", Mobile (2500) is deduped to "mob-2"
       expect(await read("contributing.md")).toContain("(/wiki/projects/mob/architecture)");
       expect(await read("contributing.md")).toContain("[Mobile](/wiki/projects/mob-2)");

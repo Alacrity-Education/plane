@@ -47,10 +47,10 @@ export function getAssetExtension(type?: string | null, name?: string | null): s
   return "bin";
 }
 
-/** Asset ids referenced by <image-component src="<uuid>"> in TipTap HTML. */
+/** Asset ids referenced by <image-component src="<uuid>"> / <excalidraw-component src="<uuid>"> in TipTap HTML. */
 export function extractImageAssetIds(html: string): string[] {
   const ids = new Set<string>();
-  const re = /<image-component\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/gi;
+  const re = /<(?:image|excalidraw)-component\b[^>]*?\bsrc\s*=\s*["']([^"']+)["']/gi;
   for (const match of html.matchAll(re)) {
     const src = match[1]?.trim() ?? "";
     if (isAssetId(src)) ids.add(src.toLowerCase());

@@ -125,6 +125,23 @@ describe("convertWikiHtmlToMarkdown: TipTap nodes", () => {
     ).toBe(`![diagram.png](/wiki-assets/${ASSET}.png)\n\nafter\n\n![](https://cdn.example.com/legacy.png)\n`);
   });
 
+  it("excalidraw-component -> its PNG asset as a Markdown image; missing asset dropped", () => {
+    const DRAWING = "44444444-4444-4444-8444-444444444444";
+    const assets = new Map([
+      [ASSET, { url: `/wiki-assets/${ASSET}.png`, name: "diagram.png" }],
+      [DRAWING, { url: `/wiki-assets/${DRAWING}.png`, name: "" }],
+    ]);
+    expect(
+      md(
+        `<p>before</p><excalidraw-component id="d1" src="${DRAWING}" width="100%" height="auto" aspectratio="1.5" alignment="left" status="uploaded"></excalidraw-component><excalidraw-component src="${ASSET}" status="uploaded"></excalidraw-component><excalidraw-component src="99999999-9999-4999-8999-999999999999" status="uploaded"></excalidraw-component><excalidraw-component src="" status="uploading"></excalidraw-component><p>after</p>`,
+        { assets }
+      )
+    ).toBe(`before\n\n![Drawing](/wiki-assets/${DRAWING}.png)![diagram.png](/wiki-assets/${ASSET}.png)\n\nafter\n`);
+    expect(preprocessHtml(`<excalidraw-component src="${DRAWING}"></excalidraw-component>`, { ...ctx, assets })).toBe(
+      `<img src="/wiki-assets/${DRAWING}.png" alt="Drawing">`
+    );
+  });
+
   it("mentions -> @display_name, unknown users -> @member", () => {
     expect(
       md(

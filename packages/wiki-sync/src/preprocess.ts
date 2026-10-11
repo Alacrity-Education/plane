@@ -194,11 +194,15 @@ export function rehypeWikiPreprocess(ctx: TPreprocessContext) {
           const name = entity === "user_mention" ? ctx.members?.get(id) : undefined;
           return replace([textNode(`@${name || "member"}`)]);
         }
-        case "image-component": {
+        case "image-component":
+        case "excalidraw-component": {
+          // Excalidraw drawings are stored as a PNG asset bound to the page, exactly like images.
+          const isDrawing = node.tagName === "excalidraw-component";
+          const fallbackAlt = isDrawing ? "Drawing" : "";
           const src = getAttr(node, "src").trim();
           const asset = UUID_RE.test(src) ? ctx.assets.get(src.toLowerCase()) : undefined;
-          if (asset) return replace([imageElement(asset.url, asset.name)]);
-          if (/^https?:\/\//i.test(src)) return replace([imageElement(src, "")]);
+          if (asset) return replace([imageElement(asset.url, asset.name || fallbackAlt)]);
+          if (/^https?:\/\//i.test(src)) return replace([imageElement(src, fallbackAlt)]);
           return replace([]);
         }
         case "img": {

@@ -56,7 +56,7 @@ describe("cli", () => {
         "Teams",
       ]);
       expect(code).toBe(0);
-      expect(out).toContain("15 page(s)");
+      expect(out).toContain("16 page(s)");
       expect(await readdir(join(dir, "wiki"))).toEqual(expect.arrayContaining(["engineering", "teams"]));
       expect((await readdir(join(dir, "wiki/teams"))).toSorted()).toEqual(["_category_.json", "mob", "web"]);
       expect(JSON.parse(await readFile(join(dir, "wiki/teams/_category_.json"), "utf8"))).toMatchObject({
