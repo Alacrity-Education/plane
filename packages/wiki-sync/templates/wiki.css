@@ -1,0 +1,65 @@
+/* Styles for markup plane-wiki-sync can emit. Add to the classic preset's theme.customCss. */
+
+/* --callouts html: <div class="plane-callout plane-callout--<background>"> */
+.plane-callout {
+  margin-bottom: var(--ifm-leading);
+  padding: 0.75rem 1rem;
+  border-radius: var(--ifm-alert-border-radius, 0.4rem);
+  background: var(--plane-callout-bg, var(--ifm-color-emphasis-100));
+}
+.plane-callout::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+.plane-callout > :last-child {
+  margin-bottom: 0;
+}
+.plane-callout__emoji {
+  float: left;
+  margin-right: 0.5rem;
+  line-height: var(--ifm-line-height-base);
+}
+.plane-callout--gray {
+  --plane-callout-bg: rgba(115, 115, 115, 0.12);
+}
+.plane-callout--peach {
+  --plane-callout-bg: rgba(255, 187, 160, 0.25);
+}
+.plane-callout--pink {
+  --plane-callout-bg: rgba(252, 165, 205, 0.25);
+}
+.plane-callout--orange {
+  --plane-callout-bg: rgba(253, 186, 116, 0.25);
+}
+.plane-callout--green {
+  --plane-callout-bg: rgba(134, 239, 172, 0.25);
+}
+.plane-callout--light-blue {
+  --plane-callout-bg: rgba(147, 197, 253, 0.25);
+}
+.plane-callout--dark-blue {
+  --plane-callout-bg: rgba(96, 125, 220, 0.25);
+}
+.plane-callout--purple {
+  --plane-callout-bg: rgba(196, 181, 253, 0.25);
+}
+
+/* GFM task lists */
+.markdown .contains-task-list {
+  padding-left: 0;
+  list-style: none;
+}
+.markdown .contains-task-list .contains-task-list {
+  padding-left: 1.5rem;
+}
+.markdown .task-list-item input[type="checkbox"] {
+  margin: 0 0.5rem 0 0;
+  vertical-align: middle;
+}
+
+/* Raw-HTML tables (merged cells) keep their per-cell background colours; keep text readable. */
+.markdown table td[style*="background-color"],
+.markdown table th[style*="background-color"] {
+  color: #1c1e21;
+}

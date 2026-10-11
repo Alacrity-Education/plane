@@ -1,0 +1,80 @@
+# .github/workflows/wiki-sync.yml in the Docusaurus repository.
+# Pulls the Plane wiki, builds the site and deploys it to GitHub Pages.
+#
+# Repository settings:
+#   Settings > Pages > Source: "GitHub Actions"
+#   Variables: PLANE_URL (e.g. https://plane.example.com), PLANE_WORKSPACE_SLUG
+#   Secrets:   PLANE_API_KEY (token of a bot user that is a workspace member)
+#
+# Trigger a rebuild from Plane or a script:
+#   curl -X POST https://api.github.com/repos/OWNER/REPO/dispatches \
+#     -H "Authorization: Bearer <token with contents:write>" \
+#     -d '{"event_type":"plane-wiki-updated"}'
+name: Wiki sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-render every page (ignore the manifest cache)"
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [plane-wiki-updated]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PLANE_URL: ${{ vars.PLANE_URL }}
+      PLANE_WORKSPACE_SLUG: ${{ vars.PLANE_WORKSPACE_SLUG }}
+      PLANE_API_KEY: ${{ secrets.PLANE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Incremental runs: keep the manifest and downloaded images between workflow runs.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .wiki-cache
+            static/wiki-assets
+            wiki
+          key: wiki-sync-${{ github.run_id }}
+          restore-keys: wiki-sync-
+
+      - name: Sync wiki from Plane
+        run: npm run sync:wiki -- ${{ inputs.force && '--force' || '' }}
+
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
