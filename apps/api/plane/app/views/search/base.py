@@ -29,6 +29,7 @@ from rest_framework.response import Response
 # Module imports
 from plane.app.views.base import BaseAPIView
 from plane.app.permissions import WorkspaceUserPermission
+from plane.app.permissions.wiki_page import wiki_pages_queryset
 from plane.db.models import (
     Workspace,
     Project,
@@ -41,6 +42,18 @@ from plane.db.models import (
     ProjectPage,
     WorkspaceMember,
 )
+
+
+def visible_wiki_page_ids(slug, user, public_only=False):
+    """
+    Ids of non-archived workspace wiki pages (global, no project link) the user
+    may see: public ones plus, unless public_only, the user's own private ones.
+    Empty for anyone who is not an active member of the workspace.
+    """
+    access = Q(access=Page.PUBLIC_ACCESS) if public_only else Q(access=Page.PUBLIC_ACCESS) | Q(owned_by=user)
+    is_member = WorkspaceMember.objects.filter(workspace__slug=slug, member=user, is_active=True).exists()
+    pages = wiki_pages_queryset(slug).filter(access, archived_at__isnull=True)
+    return (pages if is_member else pages.none()).values("id")
 
 
 class GlobalSearchEndpoint(BaseAPIView):
@@ -171,14 +184,20 @@ class GlobalSearchEndpoint(BaseAPIView):
         pages = (
             Page.objects.filter(
                 q,
-                projects__project_projectmember__member=self.request.user,
-                projects__project_projectmember__is_active=True,
-                projects__archived_at__isnull=True,
+                Q(
+                    projects__project_projectmember__member=self.request.user,
+                    projects__project_projectmember__is_active=True,
+                    projects__archived_at__isnull=True,
+                )
+                # Workspace wiki pages have no project; they come back with
+                # empty project_ids, which the web client routes to /wiki/<id>.
+                | Q(id__in=visible_wiki_page_ids(slug, self.request.user)),
                 workspace__slug=slug,
             )
+            # Skip the NULL project row of wiki pages so their project_ids is [].
             .annotate(
                 project_ids=Coalesce(
-                    ArrayAgg("projects__id", distinct=True, filter=~Q(projects__id=True)),
+                    ArrayAgg("projects__id", distinct=True, filter=Q(projects__id__isnull=False)),
                     Value([], output_field=ArrayField(UUIDField())),
                 )
             )
@@ -187,7 +206,7 @@ class GlobalSearchEndpoint(BaseAPIView):
                     ArrayAgg(
                         "projects__identifier",
                         distinct=True,
-                        filter=~Q(projects__id=True),
+                        filter=Q(projects__id__isnull=False),
                     ),
                     Value([], output_field=ArrayField(CharField())),
                 )
@@ -710,11 +729,15 @@ class SearchEndpoint(BaseAPIView):
                     pages = (
                         Page.objects.filter(
                             q,
-                            projects__project_projectmember__member=self.request.user,
-                            projects__project_projectmember__is_active=True,
+                            Q(
+                                projects__project_projectmember__member=self.request.user,
+                                projects__project_projectmember__is_active=True,
+                                access=0,
+                                is_global=True,
+                            )
+                            # Public workspace wiki pages (projects__id is null)
+                            | Q(id__in=visible_wiki_page_ids(slug, self.request.user, public_only=True)),
                             workspace__slug=slug,
-                            access=0,
-                            is_global=True,
                         )
                         .order_by("-created_at")
                         .distinct()
