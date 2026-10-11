@@ -518,3 +518,56 @@ ESTIMATE_ID_PARAMETER = OpenApiParameter(
     type=OpenApiTypes.UUID,
     location=OpenApiParameter.PATH,
 )
+
+PAGE_ID_PARAMETER = OpenApiParameter(
+    name="pk",
+    description="Wiki page ID",
+    required=True,
+    type=OpenApiTypes.UUID,
+    location=OpenApiParameter.PATH,
+    examples=[
+        OpenApiExample(
+            name="Example page ID",
+            value="550e8400-e29b-41d4-a716-446655440000",
+            description="A typical wiki page UUID",
+        )
+    ],
+)
+
+UPDATED_SINCE_PARAMETER = OpenApiParameter(
+    name="updated_since",
+    type=OpenApiTypes.DATETIME,
+    location=OpenApiParameter.QUERY,
+    description=(
+        "Only return items updated at or after this ISO 8601 timestamp. "
+        "Timestamps without a timezone are interpreted as UTC."
+    ),
+    required=False,
+    examples=[
+        OpenApiExample(
+            name="Updated since",
+            value="2024-01-01T00:00:00Z",
+            description="Items changed since the start of 2024",
+        ),
+    ],
+)
+
+PARENT_PARAMETER = OpenApiParameter(
+    name="parent",
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.QUERY,
+    description="Filter by parent page ID. Pass `null` to return only top-level pages.",
+    required=False,
+    examples=[
+        OpenApiExample(
+            name="Top-level pages",
+            value="null",
+            description="Pages without a parent",
+        ),
+        OpenApiExample(
+            name="Children of a page",
+            value="550e8400-e29b-41d4-a716-446655440000",
+            description="Direct children of the given page",
+        ),
+    ],
+)

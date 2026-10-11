@@ -323,3 +323,17 @@ def estimate_point_docs(**kwargs):
         },
     }
     return extend_schema(**_merge_schema_options(defaults, kwargs))
+
+
+def wiki_page_docs(**kwargs):
+    """Decorator for read-only workspace wiki page endpoints"""
+    defaults = {
+        "tags": ["Wiki Pages"],
+        "parameters": [WORKSPACE_SLUG_PARAMETER],
+        "responses": {
+            401: UNAUTHORIZED_RESPONSE,
+            403: FORBIDDEN_RESPONSE,
+            404: NOT_FOUND_RESPONSE,
+        },
+    }
+    return extend_schema(**_merge_schema_options(defaults, kwargs))

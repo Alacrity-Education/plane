@@ -686,6 +686,39 @@ STICKY_EXAMPLE = OpenApiExample(
     },
 )
 
+# Wiki Page Examples
+WIKI_PAGE_EXAMPLE = OpenApiExample(
+    name="WikiPage",
+    value={
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Getting started",
+        "parent": None,
+        "sort_order": 65535,
+        "access": 0,
+        "is_locked": False,
+        "archived_at": None,
+        "logo_props": {},
+        "color": "",
+        "owned_by": "550e8400-e29b-41d4-a716-446655440001",
+        "label_ids": [],
+        "sub_pages_count": 2,
+        "description_stripped": "Welcome to the wiki",
+        "created_at": "2024-01-01T10:30:00Z",
+        "updated_at": "2024-01-10T15:45:00Z",
+        "workspace": "550e8400-e29b-41d4-a716-446655440002",
+        "description_html": "<h1>Welcome</h1><p>Welcome to the wiki</p>",
+        "assets": [
+            {
+                "id": "550e8400-e29b-41d4-a716-446655440003",
+                "name": "diagram.png",
+                "type": "image/png",
+                "size": 20480.0,
+            }
+        ],
+    },
+    description="Example response for a wiki page",
+)
+
 # Estimate Examples
 ESTIMATE_EXAMPLE = OpenApiExample(
     name="Estimate",
@@ -882,6 +915,16 @@ SAMPLE_ESTIMATE_POINT = {
     "created_at": "2024-01-01T10:30:00Z",
 }
 
+SAMPLE_WIKI_PAGE = {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Getting started",
+    "parent": None,
+    "sort_order": 65535,
+    "access": 0,
+    "sub_pages_count": 2,
+    "updated_at": "2024-01-10T15:45:00Z",
+}
+
 # Mapping of schema types to sample data
 SCHEMA_EXAMPLES = {
     "Issue": SAMPLE_ISSUE,
@@ -899,6 +942,7 @@ SCHEMA_EXAMPLES = {
     "Sticky": SAMPLE_STICKY,
     "Estimate": SAMPLE_ESTIMATE,
     "EstimatePoint": SAMPLE_ESTIMATE_POINT,
+    "WikiPage": SAMPLE_WIKI_PAGE,
 }
 
 

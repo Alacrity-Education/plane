@@ -186,6 +186,20 @@ SPECTACULAR_SETTINGS = {
                 "*Use Cases:* Profile display, user context, account information, authentication status."
             ),
         },
+        # Documentation
+        {
+            "name": "Wiki Pages",
+            "description": (
+                "**Workspace Wiki**\n\n"
+                "Read-only access to the public, non-archived pages of a workspace wiki. "
+                "Pages form a tree through their `parent` and `sort_order` fields.\n\n"
+                "*Key Features:*\n"
+                "- List wiki pages with cursor pagination\n"
+                "- Filter by parent page or by last update time\n"
+                "- Retrieve a page with its HTML body and uploaded assets\n\n"
+                "*Use Cases:* Exporting the wiki to a static documentation site, search indexing, backups."
+            ),
+        },
         # Work Item Management
         {
             "name": "Work Item Activity",
@@ -272,5 +286,6 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ModuleStatusEnum": "plane.db.models.module.ModuleStatus",
         "IntakeWorkItemStatusEnum": "plane.db.models.intake.IntakeIssueStatus",
+        "PageAccessEnum": [(0, "Public"), (1, "Private")],
     },
 }

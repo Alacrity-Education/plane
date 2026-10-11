@@ -48,6 +48,9 @@ from .parameters import (
     FIELDS_PARAMETER,
     EXPAND_PARAMETER,
     ESTIMATE_ID_PARAMETER,
+    PAGE_ID_PARAMETER,
+    UPDATED_SINCE_PARAMETER,
+    PARENT_PARAMETER,
 )
 
 # Responses
@@ -152,6 +155,7 @@ from .examples import (
     STICKY_EXAMPLE,
     ESTIMATE_EXAMPLE,
     ESTIMATE_POINT_EXAMPLE,
+    WIKI_PAGE_EXAMPLE,
 )
 
 # Helper decorators
@@ -175,6 +179,7 @@ from .decorators import (
     state_docs,
     estimate_docs,
     estimate_point_docs,
+    wiki_page_docs,
 )
 
 # Schema processing hooks
@@ -217,6 +222,9 @@ __all__ = [
     "FIELDS_PARAMETER",
     "EXPAND_PARAMETER",
     "ESTIMATE_ID_PARAMETER",
+    "PAGE_ID_PARAMETER",
+    "UPDATED_SINCE_PARAMETER",
+    "PARENT_PARAMETER",
     # Responses
     "UNAUTHORIZED_RESPONSE",
     "FORBIDDEN_RESPONSE",
@@ -315,6 +323,7 @@ __all__ = [
     "STICKY_EXAMPLE",
     "ESTIMATE_EXAMPLE",
     "ESTIMATE_POINT_EXAMPLE",
+    "WIKI_PAGE_EXAMPLE",
     # Decorators
     "workspace_docs",
     "project_docs",
@@ -335,6 +344,7 @@ __all__ = [
     "state_docs",
     "estimate_docs",
     "estimate_point_docs",
+    "wiki_page_docs",
     # Hooks
     "preprocess_filter_api_v1_paths",
     "generate_operation_summary",
