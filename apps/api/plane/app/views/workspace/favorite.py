@@ -24,7 +24,7 @@ class WorkspaceFavoriteEndpoint(BaseAPIView):
     def get(self, request, slug):
         # the second filter is to check if the user is a member of the project
         favorites = UserFavorite.objects.filter(user=request.user, workspace__slug=slug, parent__isnull=True).filter(
-            Q(project__isnull=True) & ~Q(entity_type="page")
+            Q(project__isnull=True)
             | (
                 Q(project__isnull=False)
                 & Q(project__project_projectmember__member=request.user)
