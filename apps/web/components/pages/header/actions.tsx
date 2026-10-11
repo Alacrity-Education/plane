@@ -10,6 +10,7 @@ import type { EPageStoreType } from "@/hooks/store";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
 // local imports
+import type { TPageActionsMenuItem } from "../dropdowns";
 import { PageOptionsDropdown } from "../editor/toolbar";
 import { PageArchivedBadge } from "./archived-badge";
 import { PageCopyLinkControl } from "./copy-link-control";
@@ -18,12 +19,13 @@ import { PageOfflineBadge } from "./offline-badge";
 import { PageLockControl } from "./lock-control";
 
 type Props = {
+  extraOptions?: TPageActionsMenuItem[];
   page: TPageInstance;
   storeType: EPageStoreType;
 };
 
 export const PageHeaderActions = observer(function PageHeaderActions(props: Props) {
-  const { page, storeType } = props;
+  const { extraOptions, page, storeType } = props;
 
   return (
     <div className="flex items-center gap-1">
@@ -32,7 +34,7 @@ export const PageHeaderActions = observer(function PageHeaderActions(props: Prop
       <PageLockControl page={page} />
       <PageCopyLinkControl page={page} />
       <PageFavoriteControl page={page} />
-      <PageOptionsDropdown page={page} storeType={storeType} />
+      <PageOptionsDropdown extraOptions={extraOptions} page={page} storeType={storeType} />
     </div>
   );
 });

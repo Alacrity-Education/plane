@@ -138,6 +138,38 @@
         "title": "Sayfa bulunamadı",
         "description": "Erişmeye çalıştığınız sayfa mevcut değil veya görüntüleme izniniz yok.",
         "cta": "Diğer sayfaları görüntüle"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# iç içe sayfa} other {# iç içe sayfa}}"
+      },
+      "actions": {
+        "add_sub_page": "Alt sayfa ekle"
+      },
+      "header": {
+        "more_create_options": "Daha fazla oluşturma seçeneği",
+        "create_with_options": "Seçeneklerle sayfa oluştur"
+      },
+      "create_modal": {
+        "title": "Yeni wiki sayfası",
+        "name_placeholder": "Başlıksız",
+        "name_max_length": "Sayfa başlığı 255 karakterden kısa olmalıdır",
+        "parent_label": "Şunun altında oluştur",
+        "private_label": "Özel sayfa",
+        "private_description": "Yalnızca siz görebilirsiniz",
+        "submit": "Sayfa oluştur",
+        "submitting": "Oluşturuluyor"
+      },
+      "parent_picker": {
+        "search_placeholder": "Wiki sayfalarında ara",
+        "top_level": "En üst düzey",
+        "current_parent": "Mevcut",
+        "this_page": "Bu sayfa",
+        "sub_page": "Alt sayfa",
+        "no_results": "Sayfa bulunamadı"
+      },
+      "move_modal": {
+        "title": "\"{name}\" sayfasını taşı",
+        "locked": "Taşımak için sayfanın kilidini açın"
       }
     }
   }

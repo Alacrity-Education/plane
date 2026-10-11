@@ -138,6 +138,38 @@
         "title": "Halaman tidak ditemukan",
         "description": "Halaman yang Anda coba akses tidak ada atau Anda tidak memiliki izin untuk melihatnya.",
         "cta": "Lihat halaman lain"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# halaman bersarang} other {# halaman bersarang}}"
+      },
+      "actions": {
+        "add_sub_page": "Tambah subhalaman"
+      },
+      "header": {
+        "more_create_options": "Opsi pembuatan lainnya",
+        "create_with_options": "Buat halaman dengan opsi"
+      },
+      "create_modal": {
+        "title": "Halaman wiki baru",
+        "name_placeholder": "Tanpa judul",
+        "name_max_length": "Judul halaman harus kurang dari 255 karakter",
+        "parent_label": "Buat di bawah",
+        "private_label": "Halaman privat",
+        "private_description": "Hanya Anda yang dapat melihatnya",
+        "submit": "Buat halaman",
+        "submitting": "Membuat"
+      },
+      "parent_picker": {
+        "search_placeholder": "Cari halaman wiki",
+        "top_level": "Tingkat teratas",
+        "current_parent": "Saat ini",
+        "this_page": "Halaman ini",
+        "sub_page": "Subhalaman",
+        "no_results": "Tidak ada halaman ditemukan"
+      },
+      "move_modal": {
+        "title": "Pindahkan \"{name}\"",
+        "locked": "Buka kunci halaman untuk memindahkannya"
       }
     }
   }

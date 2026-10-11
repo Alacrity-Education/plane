@@ -138,6 +138,38 @@
         "title": "Seite nicht gefunden",
         "description": "Die Seite, auf die Sie zugreifen möchten, existiert nicht oder Sie haben keine Berechtigung, sie anzuzeigen.",
         "cta": "Andere Seiten anzeigen"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# verschachtelte Seite} other {# verschachtelte Seiten}}"
+      },
+      "actions": {
+        "add_sub_page": "Unterseite hinzufügen"
+      },
+      "header": {
+        "more_create_options": "Weitere Erstellungsoptionen",
+        "create_with_options": "Seite mit Optionen erstellen"
+      },
+      "create_modal": {
+        "title": "Neue Wiki-Seite",
+        "name_placeholder": "Ohne Titel",
+        "name_max_length": "Der Seitentitel muss weniger als 255 Zeichen haben",
+        "parent_label": "Erstellen unter",
+        "private_label": "Private Seite",
+        "private_description": "Nur für Sie sichtbar",
+        "submit": "Seite erstellen",
+        "submitting": "Wird erstellt"
+      },
+      "parent_picker": {
+        "search_placeholder": "Wiki-Seiten durchsuchen",
+        "top_level": "Oberste Ebene",
+        "current_parent": "Aktuell",
+        "this_page": "Diese Seite",
+        "sub_page": "Unterseite",
+        "no_results": "Keine Seiten gefunden"
+      },
+      "move_modal": {
+        "title": "„{name}“ verschieben",
+        "locked": "Entsperren Sie die Seite, um sie zu verschieben"
       }
     }
   }

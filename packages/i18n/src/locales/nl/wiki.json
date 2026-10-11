@@ -138,6 +138,38 @@
         "title": "Pagina niet gevonden",
         "description": "De pagina die u probeert te openen bestaat niet of u hebt geen toestemming om deze te bekijken.",
         "cta": "Andere pagina's bekijken"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# geneste pagina} other {# geneste pagina's}}"
+      },
+      "actions": {
+        "add_sub_page": "Subpagina toevoegen"
+      },
+      "header": {
+        "more_create_options": "Meer aanmaakopties",
+        "create_with_options": "Pagina met opties aanmaken"
+      },
+      "create_modal": {
+        "title": "Nieuwe wikipagina",
+        "name_placeholder": "Naamloos",
+        "name_max_length": "De paginatitel moet minder dan 255 tekens bevatten",
+        "parent_label": "Aanmaken onder",
+        "private_label": "Privépagina",
+        "private_description": "Alleen zichtbaar voor u",
+        "submit": "Pagina aanmaken",
+        "submitting": "Bezig met aanmaken"
+      },
+      "parent_picker": {
+        "search_placeholder": "Wikipagina's zoeken",
+        "top_level": "Hoogste niveau",
+        "current_parent": "Huidig",
+        "this_page": "Deze pagina",
+        "sub_page": "Subpagina",
+        "no_results": "Geen pagina's gevonden"
+      },
+      "move_modal": {
+        "title": "\"{name}\" verplaatsen",
+        "locked": "Ontgrendel de pagina om deze te verplaatsen"
       }
     }
   }

@@ -11,10 +11,8 @@ import { useTranslation } from "@plane/i18n";
 import type { TPageNavigationTabs } from "@plane/types";
 // components
 import { PageHead } from "@/components/core/page-title";
-import { PagesListRoot } from "@/components/pages/list/root";
 import { WikiListView } from "@/components/wiki/wiki-list-view";
-// hooks
-import { EPageStoreType } from "@/hooks/store";
+import { WikiTree } from "@/components/wiki/wiki-tree";
 import type { Route } from "./+types/page";
 
 const getWikiPageType = (pageType?: string | null): TPageNavigationTabs => {
@@ -38,7 +36,7 @@ function WikiPagesPage({ params }: Route.ComponentProps) {
     <>
       <PageHead title={t("sidebar.wiki")} />
       <WikiListView pageType={pageType} workspaceSlug={workspaceSlug}>
-        <PagesListRoot pageType={pageType} storeType={EPageStoreType.WORKSPACE} />
+        <WikiTree pageType={pageType} workspaceSlug={workspaceSlug} />
       </WikiListView>
     </>
   );

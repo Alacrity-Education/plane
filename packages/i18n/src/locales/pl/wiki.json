@@ -138,6 +138,38 @@
         "title": "Nie znaleziono strony",
         "description": "Strona, do której próbujesz uzyskać dostęp, nie istnieje lub nie masz uprawnień do jej wyświetlenia.",
         "cta": "Zobacz inne strony"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# zagnieżdżona strona} few {# zagnieżdżone strony} many {# zagnieżdżonych stron} other {# zagnieżdżonej strony}}"
+      },
+      "actions": {
+        "add_sub_page": "Dodaj podstronę"
+      },
+      "header": {
+        "more_create_options": "Więcej opcji tworzenia",
+        "create_with_options": "Utwórz stronę z opcjami"
+      },
+      "create_modal": {
+        "title": "Nowa strona wiki",
+        "name_placeholder": "Bez tytułu",
+        "name_max_length": "Tytuł strony musi mieć mniej niż 255 znaków",
+        "parent_label": "Utwórz w",
+        "private_label": "Strona prywatna",
+        "private_description": "Widoczna tylko dla Ciebie",
+        "submit": "Utwórz stronę",
+        "submitting": "Tworzenie"
+      },
+      "parent_picker": {
+        "search_placeholder": "Szukaj stron wiki",
+        "top_level": "Najwyższy poziom",
+        "current_parent": "Bieżąca",
+        "this_page": "Ta strona",
+        "sub_page": "Podstrona",
+        "no_results": "Nie znaleziono stron"
+      },
+      "move_modal": {
+        "title": "Przenieś „{name}”",
+        "locked": "Odblokuj stronę, aby ją przenieść"
       }
     }
   }

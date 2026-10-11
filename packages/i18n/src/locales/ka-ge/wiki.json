@@ -138,6 +138,38 @@
         "title": "გვერდი ვერ მოიძებნა",
         "description": "გვერდი, რომელზეც წვდომას ცდილობთ, არ არსებობს ან მისი ნახვის უფლება არ გაქვთ.",
         "cta": "სხვა გვერდების ნახვა"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# ჩადგმული გვერდი} other {# ჩადგმული გვერდი}}"
+      },
+      "actions": {
+        "add_sub_page": "ქვეგვერდის დამატება"
+      },
+      "header": {
+        "more_create_options": "შექმნის სხვა პარამეტრები",
+        "create_with_options": "გვერდის შექმნა პარამეტრებით"
+      },
+      "create_modal": {
+        "title": "ახალი ვიკი გვერდი",
+        "name_placeholder": "უსათაურო",
+        "name_max_length": "გვერდის სათაური 255 სიმბოლოზე ნაკლები უნდა იყოს",
+        "parent_label": "შექმნა შიგნით",
+        "private_label": "პირადი გვერდი",
+        "private_description": "მხოლოდ თქვენ ხედავთ",
+        "submit": "გვერდის შექმნა",
+        "submitting": "იქმნება"
+      },
+      "parent_picker": {
+        "search_placeholder": "ვიკი გვერდების ძიება",
+        "top_level": "ზედა დონე",
+        "current_parent": "მიმდინარე",
+        "this_page": "ეს გვერდი",
+        "sub_page": "ქვეგვერდი",
+        "no_results": "გვერდები ვერ მოიძებნა"
+      },
+      "move_modal": {
+        "title": "„{name}“-ის გადატანა",
+        "locked": "გადასატანად გახსენით გვერდის ბლოკი"
       }
     }
   }

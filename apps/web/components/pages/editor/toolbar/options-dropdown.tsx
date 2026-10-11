@@ -20,17 +20,20 @@ import type { EPageStoreType } from "@/hooks/store";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
 // local imports
+import type { TPageActionsMenuItem } from "../../dropdowns";
 import { PageActions } from "../../dropdowns";
 import { ExportPageModal } from "../../modals/export-page-modal";
 import { PAGE_NAVIGATION_PANE_TABS_QUERY_PARAM } from "../../navigation-pane";
 
 type Props = {
+  // additional options, rendered after "Make a copy"
+  extraOptions?: TPageActionsMenuItem[];
   page: TPageInstance;
   storeType: EPageStoreType;
 };
 
 export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: Props) {
-  const { page, storeType } = props;
+  const { extraOptions, page, storeType } = props;
   // states
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   // navigation
@@ -132,13 +135,14 @@ export const PageOptionsDropdown = observer(function PageOptionsDropdown(props: 
         pageTitle={name ?? ""}
       />
       <PageActions
-        extraOptions={EXTRA_MENU_OPTIONS}
+        extraOptions={[...(extraOptions ?? []), ...(EXTRA_MENU_OPTIONS ?? [])]}
         optionsOrder={[
           "full-screen",
           "sticky-toolbar",
           "copy-markdown",
           "version-history",
           "make-a-copy",
+          ...(extraOptions ?? []).map((option) => option.key),
           "archive-restore",
           "delete",
           "toggle-access",

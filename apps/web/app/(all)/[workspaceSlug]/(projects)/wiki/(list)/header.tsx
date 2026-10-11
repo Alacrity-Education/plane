@@ -8,8 +8,10 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 // plane imports
-import { Button } from "@makeplane/propel/components/button";
-import { PagesOutline } from "@makeplane/propel/icons";
+import { Icon } from "@makeplane/propel/components/icon";
+import { Menu, MenuContent, MenuItem } from "@makeplane/propel/components/menu";
+import { SplitButton } from "@makeplane/propel/components/split-button";
+import { AddPageOutline, PagesOutline } from "@makeplane/propel/icons";
 import { EPageAccess } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Breadcrumbs } from "@plane/blocks/breadcrumb";
@@ -19,12 +21,14 @@ import type { TPage } from "@plane/types";
 // components
 import { BreadcrumbLink } from "@/components/common/breadcrumb-link";
 import { CountChip } from "@/components/common/count-chip";
+import { CreateWikiPageModal } from "@/components/wiki/modals/create-wiki-page-modal";
 // hooks
 import { EPageStoreType, usePageStore } from "@/hooks/store";
 
 export const WikiListHeader = observer(function WikiListHeader() {
   // states
   const [isCreatingPage, setIsCreatingPage] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   // router
   const router = useRouter();
   const { workspaceSlug } = useParams();
@@ -84,14 +88,30 @@ export const WikiListHeader = observer(function WikiListHeader() {
       </Header.LeftItem>
       {canCurrentUserCreatePage && (
         <Header.RightItem>
-          <Button
-            variant="primary"
-            size="md"
-            stretch="auto"
-            label={isCreatingPage ? t("wiki.pages.adding_page") : t("wiki_collections.header.add_page")}
-            onClick={() => void handleCreatePage()}
-            loading={isCreatingPage}
+          <CreateWikiPageModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            workspaceSlug={workspaceSlug?.toString() ?? ""}
+            defaultAccess={pageType === "private" ? EPageAccess.PRIVATE : EPageAccess.PUBLIC}
           />
+          <Menu>
+            <SplitButton
+              variant="primary"
+              size="md"
+              label={isCreatingPage ? t("wiki.pages.adding_page") : t("wiki_collections.header.add_page")}
+              onClick={() => void handleCreatePage()}
+              loading={isCreatingPage}
+              menuLabel={t("wiki.pages.header.more_create_options")}
+              data-testid="wiki-add-page"
+            />
+            <MenuContent side="bottom" align="end">
+              <MenuItem
+                label={t("wiki.pages.header.create_with_options")}
+                icon={<Icon icon={AddPageOutline} />}
+                onClick={() => setIsCreateModalOpen(true)}
+              />
+            </MenuContent>
+          </Menu>
         </Header.RightItem>
       )}
     </Header>

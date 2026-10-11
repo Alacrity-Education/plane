@@ -54,11 +54,16 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
       },
       archive: async () => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
-        return await workspacePageService.archive(workspaceSlug, page.id);
+        const response = await workspacePageService.archive(workspaceSlug, page.id);
+        // the server archives the descendants as well
+        store.workspacePages.setDescendantsArchivedAt(page.id, response.archived_at);
+        return response;
       },
       restore: async () => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
         await workspacePageService.restore(workspaceSlug, page.id);
+        // the server restores the descendants as well
+        store.workspacePages.setDescendantsArchivedAt(page.id, null);
       },
       duplicate: async () => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
@@ -161,10 +166,10 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
   }
 
   /**
-   * @description moving wiki pages is not supported yet
+   * @description returns true if the current logged in user can move (re-parent) the page
    */
   get canCurrentUserMovePage() {
-    return false;
+    return this.isAtLeastWorkspaceMember && (this.isCurrentUserOwner || this.isWorkspaceAdmin);
   }
 
   /**

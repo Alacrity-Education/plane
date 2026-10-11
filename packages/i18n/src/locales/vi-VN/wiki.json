@@ -138,6 +138,38 @@
         "title": "Không tìm thấy trang",
         "description": "Trang bạn đang cố truy cập không tồn tại hoặc bạn không có quyền xem trang này.",
         "cta": "Xem các trang khác"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# trang con} other {# trang con}}"
+      },
+      "actions": {
+        "add_sub_page": "Thêm trang con"
+      },
+      "header": {
+        "more_create_options": "Thêm tùy chọn tạo",
+        "create_with_options": "Tạo trang với tùy chọn"
+      },
+      "create_modal": {
+        "title": "Trang wiki mới",
+        "name_placeholder": "Không có tiêu đề",
+        "name_max_length": "Tiêu đề trang phải ít hơn 255 ký tự",
+        "parent_label": "Tạo bên trong",
+        "private_label": "Trang riêng tư",
+        "private_description": "Chỉ bạn có thể xem",
+        "submit": "Tạo trang",
+        "submitting": "Đang tạo"
+      },
+      "parent_picker": {
+        "search_placeholder": "Tìm kiếm trang wiki",
+        "top_level": "Cấp cao nhất",
+        "current_parent": "Hiện tại",
+        "this_page": "Trang này",
+        "sub_page": "Trang con",
+        "no_results": "Không tìm thấy trang nào"
+      },
+      "move_modal": {
+        "title": "Di chuyển \"{name}\"",
+        "locked": "Mở khóa trang để di chuyển"
       }
     }
   }

@@ -53,10 +53,14 @@ export type TPageActions =
   | "delete"
   | "version-history"
   | "export"
-  | "move";
+  | "move"
+  | "add-sub-page";
+
+export type TPageActionsMenuItem = TContextMenuItem & { key: TPageActions };
 
 type Props = {
-  extraOptions?: (TContextMenuItem & { key: TPageActions })[];
+  // extra options take precedence over the built-in options with the same key
+  extraOptions?: TPageActionsMenuItem[];
   optionsOrder: TPageActions[];
   page: TPageInstance;
   parentRef?: React.RefObject<HTMLElement | null>;
@@ -163,10 +167,8 @@ export const PageActions = observer(function PageActions(props: Props) {
           shouldRender: canCurrentUserMovePage && isMovePageEnabled,
         },
       ];
-      if (extraOptions) {
-        menuItems.push(...extraOptions);
-      }
-      return menuItems;
+      // extra options come first so that they override built-in options with the same key
+      return [...(extraOptions ?? []), ...menuItems];
     },
     [
       extraOptions,

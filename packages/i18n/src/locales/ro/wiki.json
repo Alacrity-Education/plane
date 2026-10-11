@@ -138,6 +138,38 @@
         "title": "Pagina nu a fost găsită",
         "description": "Pagina pe care încercați să o accesați nu există sau nu aveți permisiunea de a o vizualiza.",
         "cta": "Vedeți alte pagini"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# pagină imbricată} few {# pagini imbricate} other {# de pagini imbricate}}"
+      },
+      "actions": {
+        "add_sub_page": "Adaugă subpagină"
+      },
+      "header": {
+        "more_create_options": "Mai multe opțiuni de creare",
+        "create_with_options": "Creează pagină cu opțiuni"
+      },
+      "create_modal": {
+        "title": "Pagină wiki nouă",
+        "name_placeholder": "Fără titlu",
+        "name_max_length": "Titlul paginii trebuie să aibă mai puțin de 255 de caractere",
+        "parent_label": "Creează în",
+        "private_label": "Pagină privată",
+        "private_description": "Doar dumneavoastră o puteți vedea",
+        "submit": "Creează pagina",
+        "submitting": "Se creează"
+      },
+      "parent_picker": {
+        "search_placeholder": "Căutați pagini wiki",
+        "top_level": "Nivel superior",
+        "current_parent": "Curentă",
+        "this_page": "Această pagină",
+        "sub_page": "Subpagină",
+        "no_results": "Nu s-au găsit pagini"
+      },
+      "move_modal": {
+        "title": "Mută „{name}”",
+        "locked": "Deblocați pagina pentru a o muta"
       }
     }
   }

@@ -138,6 +138,38 @@
         "title": "找不到頁面",
         "description": "您嘗試存取的頁面不存在，或您沒有檢視權限。",
         "cta": "檢視其他頁面"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# 個巢狀頁面} other {# 個巢狀頁面}}"
+      },
+      "actions": {
+        "add_sub_page": "新增子頁面"
+      },
+      "header": {
+        "more_create_options": "更多建立選項",
+        "create_with_options": "使用選項建立頁面"
+      },
+      "create_modal": {
+        "title": "新增 Wiki 頁面",
+        "name_placeholder": "未命名",
+        "name_max_length": "頁面標題必須少於 255 個字元",
+        "parent_label": "建立於",
+        "private_label": "私人頁面",
+        "private_description": "僅您可見",
+        "submit": "建立頁面",
+        "submitting": "正在建立"
+      },
+      "parent_picker": {
+        "search_placeholder": "搜尋 Wiki 頁面",
+        "top_level": "最上層",
+        "current_parent": "目前",
+        "this_page": "此頁面",
+        "sub_page": "子頁面",
+        "no_results": "找不到頁面"
+      },
+      "move_modal": {
+        "title": "移動「{name}」",
+        "locked": "請先解除鎖定頁面再移動"
       }
     }
   }

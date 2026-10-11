@@ -138,6 +138,38 @@
         "title": "Page introuvable",
         "description": "La page à laquelle vous essayez d’accéder n’existe pas ou vous n’avez pas l’autorisation de la consulter.",
         "cta": "Voir les autres pages"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# page imbriquée} many {# pages imbriquées} other {# pages imbriquées}}"
+      },
+      "actions": {
+        "add_sub_page": "Ajouter une sous-page"
+      },
+      "header": {
+        "more_create_options": "Plus d’options de création",
+        "create_with_options": "Créer une page avec options"
+      },
+      "create_modal": {
+        "title": "Nouvelle page wiki",
+        "name_placeholder": "Sans titre",
+        "name_max_length": "Le titre de la page doit comporter moins de 255 caractères",
+        "parent_label": "Créer sous",
+        "private_label": "Page privée",
+        "private_description": "Visible uniquement par vous",
+        "submit": "Créer la page",
+        "submitting": "Création"
+      },
+      "parent_picker": {
+        "search_placeholder": "Rechercher des pages wiki",
+        "top_level": "Niveau supérieur",
+        "current_parent": "Actuelle",
+        "this_page": "Cette page",
+        "sub_page": "Sous-page",
+        "no_results": "Aucune page trouvée"
+      },
+      "move_modal": {
+        "title": "Déplacer « {name} »",
+        "locked": "Déverrouillez la page pour la déplacer"
       }
     }
   }

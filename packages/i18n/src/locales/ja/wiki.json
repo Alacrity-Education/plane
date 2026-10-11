@@ -138,6 +138,38 @@
         "title": "ページが見つかりません",
         "description": "アクセスしようとしているページは存在しないか、閲覧する権限がありません。",
         "cta": "他のページを表示"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {#件のネストされたページ} other {#件のネストされたページ}}"
+      },
+      "actions": {
+        "add_sub_page": "サブページを追加"
+      },
+      "header": {
+        "more_create_options": "その他の作成オプション",
+        "create_with_options": "オプションを指定してページを作成"
+      },
+      "create_modal": {
+        "title": "新しいWikiページ",
+        "name_placeholder": "無題",
+        "name_max_length": "ページタイトルは255文字未満にしてください",
+        "parent_label": "作成先",
+        "private_label": "非公開ページ",
+        "private_description": "自分だけが閲覧できます",
+        "submit": "ページを作成",
+        "submitting": "作成中"
+      },
+      "parent_picker": {
+        "search_placeholder": "Wikiページを検索",
+        "top_level": "トップレベル",
+        "current_parent": "現在",
+        "this_page": "このページ",
+        "sub_page": "サブページ",
+        "no_results": "ページが見つかりません"
+      },
+      "move_modal": {
+        "title": "「{name}」を移動",
+        "locked": "移動するにはページのロックを解除してください"
       }
     }
   }

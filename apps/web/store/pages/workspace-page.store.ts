@@ -24,6 +24,11 @@ type TError = { title: string; description: string };
 
 export const ROLE_PERMISSIONS_TO_CREATE_WORKSPACE_PAGE = [EUserPermissions.ADMIN, EUserPermissions.MEMBER];
 
+// sort_order used for the first page under a parent and the gap kept between appended siblings
+// (mirrors DEFAULT_SORT_ORDER / SORT_ORDER_STEP of @plane/wiki-sync)
+const DEFAULT_WIKI_SORT_ORDER = 65535;
+const WIKI_SORT_ORDER_STEP = 10000;
+
 /**
  * @description store for workspace level (wiki) pages.
  * Member names intentionally mirror IProjectPageStore so that shared page components
@@ -43,6 +48,13 @@ export interface IWorkspacePageStore {
   getCurrentProjectFilteredPageIdsByTab: (pageType: TPageNavigationTabs) => string[] | undefined;
   getCurrentWorkspacePageIds: () => string[];
   getPageById: (pageId: string) => TWorkspacePage | undefined;
+  // tree helpers
+  getRootPageIds: (pageType: TPageNavigationTabs) => string[];
+  getChildPageIds: (pageId: string, pageType: TPageNavigationTabs) => string[];
+  getAncestorIds: (pageId: string) => string[];
+  getDescendantIds: (pageId: string) => string[];
+  getNextChildSortOrder: (parentId: string | null, excludePageId?: string) => number;
+  setDescendantsArchivedAt: (pageId: string, archivedAt: string | null) => void;
   updateFilters: <T extends keyof TPageFilters>(filterKey: T, filterValue: TPageFilters[T]) => void;
   clearAllFilters: () => void;
   // actions
@@ -54,6 +66,7 @@ export interface IWorkspacePageStore {
   ) => Promise<TPage | undefined>;
   createPage: (pageData: Partial<TPage>) => Promise<TPage | undefined>;
   removePage: (params: { pageId: string; shouldSync?: boolean }) => Promise<void>;
+  movePage: (workspaceSlug: string, pageId: string, parentId: string | null, sortOrder?: number) => Promise<void>;
 }
 
 export class WorkspacePageStore implements IWorkspacePageStore {
@@ -88,6 +101,8 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       fetchPageDetails: action,
       createPage: action,
       removePage: action,
+      movePage: action,
+      setDescendantsArchivedAt: action,
     });
     this.rootStore = store;
     // service
@@ -183,6 +198,107 @@ export class WorkspacePageStore implements IWorkspacePageStore {
    * @param {string} pageId
    */
   getPageById = computedFn((pageId: string) => this.data?.[pageId] || undefined);
+
+  /**
+   * @description returns the current workspace pages of a tab, ordered by the current sort filters
+   * @param {TPageNavigationTabs} pageType
+   */
+  private getOrderedPagesByTab = computedFn((pageType: TPageNavigationTabs) =>
+    orderPages(
+      filterPagesByPageType(pageType, this.getCurrentWorkspacePages()),
+      this.filters.sortKey,
+      this.filters.sortBy
+    )
+  );
+
+  /**
+   * @description get the ids of the tree roots of a tab: pages without a parent, or whose parent is not visible in the tab
+   * @param {TPageNavigationTabs} pageType
+   */
+  getRootPageIds = computedFn((pageType: TPageNavigationTabs) => {
+    const pages = this.getOrderedPagesByTab(pageType);
+    const visiblePageIds = new Set(pages.map((page) => page.id));
+    return pages
+      .filter((page) => !page.parent || !visiblePageIds.has(page.parent))
+      .map((page) => page.id)
+      .filter((id): id is string => !!id);
+  });
+
+  /**
+   * @description get the ids of the direct children of a page that are visible in a tab
+   * @param {string} pageId
+   * @param {TPageNavigationTabs} pageType
+   */
+  getChildPageIds = computedFn((pageId: string, pageType: TPageNavigationTabs) =>
+    this.getOrderedPagesByTab(pageType)
+      .filter((page) => page.parent === pageId)
+      .map((page) => page.id)
+      .filter((id): id is string => !!id)
+  );
+
+  /**
+   * @description get the ids of the loaded ancestors of a page, root first
+   * @param {string} pageId
+   */
+  getAncestorIds = computedFn((pageId: string) => {
+    const ancestorIds: string[] = [];
+    const visitedIds = new Set<string>([pageId]);
+    let parentId = this.getPageById(pageId)?.parent;
+    while (parentId && !visitedIds.has(parentId)) {
+      const parentPage = this.getPageById(parentId);
+      if (!parentPage) break;
+      visitedIds.add(parentId);
+      ancestorIds.unshift(parentId);
+      parentId = parentPage.parent;
+    }
+    return ancestorIds;
+  });
+
+  /**
+   * @description get the ids of all the loaded descendants of a page (archived ones included)
+   * @param {string} pageId
+   */
+  getDescendantIds = computedFn((pageId: string) => {
+    const pages = this.getCurrentWorkspacePages();
+    const descendantIds: string[] = [];
+    const visitedIds = new Set<string>([pageId]);
+    const queue = [pageId];
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      for (const page of pages) {
+        if (!page.id || page.parent !== currentId || visitedIds.has(page.id)) continue;
+        visitedIds.add(page.id);
+        descendantIds.push(page.id);
+        queue.push(page.id);
+      }
+    }
+    return descendantIds;
+  });
+
+  /**
+   * @description sort_order that appends a page after the existing (non archived) children of a parent
+   * @param {string | null} parentId - null for top level pages
+   * @param {string} excludePageId - page being moved, ignored when looking at its future siblings
+   */
+  getNextChildSortOrder = (parentId: string | null, excludePageId?: string) => {
+    const siblingSortOrders = this.getCurrentWorkspacePages()
+      .filter((page) => page.id !== excludePageId && !page.archived_at && (page.parent ?? null) === parentId)
+      .map((page) => page.sort_order)
+      .filter((sortOrder): sortOrder is number => typeof sortOrder === "number" && Number.isFinite(sortOrder));
+    if (siblingSortOrders.length === 0) return DEFAULT_WIKI_SORT_ORDER;
+    return Math.max(...siblingSortOrders) + WIKI_SORT_ORDER_STEP;
+  };
+
+  /**
+   * @description archiving/restoring a page cascades to its descendants on the server, mirror it locally
+   * @param {string} pageId
+   * @param {string | null} archivedAt
+   */
+  setDescendantsArchivedAt = (pageId: string, archivedAt: string | null) => {
+    this.getDescendantIds(pageId).forEach((descendantId) => {
+      this.getPageById(descendantId)?.mutateProperties({ archived_at: archivedAt });
+    });
+  };
 
   updateFilters = <T extends keyof TPageFilters>(filterKey: T, filterValue: TPageFilters[T]) => {
     runInAction(() => {
@@ -344,6 +460,61 @@ export class WorkspacePageStore implements IWorkspacePageStore {
           title: "Failed",
           description: "Failed to delete a page, Please try again later.",
         };
+      });
+      throw error;
+    }
+  };
+
+  /**
+   * @description move a page under another page (or to the top level), optimistic with rollback
+   * @param {string} workspaceSlug
+   * @param {string} pageId
+   * @param {string | null} parentId - null moves the page to the top level
+   * @param {number} sortOrder - defaults to the end of the new siblings
+   */
+  movePage = async (workspaceSlug: string, pageId: string, parentId: string | null, sortOrder?: number) => {
+    const page = this.getPageById(pageId);
+    if (!workspaceSlug || !page) return;
+
+    const previousParentId = page.parent ?? null;
+    const previousSortOrder = page.sort_order;
+    const nextSortOrder = sortOrder ?? this.getNextChildSortOrder(parentId, pageId);
+    const isParentChanged = previousParentId !== parentId;
+
+    const updateSubPagesCount = (targetPageId: string | null, delta: number) => {
+      if (!targetPageId) return;
+      const targetPage = this.getPageById(targetPageId);
+      if (!targetPage) return;
+      targetPage.mutateProperties({ sub_pages_count: Math.max(0, (targetPage.sub_pages_count ?? 0) + delta) });
+    };
+
+    runInAction(() => {
+      page.mutateProperties({ parent: parentId, sort_order: nextSortOrder });
+      if (isParentChanged) {
+        updateSubPagesCount(previousParentId, -1);
+        updateSubPagesCount(parentId, 1);
+      }
+    });
+
+    try {
+      const response = await this.service.update(workspaceSlug, pageId, {
+        parent: parentId,
+        sort_order: nextSortOrder,
+      });
+      runInAction(() => {
+        if (response)
+          page.mutateProperties({
+            parent: response.parent ?? null,
+            sort_order: response.sort_order ?? nextSortOrder,
+          });
+      });
+    } catch (error) {
+      runInAction(() => {
+        page.mutateProperties({ parent: previousParentId, sort_order: previousSortOrder });
+        if (isParentChanged) {
+          updateSubPagesCount(parentId, -1);
+          updateSubPagesCount(previousParentId, 1);
+        }
       });
       throw error;
     }

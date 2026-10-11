@@ -138,6 +138,38 @@
         "title": "未找到页面",
         "description": "您尝试访问的页面不存在，或者您没有查看权限。",
         "cta": "查看其他页面"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# 个嵌套页面} other {# 个嵌套页面}}"
+      },
+      "actions": {
+        "add_sub_page": "添加子页面"
+      },
+      "header": {
+        "more_create_options": "更多创建选项",
+        "create_with_options": "使用选项创建页面"
+      },
+      "create_modal": {
+        "title": "新建 Wiki 页面",
+        "name_placeholder": "无标题",
+        "name_max_length": "页面标题必须少于 255 个字符",
+        "parent_label": "创建于",
+        "private_label": "私有页面",
+        "private_description": "仅您可见",
+        "submit": "创建页面",
+        "submitting": "正在创建"
+      },
+      "parent_picker": {
+        "search_placeholder": "搜索 Wiki 页面",
+        "top_level": "顶层",
+        "current_parent": "当前",
+        "this_page": "此页面",
+        "sub_page": "子页面",
+        "no_results": "未找到页面"
+      },
+      "move_modal": {
+        "title": "移动“{name}”",
+        "locked": "请先解锁页面再移动"
       }
     }
   }

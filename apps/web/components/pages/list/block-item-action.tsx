@@ -19,16 +19,29 @@ import type { EPageStoreType } from "@/hooks/store";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
 // local imports
+import type { TPageActions, TPageActionsMenuItem } from "../dropdowns";
 import { PageActions } from "../dropdowns";
 
+const DEFAULT_OPTIONS_ORDER: TPageActions[] = [
+  "open-in-new-tab",
+  "copy-link",
+  "make-a-copy",
+  "toggle-lock",
+  "toggle-access",
+  "archive-restore",
+  "delete",
+];
+
 type Props = {
+  extraOptions?: TPageActionsMenuItem[];
+  optionsOrder?: TPageActions[];
   page: TPageInstance;
   parentRef: React.RefObject<HTMLElement | null>;
   storeType: EPageStoreType;
 };
 
 export const BlockItemAction = observer(function BlockItemAction(props: Props) {
-  const { page, parentRef, storeType } = props;
+  const { extraOptions, optionsOrder = DEFAULT_OPTIONS_ORDER, page, parentRef, storeType } = props;
   // store hooks
   const { getUserDetails } = useMember();
   // page operations
@@ -81,15 +94,8 @@ export const BlockItemAction = observer(function BlockItemAction(props: Props) {
 
       {/* quick actions dropdown */}
       <PageActions
-        optionsOrder={[
-          "open-in-new-tab",
-          "copy-link",
-          "make-a-copy",
-          "toggle-lock",
-          "toggle-access",
-          "archive-restore",
-          "delete",
-        ]}
+        extraOptions={extraOptions}
+        optionsOrder={optionsOrder}
         page={page}
         parentRef={parentRef}
         storeType={storeType}

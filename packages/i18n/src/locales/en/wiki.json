@@ -138,6 +138,38 @@
         "title": "Page not found",
         "description": "The page you are trying to access doesn't exist or you don't have permission to view it.",
         "cta": "View other pages"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# nested page} other {# nested pages}}"
+      },
+      "actions": {
+        "add_sub_page": "Add sub-page"
+      },
+      "header": {
+        "more_create_options": "More create options",
+        "create_with_options": "Create page with options"
+      },
+      "create_modal": {
+        "title": "New wiki page",
+        "name_placeholder": "Untitled",
+        "name_max_length": "Page title must be less than 255 characters",
+        "parent_label": "Create under",
+        "private_label": "Private page",
+        "private_description": "Only you can see it",
+        "submit": "Create page",
+        "submitting": "Creating"
+      },
+      "parent_picker": {
+        "search_placeholder": "Search for wiki pages",
+        "top_level": "Top level",
+        "current_parent": "Current",
+        "this_page": "This page",
+        "sub_page": "Sub-page",
+        "no_results": "No pages found"
+      },
+      "move_modal": {
+        "title": "Move \"{name}\"",
+        "locked": "Unlock the page to move it"
       }
     }
   }

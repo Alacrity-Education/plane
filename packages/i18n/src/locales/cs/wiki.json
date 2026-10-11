@@ -138,6 +138,38 @@
         "title": "Stránka nenalezena",
         "description": "Stránka, ke které se pokoušíte přistoupit, neexistuje nebo nemáte oprávnění ji zobrazit.",
         "cta": "Zobrazit další stránky"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# vnořená stránka} few {# vnořené stránky} many {# vnořené stránky} other {# vnořených stránek}}"
+      },
+      "actions": {
+        "add_sub_page": "Přidat podstránku"
+      },
+      "header": {
+        "more_create_options": "Další možnosti vytvoření",
+        "create_with_options": "Vytvořit stránku s možnostmi"
+      },
+      "create_modal": {
+        "title": "Nová wiki stránka",
+        "name_placeholder": "Bez názvu",
+        "name_max_length": "Název stránky musí mít méně než 255 znaků",
+        "parent_label": "Vytvořit pod",
+        "private_label": "Soukromá stránka",
+        "private_description": "Vidíte ji pouze Vy",
+        "submit": "Vytvořit stránku",
+        "submitting": "Vytváření"
+      },
+      "parent_picker": {
+        "search_placeholder": "Hledat wiki stránky",
+        "top_level": "Nejvyšší úroveň",
+        "current_parent": "Aktuální",
+        "this_page": "Tato stránka",
+        "sub_page": "Podstránka",
+        "no_results": "Nebyly nalezeny žádné stránky"
+      },
+      "move_modal": {
+        "title": "Přesunout „{name}“",
+        "locked": "Pro přesunutí stránku odemkněte"
       }
     }
   }

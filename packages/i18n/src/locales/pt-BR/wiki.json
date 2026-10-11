@@ -138,6 +138,38 @@
         "title": "Página não encontrada",
         "description": "A página que você está tentando acessar não existe ou você não tem permissão para visualizá-la.",
         "cta": "Ver outras páginas"
+      },
+      "tree": {
+        "nested_pages": "{count, plural, one {# página aninhada} many {# páginas aninhadas} other {# páginas aninhadas}}"
+      },
+      "actions": {
+        "add_sub_page": "Adicionar subpágina"
+      },
+      "header": {
+        "more_create_options": "Mais opções de criação",
+        "create_with_options": "Criar página com opções"
+      },
+      "create_modal": {
+        "title": "Nova página wiki",
+        "name_placeholder": "Sem título",
+        "name_max_length": "O título da página deve ter menos de 255 caracteres",
+        "parent_label": "Criar dentro de",
+        "private_label": "Página privada",
+        "private_description": "Somente você pode vê-la",
+        "submit": "Criar página",
+        "submitting": "Criando"
+      },
+      "parent_picker": {
+        "search_placeholder": "Pesquisar páginas wiki",
+        "top_level": "Nível superior",
+        "current_parent": "Atual",
+        "this_page": "Esta página",
+        "sub_page": "Subpágina",
+        "no_results": "Nenhuma página encontrada"
+      },
+      "move_modal": {
+        "title": "Mover \"{name}\"",
+        "locked": "Desbloqueie a página para movê-la"
       }
     }
   }
