@@ -12,6 +12,7 @@ import { AppError } from "@/lib/errors";
 // services
 import { UserService } from "@/services/user.service";
 // types
+import { DOCUMENT_TYPES } from "@/types";
 import type { HocusPocusServerContext, TDocumentTypes } from "@/types";
 
 /**
@@ -59,12 +60,28 @@ export const onAuthenticate = async ({
     throw appError;
   }
 
+  // validate document params before touching the API
+  const documentType = requestParameters.get("documentType")?.toString();
+  if (!documentType || !DOCUMENT_TYPES.includes(documentType as TDocumentTypes)) {
+    const appError = new AppError(`Invalid document type ${documentType ?? ""} provided.`, {
+      code: "AUTH_INVALID_DOCUMENT_TYPE",
+    });
+    logger.error("Invalid document type", appError);
+    throw appError;
+  }
+  const workspaceSlug = requestParameters.get("workspaceSlug");
+  if (!workspaceSlug) {
+    const appError = new AppError("Workspace slug is required.", { code: "AUTH_MISSING_WORKSPACE_SLUG" });
+    logger.error("Workspace slug not provided", appError);
+    throw appError;
+  }
+
   // set cookie in context, so it can be used throughout the ws connection
   context.cookie = cookie ?? requestParameters.get("cookie") ?? "";
-  context.documentType = requestParameters.get("documentType")?.toString() as TDocumentTypes;
+  context.documentType = documentType as TDocumentTypes;
   context.projectId = requestParameters.get("projectId");
   context.userId = userId;
-  context.workspaceSlug = requestParameters.get("workspaceSlug");
+  context.workspaceSlug = workspaceSlug;
 
   return await handleAuthentication({
     cookie: context.cookie,

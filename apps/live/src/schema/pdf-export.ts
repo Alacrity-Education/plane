@@ -10,6 +10,7 @@ export const PdfExportRequestBody = Schema.Struct({
   pageId: Schema.NonEmptyTrimmedString,
   workspaceSlug: Schema.NonEmptyTrimmedString,
   projectId: Schema.optional(Schema.NonEmptyTrimmedString),
+  documentType: Schema.optional(Schema.Literal("project_page", "workspace_page")),
   title: Schema.optional(Schema.String),
   author: Schema.optional(Schema.String),
   subject: Schema.optional(Schema.String),

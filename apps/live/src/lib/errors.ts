@@ -14,7 +14,7 @@ import type { AxiosError } from "axios";
  * Usage:
  *   new AppError("Simple error message")
  *   new AppError("Custom error", { code: "MY_CODE", statusCode: 400 })
- *   new AppError(axiosError)  // Auto-extracts essential info
+ *   new AppError(axiosError)  // Auto-extracts essential info (incl. API `error_code` as `apiErrorCode`)
  *   new AppError(anyError)    // Works with any error type
  */
 export class AppError extends Error {
@@ -22,6 +22,8 @@ export class AppError extends Error {
   method?: string;
   url?: string;
   code?: string;
+  /** Application-level error code from the API response body (e.g. 4701 PAGE_LOCKED) */
+  apiErrorCode?: number;
   context?: Record<string, any>;
 
   constructor(messageOrError: string | unknown, data?: Partial<Omit<AppError, "name" | "message">>) {
@@ -47,9 +49,13 @@ export class AppError extends Error {
     if (error && typeof error === "object" && "isAxiosError" in error) {
       const axiosError = error as AxiosError;
       const responseData = axiosError.response?.data as any;
-      super(responseData?.message || axiosError.message);
+      super(responseData?.error_message || responseData?.message || axiosError.message);
       this.name = "AppError";
       this.statusCode = axiosError.response?.status;
+      // keep only the numeric API error code from the body (never the full body)
+      if (typeof responseData?.error_code === "number") {
+        this.apiErrorCode = responseData.error_code;
+      }
       this.method = axiosError.config?.method?.toUpperCase();
       this.url = axiosError.config?.url;
       this.code = axiosError.code;

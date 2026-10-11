@@ -23,6 +23,10 @@ import { broadcastError } from "@/utils/broadcast-error";
 // force close utility
 import { forceCloseDocumentAcrossServers } from "./force-close-handler";
 
+// API error codes returned by the page description PATCH endpoint (see plane/app/views/page)
+const PAGE_LOCKED_ERROR_CODE = 4701;
+const PAGE_ARCHIVED_ERROR_CODE = 4702;
+
 const fetchDocument = async ({ context, documentName: pageId, instance }: FetchPayloadWithContext) => {
   try {
     const service = getPageService(context.documentType, context);
@@ -95,6 +99,8 @@ const storeDocument = async ({
 
     // Check error types
     const isContentTooLarge = appError.statusCode === 413;
+    const isPageLocked = appError.statusCode === 400 && appError.apiErrorCode === PAGE_LOCKED_ERROR_CODE;
+    const isPageArchived = appError.statusCode === 400 && appError.apiErrorCode === PAGE_ARCHIVED_ERROR_CODE;
 
     // Determine if we should disconnect and unload
     const shouldDisconnect = isContentTooLarge;
@@ -106,6 +112,12 @@ const storeDocument = async ({
     if (isContentTooLarge) {
       errorMessage = "Document is too large to save. Please reduce the content size.";
       errorCode = "content_too_large";
+    } else if (isPageLocked) {
+      errorMessage = "This page is locked and can't be edited.";
+      errorCode = "page_locked";
+    } else if (isPageArchived) {
+      errorMessage = "This page is archived and can't be edited.";
+      errorCode = "page_archived";
     } else {
       errorMessage = "Unable to save the page. Please try again.";
     }

@@ -46,6 +46,7 @@ export class PdfExportController {
         pageId: body.pageId,
         workspaceSlug: body.workspaceSlug,
         projectId: body.projectId,
+        documentType: body.documentType,
         title: body.title,
         author: body.author,
         subject: body.subject,

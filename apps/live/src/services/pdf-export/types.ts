@@ -5,11 +5,13 @@
  */
 
 import type { TipTapDocument, PDFUserMention } from "@/lib/pdf";
+import type { TDocumentTypes } from "@/types";
 
 export interface PdfExportInput {
   readonly pageId: string;
   readonly workspaceSlug: string;
   readonly projectId?: string;
+  readonly documentType?: TDocumentTypes;
   readonly title?: string;
   readonly author?: string;
   readonly subject?: string;
