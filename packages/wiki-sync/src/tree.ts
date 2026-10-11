@@ -6,11 +6,19 @@
 
 // Pure helpers (no Node APIs) so the web store can import them too.
 
+/** Set on a project's root wiki page (always a top-level page); null/missing everywhere else. */
+export type TTreeProjectWiki = {
+  project_id: string;
+  identifier: string;
+  name: string;
+};
+
 export type TTreePage = {
   id: string;
   name: string;
   parent: string | null;
   sort_order: number;
+  project_wiki?: TTreeProjectWiki | null;
 };
 
 export type TPageTreeNode<T extends TTreePage = TTreePage> = {
@@ -21,11 +29,27 @@ export type TPageTreeNode<T extends TTreePage = TTreePage> = {
   path: string;
   depth: number;
   children: TPageTreeNode<T>[];
+  /**
+   * Only on the root page of a project wiki section (when `buildPageTree` got `projectsDir`): the
+   * page is always written as a folder `<projectsDir>/<identifier slug>/`, even without children.
+   */
+  project?: TTreeProjectWiki;
 };
 
 export type TPageTree<T extends TTreePage = TTreePage> = {
+  /** Every top-level node: ordinary roots first, then the project section roots. */
   roots: TPageTreeNode<T>[];
+  /** Project section roots (subset of `roots`), in sidebar order; empty without `projectsDir`. */
+  projects: TPageTreeNode<T>[];
   byId: Map<string, TPageTreeNode<T>>;
+};
+
+export type TBuildPageTreeOptions = {
+  /**
+   * Folder (one path segment) that groups project wiki sections: a top-level page with a non-null
+   * `project_wiki` becomes `<projectsDir>/<identifier slug>`. Unset: project roots are ordinary pages.
+   */
+  projectsDir?: string;
 };
 
 /** File names a generated slug must not take inside a category folder. */
@@ -55,9 +79,9 @@ export function comparePages(a: TTreePage, b: TTreePage): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-/** Assigns sibling-unique slugs in order: "faq", "faq-2", "faq-3", ... */
-export function dedupeSlugs(names: string[]): string[] {
-  const used = new Set<string>(RESERVED_SLUGS);
+/** Assigns sibling-unique slugs in order: "faq", "faq-2", "faq-3", ... (`reserved` are never used). */
+export function dedupeSlugs(names: string[], reserved: Iterable<string> = []): string[] {
+  const used = new Set<string>([...RESERVED_SLUGS, ...reserved]);
   return names.map((name) => {
     const base = slugify(name);
     let candidate = base;
@@ -70,9 +94,10 @@ export function dedupeSlugs(names: string[]): string[] {
 /**
  * Builds the page tree from a flat list. Children are sorted by (sort_order, name); pages whose
  * parent is not in the list (private, archived or deleted parents) become roots, and so do pages
- * caught in a parent cycle.
+ * caught in a parent cycle. With `projectsDir`, top-level project root pages are placed under
+ * `<projectsDir>/<identifier slug>` and an ordinary root may not take the `projectsDir` slug.
  */
-export function buildPageTree<T extends TTreePage>(pages: T[]): TPageTree<T> {
+export function buildPageTree<T extends TTreePage>(pages: T[], options: TBuildPageTreeOptions = {}): TPageTree<T> {
   const ids = new Set(pages.map((p) => p.id));
   const effectiveParent = new Map<string, string | null>();
   for (const page of pages) {
@@ -105,25 +130,55 @@ export function buildPageTree<T extends TTreePage>(pages: T[]): TPageTree<T> {
   }
 
   const byId = new Map<string, TPageTreeNode<T>>();
-  const attach = (parent: TPageTreeNode<T> | null): TPageTreeNode<T>[] => {
-    const siblings = (childrenOf.get(parent ? parent.page.id : null) ?? []).toSorted(comparePages);
-    const slugs = dedupeSlugs(siblings.map((p) => p.name));
-    return siblings.map((page, index) => {
+  const place = (
+    siblings: T[],
+    parent: TPageTreeNode<T> | null,
+    slugs: string[],
+    prefix: string,
+    isProject: boolean
+  ): TPageTreeNode<T>[] =>
+    siblings.map((page, index) => {
       const slug = slugs[index] ?? slugify(page.name);
       const node: TPageTreeNode<T> = {
         page,
         slug,
-        path: parent ? `${parent.path}/${slug}` : slug,
+        path: parent ? `${parent.path}/${slug}` : `${prefix}${slug}`,
         depth: parent ? parent.depth + 1 : 0,
         children: [],
       };
+      if (isProject && page.project_wiki) node.project = page.project_wiki;
       byId.set(page.id, node);
-      node.children = attach(node);
+      const children = (childrenOf.get(page.id) ?? []).toSorted(comparePages);
+      node.children = place(children, node, dedupeSlugs(children.map((p) => p.name)), "", false);
       return node;
     });
-  };
 
-  return { roots: attach(null), byId };
+  const topLevel = (childrenOf.get(null) ?? []).toSorted(comparePages);
+  const projectsDir = options.projectsDir?.replace(/^\/+|\/+$/g, "") ?? "";
+  const isProjectRoot = (page: T): boolean => Boolean(projectsDir && page.project_wiki);
+  const projectPages = topLevel.filter(isProjectRoot);
+  const ordinaryPages = topLevel.filter((page) => !isProjectRoot(page));
+
+  const ordinary = place(
+    ordinaryPages,
+    null,
+    // while project sections exist, the projects folder belongs to them
+    dedupeSlugs(
+      ordinaryPages.map((p) => p.name),
+      projectPages.length ? [projectsDir.toLowerCase()] : []
+    ),
+    "",
+    false
+  );
+  const projects = place(
+    projectPages,
+    null,
+    dedupeSlugs(projectPages.map((p) => p.project_wiki?.identifier || p.name)),
+    `${projectsDir}/`,
+    true
+  );
+
+  return { roots: [...ordinary, ...projects], projects, byId };
 }
 
 /** Depth-first, parents before children, siblings in sidebar order. */

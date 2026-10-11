@@ -117,6 +117,7 @@ describe("runSync (temp dir)", () => {
   it("writes the folder tree, categories, assets and manifest", async () => {
     await runSync(options(await CountingSource.fromFile(FIXTURE)));
     expect(await listFiles(join(root, "wiki"))).toEqual([
+      "contributing.md",
       "engineering/_category_.json",
       "engineering/index.md",
       "engineering/onboarding.md",
@@ -127,6 +128,15 @@ describe("runSync (temp dir)", () => {
       "faq.md",
       "getting-started.md",
       "orphaned-page.md",
+      "projects/_category_.json",
+      "projects/mob/_category_.json",
+      "projects/mob/index.md",
+      "projects/web/_category_.json",
+      "projects/web/architecture/_category_.json",
+      "projects/web/architecture/frontend.md",
+      "projects/web/architecture/index.md",
+      "projects/web/index.md",
+      "projects/web/release-notes.md",
       "smoke-fixture-mdx-check.md",
     ]);
     expect(await listFiles(join(root, "static/wiki-assets"))).toEqual(["aaaaaaaa-0000-4000-8000-000000000001.png"]);
@@ -137,7 +147,8 @@ describe("runSync (temp dir)", () => {
       "See [Onboarding](/wiki/engineering/onboarding) and [Runbooks](/wiki/engineering/runbooks)."
     );
     const manifest = await readManifest(join(root, ".wiki-cache/manifest.json"));
-    expect(Object.keys(manifest.pages)).toHaveLength(9);
+    expect(Object.keys(manifest.pages)).toHaveLength(15);
+    expect(manifest.files).toEqual(["projects/_category_.json"]);
     expect(manifest.pages["00000002-0000-4000-8000-000000000002"]).toMatchObject({
       file: "engineering/index.md",
       category: "engineering/_category_.json",
@@ -154,12 +165,12 @@ describe("runSync (temp dir)", () => {
     const second = new CountingSource(fixture, FIXTURE_DIR);
     const result = await runSync(options(second));
     expect(second.getPageCalls).toEqual([changed.id]);
-    expect(result.skipped).toBe(8);
+    expect(result.skipped).toBe(14);
     expect(await readFile(join(root, "wiki/engineering/onboarding.md"), "utf8")).toContain("Updated onboarding.");
 
     const third = new CountingSource(fixture, FIXTURE_DIR);
     await runSync(options(third, { force: true }));
-    expect(third.getPageCalls).toHaveLength(9);
+    expect(third.getPageCalls).toHaveLength(15);
   });
 
   it("re-renders everything when the link map changes (a rename moves a link target)", async () => {
@@ -168,7 +179,7 @@ describe("runSync (temp dir)", () => {
     fixture.pages.find((p) => p.name === "Runbooks")!.name = "Playbooks";
     const source = new CountingSource(fixture, FIXTURE_DIR);
     await runSync(options(source));
-    expect(source.getPageCalls).toHaveLength(9);
+    expect(source.getPageCalls).toHaveLength(15);
     expect(await readFile(join(root, "wiki/smoke-fixture-mdx-check.md"), "utf8")).toContain(
       "(/wiki/engineering/playbooks)"
     );
@@ -211,6 +222,143 @@ describe("runSync (temp dir)", () => {
     const files = await listFiles(join(root, "wiki"));
     expect(files).toEqual(expect.arrayContaining(["faq/index.md", "faq/_category_.json", "faq/billing.md"]));
     expect(files).not.toContain("faq.md");
+  });
+
+  describe("project wiki sections", () => {
+    const WEB = "00000010-0000-4000-8000-000000000010";
+    const MOB = "00000014-0000-4000-8000-000000000014";
+    const CONTRIB = "00000015-0000-4000-8000-000000000015";
+    const readJson = async (rel: string): Promise<unknown> =>
+      JSON.parse(await readFile(join(root, "wiki", rel), "utf8")) as unknown;
+    const read = (rel: string) => readFile(join(root, "wiki", rel), "utf8");
+
+    it("writes the Projects folder and one category per project section", async () => {
+      await runSync(options(await CountingSource.fromFile(FIXTURE)));
+      expect(await readJson("projects/_category_.json")).toEqual({
+        label: "Projects",
+        position: 1e9,
+        collapsed: false,
+      });
+      expect(await readJson("projects/web/_category_.json")).toEqual({
+        label: "Web App",
+        position: 1500,
+        collapsed: true,
+        link: { type: "doc", id: `projects/web/${WEB}` },
+      });
+      // an empty project root is still a folder, so its URL is stable when it gains pages
+      expect(await readJson("projects/mob/_category_.json")).toEqual({
+        label: "Mobile",
+        position: 2500,
+        collapsed: true,
+        link: { type: "doc", id: `projects/mob/${MOB}` },
+      });
+      expect(await read("projects/web/index.md")).toContain('slug: "/projects/web"');
+      expect(await read("projects/web/architecture/frontend.md")).toContain(
+        'slug: "/projects/web/architecture/frontend"'
+      );
+      const manifest = await readManifest(join(root, ".wiki-cache/manifest.json"));
+      expect(manifest.pages[MOB]).toMatchObject({
+        file: "projects/mob/index.md",
+        category: "projects/mob/_category_.json",
+      });
+    });
+
+    it("rewrites links into and out of the projects path", async () => {
+      await runSync(options(await CountingSource.fromFile(FIXTURE)));
+      const contributing = await read("contributing.md");
+      expect(contributing).toContain("[its architecture](/wiki/projects/web/architecture)");
+      expect(contributing).toContain("[frontend notes](/wiki/projects/web/architecture/frontend#state)");
+      expect(contributing).toContain("[Mobile](/wiki/projects/mob)");
+      expect(await read("projects/web/index.md")).toContain("[Architecture](/wiki/projects/web/architecture)");
+      expect(await read("projects/web/architecture/index.md")).toContain("[Onboarding](/wiki/engineering/onboarding)");
+    });
+
+    it("honours projectsDir, projectsLabel and projectsPosition", async () => {
+      await runSync(
+        options(await CountingSource.fromFile(FIXTURE), {
+          projectsDir: "teams",
+          projectsLabel: "Teams",
+          projectsPosition: 5,
+        })
+      );
+      expect(await readJson("teams/_category_.json")).toEqual({ label: "Teams", position: 5, collapsed: false });
+      expect(await read("contributing.md")).toContain("(/wiki/teams/web/architecture)");
+      await expect(stat(join(root, "wiki/projects"))).rejects.toThrow();
+      await expect(runSync(options(await CountingSource.fromFile(FIXTURE), { projectsDir: "a/b" }))).rejects.toThrow(
+        /single folder/
+      );
+    });
+
+    it("moves a page from the root into a project section and back, cleaning stale files", async () => {
+      await runSync(options(await CountingSource.fromFile(FIXTURE)));
+
+      const fixture = await loadFixture();
+      const contributing = fixture.pages.find((p) => p.id === CONTRIB)!;
+      contributing.project_wiki = {
+        project_id: "dddddddd-0000-4000-8000-000000000003",
+        identifier: "CON",
+        name: "Contrib",
+      };
+      const linked = new CountingSource(fixture, FIXTURE_DIR);
+      const first = await runSync(options(linked));
+      // the link map changed, so every page is re-rendered
+      expect(linked.getPageCalls).toHaveLength(15);
+      let files = await listFiles(join(root, "wiki"));
+      expect(files).toEqual(expect.arrayContaining(["projects/con/index.md", "projects/con/_category_.json"]));
+      expect(files).not.toContain("contributing.md");
+      expect(first.removed).toEqual(["contributing.md"]);
+      expect(await readJson("projects/con/_category_.json")).toMatchObject({ label: "Contrib" });
+
+      contributing.project_wiki = null;
+      const unlinked = new CountingSource(fixture, FIXTURE_DIR);
+      const second = await runSync(options(unlinked));
+      expect(unlinked.getPageCalls).toHaveLength(15);
+      files = await listFiles(join(root, "wiki"));
+      expect(files).toContain("contributing.md");
+      expect(files.filter((f) => f.startsWith("projects/con"))).toEqual([]);
+      await expect(stat(join(root, "wiki/projects/con"))).rejects.toThrow();
+      expect(second.removed.toSorted()).toEqual(["projects/con/_category_.json", "projects/con/index.md"]);
+      // a second identical run touches nothing
+      const third = new CountingSource(fixture, FIXTURE_DIR);
+      expect((await runSync(options(third))).skipped).toBe(15);
+      expect(third.getPageCalls).toEqual([]);
+    });
+
+    it("removes the Projects folder when the last section is unlinked (missing field = null)", async () => {
+      await runSync(options(await CountingSource.fromFile(FIXTURE)));
+      const fixture = await loadFixture();
+      for (const page of fixture.pages) delete page.project_wiki;
+      const result = await runSync(options(new CountingSource(fixture, FIXTURE_DIR)));
+      const files = await listFiles(join(root, "wiki"));
+      expect(files.filter((f) => f.startsWith("projects/"))).toEqual([]);
+      await expect(stat(join(root, "wiki/projects"))).rejects.toThrow();
+      expect(files).toEqual(
+        expect.arrayContaining(["web-app/index.md", "web-app/architecture/frontend.md", "mobile.md"])
+      );
+      expect(result.removed).toEqual(expect.arrayContaining(["projects/_category_.json", "projects/mob/index.md"]));
+      expect(await read("contributing.md")).toContain("(/wiki/web-app/architecture)");
+      const manifest = await readManifest(join(root, ".wiki-cache/manifest.json"));
+      expect(manifest.files).toBeUndefined();
+    });
+
+    it("re-renders links when a project identifier changes", async () => {
+      await runSync(options(await CountingSource.fromFile(FIXTURE)));
+      const fixture = await loadFixture();
+      fixture.pages.find((p) => p.id === WEB)!.project_wiki = {
+        project_id: "dddddddd-0000-4000-8000-000000000001",
+        identifier: "MOB",
+        name: "Web App",
+      };
+      const source = new CountingSource(fixture, FIXTURE_DIR);
+      await runSync(options(source));
+      expect(source.getPageCalls).toHaveLength(15);
+      // sorted by sort_order: Web App (1500) keeps "mob", Mobile (2500) is deduped to "mob-2"
+      expect(await read("contributing.md")).toContain("(/wiki/projects/mob/architecture)");
+      expect(await read("contributing.md")).toContain("[Mobile](/wiki/projects/mob-2)");
+      const files = await listFiles(join(root, "wiki"));
+      expect(files.filter((f) => f.startsWith("projects/web"))).toEqual([]);
+      expect(files).toEqual(expect.arrayContaining(["projects/mob/architecture/index.md", "projects/mob-2/index.md"]));
+    });
   });
 
   it("does not update the manifest when a page fails", async () => {

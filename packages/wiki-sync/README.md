@@ -93,6 +93,8 @@ Flags:
 --cache <file>         Manifest used for incremental runs   (default: .wiki-cache/manifest.json)
 --concurrency <n>      Parallel API requests                (default: 5)
 --callouts <mode>      admonition | html                    (default: admonition)
+--projects-dir <name>  Folder for project wiki sections     (default: projects)
+--projects-label <txt> Sidebar label of that folder         (default: Projects)
 --force                Re-render every page, ignoring the manifest
 --from-fixture <file>  Read pages from a JSON fixture instead of the API
 ```
@@ -114,6 +116,36 @@ scheduled run usually costs one list request plus one request per edited page.
 | `updated_at`                           | `last_update.date`                                                                             |
 | page URL in Plane                      | `custom_edit_url`                                                                              |
 | parent not exported (private/archived) | page moves to the root                                                                         |
+
+### Project wiki sections
+
+Plane marks the root wiki page of each project with `project_wiki: {project_id, identifier, name}`
+(always a top-level page; `null` or absent on every other page, and on older Plane versions). Such
+a page and everything below it are exported under the projects folder instead of the wiki root:
+
+```
+wiki/
+  getting-started.md                 ordinary pages stay at the root
+  engineering/...
+  projects/
+    _category_.json                  {"label": "Projects", "position": 1000000000, "collapsed": false}
+    web/                             project root page, slug = lowercased identifier ("WEB")
+      _category_.json                {"label": "<project name>", "link": {"type": "doc", ...}, ...}
+      index.md                       the project root page
+      architecture/index.md ...      its sub-pages, nested as usual
+    mob/                             an empty project root is still a folder (stable URL)
+      _category_.json
+      index.md
+```
+
+- The folder name and label come from `--projects-dir` (one folder name) and `--projects-label`;
+  the folder is placed after every top-level page and is only written while at least one project
+  section exists.
+- Identifier slugs are de-duplicated like sibling slugs (`web`, `web-2`). While sections exist, an
+  ordinary top-level page whose slug would be the projects folder gets a suffix (`projects-2`).
+- Links to pages inside a section point at `/wiki/projects/<identifier>/...`; renaming a project
+  identifier or linking/unlinking a section changes the link map, so every page is re-rendered and
+  the old files are removed (see below).
 
 Every file has `format: md`, so it is parsed as CommonMark (never MDX) even if the site's
 `markdown.format` changes; Docusaurus adds `rehype-raw` for `.md` files so the raw-HTML fallbacks
@@ -141,7 +173,7 @@ Content mapping:
 uses. A page is fetched again only when `updated_at` or its path changed (or with `--force`); a
 rename that changes any page's URL re-renders every page so links stay correct. Files and images
 that a previous run wrote but the current run did not are deleted, together with folders left
-empty. Files never written by the tool (for example `wiki/smoke-fixture.md`) are not touched.
+empty (including `projects/` when the last section is unlinked). Files never written by the tool (for example `wiki/smoke-fixture.md`) are not touched.
 Cache `.wiki-cache`, `wiki` and `static/wiki-assets` between CI runs (the workflow template does)
 to benefit from this.
 

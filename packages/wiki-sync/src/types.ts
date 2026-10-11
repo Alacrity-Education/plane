@@ -4,6 +4,13 @@
  * See the LICENSE file for details.
  */
 
+/** `project_wiki` of a page: set only on a project's root wiki page (always top-level). */
+export type TWikiProjectWiki = {
+  project_id: string;
+  identifier: string;
+  name: string;
+};
+
 /** Row of GET /api/v1/workspaces/<slug>/wiki/pages/ */
 export type TWikiPageSummary = {
   id: string;
@@ -22,6 +29,8 @@ export type TWikiPageSummary = {
   created_at?: string;
   updated_at: string;
   workspace?: string;
+  /** Missing on older Plane versions; treated as null. */
+  project_wiki?: TWikiProjectWiki | null;
 };
 
 export type TWikiAsset = {

@@ -116,6 +116,74 @@ describe("buildPageTree", () => {
   });
 });
 
+const pw = (identifier: string, name = identifier) => ({ project_id: `pid-${identifier}`, identifier, name });
+
+describe("buildPageTree with project sections", () => {
+  const pages: TTreePage[] = [
+    p("o1", "Projects", null, 1),
+    p("o2", "Handbook", null, 2),
+    { ...p("w", "Web App", null, 3), project_wiki: pw("WEB", "Web App") },
+    p("w1", "Architecture", "w", 1),
+    p("w11", "Frontend", "w1", 1),
+    { ...p("m", "Mobile", null, 4), project_wiki: pw("MOB") },
+    { ...p("x", "Other web", null, 5), project_wiki: pw("web") },
+    { ...p("i", "Weird", null, 6), project_wiki: pw("Index") },
+    { ...p("n", "Explicit null", null, 7), project_wiki: null },
+    // project_wiki on a nested page is ignored (only top-level pages are project roots)
+    { ...p("nested", "Nested", "o2", 1), project_wiki: pw("NEST") },
+  ];
+  const tree = buildPageTree(pages, { projectsDir: "projects" });
+
+  it("places project roots under <projectsDir>/<identifier slug> with their subtree", () => {
+    expect(tree.projects.map((n) => n.page.id)).toEqual(["w", "m", "x", "i"]);
+    expect(tree.byId.get("w")?.path).toBe("projects/web");
+    expect(tree.byId.get("w")?.project).toEqual(pw("WEB", "Web App"));
+    expect(tree.byId.get("w11")?.path).toBe("projects/web/architecture/frontend");
+    expect(tree.byId.get("w11")?.project).toBeUndefined();
+    expect(tree.byId.get("m")?.path).toBe("projects/mob");
+    expect(tree.byId.get("nested")?.path).toBe("handbook/nested");
+    expect(tree.byId.get("nested")?.project).toBeUndefined();
+  });
+
+  it("dedupes identifier slugs like sibling slugs", () => {
+    expect(tree.projects.map((n) => n.slug)).toEqual(["web", "mob", "web-2", "index-2"]);
+  });
+
+  it("keeps ordinary roots at the top level and reserves the projects folder for the sections", () => {
+    expect(tree.roots.map((n) => n.path)).toEqual([
+      "projects-2",
+      "handbook",
+      "explicit-null",
+      "projects/web",
+      "projects/mob",
+      "projects/web-2",
+      "projects/index-2",
+    ]);
+    const onlyOrdinary = buildPageTree(
+      pages.filter((page) => !page.project_wiki || page.id === "nested"),
+      {
+        projectsDir: "projects",
+      }
+    );
+    expect(onlyOrdinary.byId.get("o1")?.path).toBe("projects");
+    expect(onlyOrdinary.projects).toEqual([]);
+  });
+
+  it("treats a missing project_wiki as null and ignores sections without projectsDir", () => {
+    expect(tree.byId.get("o2")?.project).toBeUndefined();
+    const plain = buildPageTree(pages);
+    expect(plain.projects).toEqual([]);
+    expect(plain.byId.get("w")?.path).toBe("web-app");
+    expect(plain.byId.get("w")?.project).toBeUndefined();
+  });
+
+  it("links into the projects path", () => {
+    const map = buildLinkMap(tree, "/wiki");
+    expect(map.get("w11")).toBe("/wiki/projects/web/architecture/frontend");
+    expect(map.get("m")).toBe("/wiki/projects/mob");
+  });
+});
+
 describe("midpointSortOrder", () => {
   it("handles open ends", () => {
     expect(midpointSortOrder()).toBe(65535);

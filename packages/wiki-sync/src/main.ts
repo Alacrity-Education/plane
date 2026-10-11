@@ -34,6 +34,8 @@ Options:
   --cache <file>         Manifest used for incremental runs   (default: .wiki-cache/manifest.json)
   --concurrency <n>      Parallel API requests                (default: 5)
   --callouts <mode>      admonition | html                    (default: admonition)
+  --projects-dir <name>  Folder for project wiki sections     (default: projects)
+  --projects-label <txt> Sidebar label of that folder         (default: Projects)
   --force                Re-render every page, ignoring the manifest
   --from-fixture <file>  Read pages from a JSON fixture instead of the API (no env needed)
   -h, --help             Show this help
@@ -60,6 +62,8 @@ export async function main(argv: string[], io: TCliIO): Promise<number> {
         cache: { type: "string", default: ".wiki-cache/manifest.json" },
         concurrency: { type: "string", default: "5" },
         callouts: { type: "string", default: "admonition" },
+        "projects-dir": { type: "string", default: "projects" },
+        "projects-label": { type: "string", default: "Projects" },
         force: { type: "boolean", default: false },
         "from-fixture": { type: "string" },
         help: { type: "boolean", short: "h", default: false },
@@ -88,6 +92,17 @@ export async function main(argv: string[], io: TCliIO): Promise<number> {
   const concurrency = Number.parseInt(values.concurrency, 10);
   if (!Number.isFinite(concurrency) || concurrency < 1) {
     io.stderr(`--concurrency must be a positive integer, got "${values.concurrency}"`);
+    return 2;
+  }
+
+  const projectsDir = values["projects-dir"].trim();
+  if (!/^[A-Za-z0-9_][A-Za-z0-9._-]*$/.test(projectsDir)) {
+    io.stderr(`--projects-dir must be a single folder name ([A-Za-z0-9._-]), got "${values["projects-dir"]}"`);
+    return 2;
+  }
+  const projectsLabel = values["projects-label"].trim();
+  if (!projectsLabel) {
+    io.stderr("--projects-label must not be empty");
     return 2;
   }
 
@@ -125,6 +140,8 @@ export async function main(argv: string[], io: TCliIO): Promise<number> {
       cachePath: resolve(values.cache),
       concurrency,
       callouts,
+      projectsDir,
+      projectsLabel,
       force: values.force,
       logger: { info: (m) => io.stdout(m), warn: (m) => io.stderr(`warning: ${m}`) },
     });

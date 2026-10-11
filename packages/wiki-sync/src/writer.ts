@@ -29,6 +29,8 @@ export type TManifest = {
   /** Hash of everything that changes every page's output (link map, options). */
   fingerprint: string;
   pages: Record<string, TManifestPage>;
+  /** Generated files that belong to no single page (the projects folder's _category_.json). */
+  files?: string[];
 };
 
 export const emptyManifest = (): TManifest => ({
@@ -56,11 +58,14 @@ export function fingerprint(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
 }
 
+/** Pages with children and project section roots (even empty ones) are written as folders. */
+export const isFolderNode = (node: TPageTreeNode): boolean => node.children.length > 0 || Boolean(node.project);
+
 export const docFileFor = (node: TPageTreeNode): string =>
-  node.children.length ? `${node.path}/index.md` : `${node.path}.md`;
+  isFolderNode(node) ? `${node.path}/index.md` : `${node.path}.md`;
 
 export const categoryFileFor = (node: TPageTreeNode): string | undefined =>
-  node.children.length ? `${node.path}/_category_.json` : undefined;
+  isFolderNode(node) ? `${node.path}/_category_.json` : undefined;
 
 /**
  * Docusaurus doc id = folder of the file + front matter `id`, so the parent page written to
@@ -114,11 +119,19 @@ export function renderDocument(frontMatter: string, body: string): string {
 
 export function buildCategory(node: TPageTreeNode<TWikiPageSummary>): string {
   const category = {
-    label: node.page.name?.trim() || "Untitled",
+    label: node.project?.name?.trim() || node.page.name?.trim() || "Untitled",
     ...(Number.isFinite(node.page.sort_order) ? { position: node.page.sort_order } : {}),
     collapsed: true,
     link: { type: "doc", id: docIdFor(node) },
   };
+  return `${JSON.stringify(category, null, 2)}\n`;
+}
+
+export const DEFAULT_PROJECTS_POSITION = 1e9;
+
+/** _category_.json of the folder that groups the project sections (no index doc, kept expanded). */
+export function buildProjectsCategory(label: string, position: number = DEFAULT_PROJECTS_POSITION): string {
+  const category = { label: label.trim() || "Projects", position, collapsed: false };
   return `${JSON.stringify(category, null, 2)}\n`;
 }
 

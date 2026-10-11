@@ -1,4 +1,4 @@
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -16,6 +16,8 @@ describe("cli", () => {
     const { code, out } = await run(["--help"]);
     expect(code).toBe(0);
     expect(out).toContain("--callouts <mode>");
+    expect(out).toContain("--projects-dir <name>");
+    expect(out).toContain("--projects-label <txt>");
   });
 
   it("requires the environment unless --from-fixture is used", async () => {
@@ -28,6 +30,9 @@ describe("cli", () => {
     expect((await run(["--callouts", "nope"])).code).toBe(2);
     expect((await run(["--concurrency", "0"])).code).toBe(2);
     expect((await run(["--bogus"])).code).toBe(2);
+    expect((await run(["--projects-dir", "a/b"])).code).toBe(2);
+    expect((await run(["--projects-dir", ".."])).code).toBe(2);
+    expect((await run(["--projects-label", "  "])).code).toBe(2);
   });
 
   it("syncs from a fixture", async () => {
@@ -45,10 +50,18 @@ describe("cli", () => {
         join(dir, "cache/manifest.json"),
         "--callouts",
         "html",
+        "--projects-dir",
+        "teams",
+        "--projects-label",
+        "Teams",
       ]);
       expect(code).toBe(0);
-      expect(out).toContain("9 page(s)");
-      expect(await readdir(join(dir, "wiki"))).toContain("engineering");
+      expect(out).toContain("15 page(s)");
+      expect(await readdir(join(dir, "wiki"))).toEqual(expect.arrayContaining(["engineering", "teams"]));
+      expect((await readdir(join(dir, "wiki/teams"))).toSorted()).toEqual(["_category_.json", "mob", "web"]);
+      expect(JSON.parse(await readFile(join(dir, "wiki/teams/_category_.json"), "utf8"))).toMatchObject({
+        label: "Teams",
+      });
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

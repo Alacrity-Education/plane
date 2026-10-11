@@ -12,8 +12,10 @@ import type { TPreprocessAsset } from "./preprocess";
 import { buildLinkMap, buildPageTree, flattenTree } from "./tree";
 import type { IWikiSource, TCalloutMode, TLogger, TWikiAsset, TWikiPageSummary } from "./types";
 import {
+  DEFAULT_PROJECTS_POSITION,
   MANIFEST_VERSION,
   buildCategory,
+  buildProjectsCategory,
   buildFrontMatter,
   categoryFileFor,
   docFileFor,
@@ -45,7 +47,16 @@ export type TSyncOptions = {
   callouts: TCalloutMode;
   force: boolean;
   logger: TLogger;
+  /** Folder (one path segment) for project wiki sections (default "projects"). */
+  projectsDir?: string;
+  /** Sidebar label of that folder (default "Projects"). */
+  projectsLabel?: string;
+  /** Sidebar position of that folder (default 1e9: after every top-level page). */
+  projectsPosition?: number;
 };
+
+export const DEFAULT_PROJECTS_DIR = "projects";
+export const DEFAULT_PROJECTS_LABEL = "Projects";
 
 export type TSyncResult = {
   pages: number;
@@ -67,15 +78,20 @@ function limitSource(source: IWikiSource, concurrency: number): IWikiSource {
   };
 }
 
-const listFiles = (manifest: TManifest): string[] =>
-  Object.values(manifest.pages).flatMap((p) => (p.category ? [p.file, p.category] : [p.file]));
+const listFiles = (manifest: TManifest): string[] => [
+  ...Object.values(manifest.pages).flatMap((p) => (p.category ? [p.file, p.category] : [p.file])),
+  ...(Array.isArray(manifest.files) ? manifest.files : []),
+];
 
 export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
   const { logger } = options;
   const source = limitSource(options.source, options.concurrency);
 
   const pages = (await source.listPages()).filter((p) => !p.archived_at);
-  const tree = buildPageTree<TWikiPageSummary>(pages);
+  const projectsDir = (options.projectsDir ?? DEFAULT_PROJECTS_DIR).replace(/^\/+|\/+$/g, "");
+  if (!projectsDir || /[\\/]/.test(projectsDir) || projectsDir === "." || projectsDir === "..")
+    throw new Error(`projectsDir must be a single folder name, got "${options.projectsDir}"`);
+  const tree = buildPageTree<TWikiPageSummary>(pages, { projectsDir });
   const linkMap = buildLinkMap(tree, options.routeBasePath);
   const nodes = flattenTree(tree.roots);
 
@@ -108,6 +124,19 @@ export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
     pages: {},
   };
   const result: TSyncResult = { pages: nodes.length, written: 0, unchanged: 0, skipped: 0, removed: [] };
+
+  if (tree.projects.length) {
+    const projectsCategory = `${projectsDir}/_category_.json`;
+    await writeIfChanged(
+      options.outDir,
+      projectsCategory,
+      buildProjectsCategory(
+        options.projectsLabel ?? DEFAULT_PROJECTS_LABEL,
+        options.projectsPosition ?? DEFAULT_PROJECTS_POSITION
+      )
+    );
+    next.files = [projectsCategory];
+  }
 
   const settled = await Promise.allSettled(
     nodes.map(async (node) => {
