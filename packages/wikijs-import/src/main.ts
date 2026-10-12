@@ -4,13 +4,14 @@
  * See the LICENSE file for details.
  */
 
-import { existsSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { fetchFileSizeLimit, PlaneSession, PlaneWikiApi } from "./api";
 import { defaultCacheDir, runImport } from "./importer";
 import { renderMarkdownReport } from "./report";
 import { ensureDir } from "./images";
+import { parseProjectMap } from "./projects";
 import { loadState } from "./state";
 
 export const USAGE = `Usage: plane-wikijs-import --source <wiki.js repo> [options]
@@ -22,6 +23,10 @@ Options:
   --state <file>          State file (default .wikijs-import/state.json)
   --report <file>         Report file; writes <file> (JSON) and <file>.md (default .wikijs-import/report.json)
   --force                 Rewrite page descriptions even when unchanged since the last run
+  --project-map <json>    JSON object { "<Wiki.js path>": "<project identifier or name>" } placing
+                          Projects/ pages into those projects' wiki sections (else matched by name)
+  --create-missing-projects
+                          Create a Plane project for every Projects/ page that matches none
   --adopt                 Without a state entry, reuse an existing page with the same name and
                           parent instead of creating one (recovery after losing the state file)
   --login-email <email>   Sign in with email/password instead of a session cookie
@@ -53,6 +58,8 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
       report: { type: "string", default: ".wikijs-import/report.json" },
       force: { type: "boolean", default: false },
       adopt: { type: "boolean", default: false },
+      "project-map": { type: "string" },
+      "create-missing-projects": { type: "boolean", default: false },
       "login-email": { type: "string" },
       "login-password": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
@@ -82,7 +89,15 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
   let api: PlaneWikiApi | undefined;
   let maxImageBytes = DEFAULT_FILE_SIZE_LIMIT;
   const state = loadState(statePath);
-  if (!dryRun) {
+  const email = values["login-email"] ?? io.env.PLANE_LOGIN_EMAIL;
+  const password = values["login-password"] ?? io.env.PLANE_LOGIN_PASSWORD;
+  const hasCredentials = !!(email && password) || !!io.env.PLANE_SESSION_COOKIE;
+  let projectMap: Map<string, string> | undefined;
+  if (values["project-map"]) {
+    projectMap = parseProjectMap(JSON.parse(readFileSync(resolve(values["project-map"]), "utf8")));
+  }
+  // A dry run with credentials connects read-only, to show how project pages match projects
+  if (!dryRun || (baseUrl && workspaceSlug && hasCredentials)) {
     if (!baseUrl || !workspaceSlug) {
       io.stderr("PLANE_URL and PLANE_WORKSPACE_SLUG are required (or use --dry-run)");
       return 2;
@@ -93,11 +108,11 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
       );
       return 2;
     }
-    state.baseUrl = baseUrl;
-    state.workspaceSlug = workspaceSlug;
+    if (!dryRun) {
+      state.baseUrl = baseUrl;
+      state.workspaceSlug = workspaceSlug;
+    }
     const session = new PlaneSession(baseUrl, io.env.PLANE_SESSION_COOKIE ?? "");
-    const email = values["login-email"] ?? io.env.PLANE_LOGIN_EMAIL;
-    const password = values["login-password"] ?? io.env.PLANE_LOGIN_PASSWORD;
     if (email && password) {
       await session.login(email, password);
       io.stdout(`Signed in as ${email}`);
@@ -118,6 +133,8 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
     only: values.only,
     force: values.force,
     adopt: values.adopt,
+    projectMap,
+    createMissingProjects: values["create-missing-projects"],
     statePath,
     state,
     cacheDir: defaultCacheDir(statePath),
@@ -141,6 +158,11 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
   );
   for (const [folder, counts] of Object.entries(report.visibility)) {
     io.stdout(`  ${folder}: ${counts.public} public, ${counts.private} private`);
+  }
+  const unmatched = report.projects.filter((p) => !p.project);
+  if (report.projects.length) {
+    io.stdout(`Project pages: ${report.projects.length - unmatched.length} matched, ${unmatched.length} unmatched`);
+    for (const p of unmatched) io.stdout(`  unmatched ${p.path} → add ${p.suggestion} to --project-map`);
   }
   if (report.publishPending.length) io.stdout(`Pages waiting to be published: ${report.publishPending.length}`);
   io.stdout(`Report: ${reportPath} and ${markdownPath}`);

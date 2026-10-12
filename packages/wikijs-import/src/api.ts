@@ -6,6 +6,7 @@
 
 /* oxlint-disable no-await-in-loop -- retries are sequential by design */
 import type { TPreparedImage } from "./images";
+import type { TPlaneProject } from "./projects";
 
 export class PlaneApiError extends Error {
   readonly status: number;
@@ -175,6 +176,8 @@ export type TPlanePage = {
   owned_by: string;
 };
 
+export type TProjectWiki = { id: string; project: string; root_page: string; root_page_name: string };
+
 export type TPublishResult = "published" | "unpublished" | "unavailable";
 
 /** Workspace wiki endpoints. */
@@ -205,6 +208,40 @@ export class PlaneWikiApi {
 
   async updateDescription(id: string, body: object): Promise<void> {
     await this.session.json("PATCH", `${this.base}/${id}/description/`, body);
+  }
+
+  getPage(id: string): Promise<TPlanePage & { description_html?: string | null }> {
+    return this.session.json("GET", `${this.base}/${id}/`);
+  }
+
+  /** Archives then deletes a page (Plane only deletes archived pages). */
+  async deletePage(id: string): Promise<void> {
+    await this.session.request("POST", `${this.base}/${id}/archive/`, { allowStatus: [400] });
+    await this.session.request("DELETE", `${this.base}/${id}/`, { allowStatus: [404] });
+  }
+
+  async listProjects(): Promise<TPlaneProject[]> {
+    const data = await this.session.json<TPlaneProject[] | { results: TPlaneProject[] }>(
+      "GET",
+      `/api/workspaces/${encodeURIComponent(this.workspaceSlug)}/projects/`
+    );
+    const list = Array.isArray(data) ? data : data.results;
+    return list.map((p) => ({ id: p.id, name: p.name, identifier: p.identifier }));
+  }
+
+  createProject(body: { name: string; identifier: string }): Promise<TPlaneProject> {
+    return this.session.json("POST", `/api/workspaces/${encodeURIComponent(this.workspaceSlug)}/projects/`, {
+      ...body,
+      network: 2,
+    });
+  }
+
+  /** The project's wiki section; created (with a fresh root page) when missing. */
+  async ensureProjectWiki(projectId: string): Promise<TProjectWiki & { created: boolean }> {
+    const path = `/api/workspaces/${encodeURIComponent(this.workspaceSlug)}/projects/${projectId}/wiki/`;
+    const existing = await this.session.request("GET", path, { allowStatus: [404] });
+    if (existing.status === 200) return { ...((await existing.json()) as TProjectWiki), created: false };
+    return { ...(await this.session.json<TProjectWiki>("POST", path)), created: true };
   }
 
   /** Publishes (or with `publish=false` unpublishes) a page on the docs site. */

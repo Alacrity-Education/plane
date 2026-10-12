@@ -30,6 +30,8 @@ node packages/wikijs-import/dist/cli.js --source /path/to/wikijs-repo
 | `--only <path prefix>`              | Only import pages under this Wiki.js path (e.g. `Courses/AirboxBootcamp`); missing ancestors are created                                     |
 | `--state <file>`                    | State file, default `.wikijs-import/state.json`                                                                                              |
 | `--report <file>`                   | Report, default `.wikijs-import/report.json` (a `.md` twin is written next to it)                                                            |
+| `--project-map <json>`              | JSON object `{ "<Wiki.js path>": "<project identifier or name>" }` placing `Projects/` pages into those projects' wiki sections              |
+| `--create-missing-projects`         | Create a Plane project for every `Projects/` page that matches none (see below)                                                              |
 | `--force`                           | Rewrite descriptions even when unchanged since the last run                                                                                  |
 | `--adopt`                           | Without a state entry, reuse an existing page with the same name and parent (recovery after losing the state file; that page is overwritten) |
 | `--login-email`, `--login-password` | Sign in with email/password instead of a cookie (also `PLANE_LOGIN_EMAIL` / `PLANE_LOGIN_PASSWORD`)                                          |
@@ -72,6 +74,33 @@ is skipped for pages that are already published.
 | Same page twice (folder variants, `.md` and `.html` copies)                                                          | The copy with the newest `date` wins; a warning names the other  |
 | Sibling order                                                                                                        | Alphabetical by title, `sort_order` 1000, 2000, …                |
 | Plane access                                                                                                         | Always public (= visible to workspace members)                   |
+
+### Project pages → project wiki sections
+
+Plane's wiki already groups one section per Plane project (Wiki › Projects › IDENT, each with a
+root page). The Wiki.js `/Projects/` folder is merged into those sections instead of becoming a
+plain "Projects" page:
+
+1. Every direct child of `Projects/` (a page, or a sub-folder with its pages) is a _project page_.
+   It is resolved to a Plane project by, in order:
+   - `--project-map`: path (`Projects/indxworks`, `/Projects/indxworks.md` also work) → project
+     identifier or name;
+   - its title or file slug equal to the project name or identifier, compared case-insensitively
+     without spaces, hyphens, underscores and dots (`AirBox V1.9` = `AIRBOXV19`);
+   - a prefix of at least 4 characters of one in the other (`WikiJS Fork` → `WikiJS`); ambiguous
+     matches are left unmatched.
+     With `--create-missing-projects`, a project is created for each unmatched page (name without the
+     characters Plane forbids, identifier = uppercase letters/digits of the title, max 12, unique).
+2. The project's wiki section is created when missing. If its root page has no content (or holds
+   this page from an earlier run) the Wiki.js content is written into the root, which keeps its
+   name; otherwise the page becomes a child of the root with its Wiki.js title. Sub-pages follow
+   as children. Visibility is unchanged: a public project page publishes the root (or the child).
+3. Unmatched pages stay under a fallback "Projects" folder page and are listed in the report with
+   the `--project-map` line to copy. When every project page has a project, no folder page is made.
+4. Re-runs migrate earlier imports: a page the state maps outside its project section is moved —
+   into the root (content written there, the old page archived and deleted) or under the root —
+   and the fallback "Projects" page is deleted once it has no children. A `--dry-run` with
+   credentials shows the matching (read-only).
 
 Content:
 

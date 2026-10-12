@@ -16,6 +16,15 @@ import { indexRepositoryImages, loadImageSource, locateImage, prepareImage, shri
 import { createLinkResolver } from "./links";
 import { htmlToHast, markdownToHast } from "./markdown";
 import { pathKey } from "./paths";
+import type { TProjectMatch } from "./projects";
+import {
+  decideMergeTarget,
+  deriveIdentifier,
+  matchProject,
+  PROJECTS_FOLDER_KEY,
+  projectPageNodes,
+  sanitizeProjectName,
+} from "./projects";
 import type { TImportReport, TReportPage } from "./report";
 import { summarize } from "./report";
 import { readSourcePages } from "./source";
@@ -39,6 +48,10 @@ export type TImportOptions = {
   /** Rewrite descriptions even when unchanged since the last run. */
   force?: boolean | undefined;
   statePath: string;
+  /** `--project-map`: normalized Wiki.js path → project identifier or name. */
+  projectMap?: Map<string, string> | undefined;
+  /** Create a Plane project for every unmatched project page. */
+  createMissingProjects?: boolean | undefined;
   state: TImportState;
   cacheDir: string;
   /** Upload limit of the Plane instance (FILE_SIZE_LIMIT); larger images are re-encoded. */
@@ -97,6 +110,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     pages: [],
     warnings,
     publishPending: [],
+    projects: [],
   };
 
   const sources = readSourcePages(options.sourceDir, warnings);
@@ -124,6 +138,60 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     report.pages.push(entry);
   }
 
+  // ------------------------------------------------------------ 0. project pages → Plane projects
+  const projectTargets = new Map<TTreeNode, TProjectMatch>();
+  const projectNodes = projectPageNodes(tree.roots).filter((node) => shells.has(node));
+  if (projectNodes.length && options.api) {
+    const projects = await options.api.listProjects();
+    for (const node of projectNodes) {
+      let result = matchProject(node, projects, options.projectMap);
+      if (!result.match && !result.reason && options.createMissingProjects && !options.dryRun) {
+        const identifier = deriveIdentifier(node.title, new Set(projects.map((p) => p.identifier)));
+        const created = await options.api.createProject({ name: sanitizeProjectName(node.title), identifier });
+        const project = { id: created.id, name: created.name, identifier: created.identifier };
+        projects.push(project);
+        result = { match: { project, via: "created" } };
+        log(`project  created ${project.identifier} for ${node.path}`);
+      }
+      const reportEntry = {
+        path: node.path,
+        title: node.title,
+        project: result.match?.project.identifier,
+        projectName: result.match?.project.name,
+        via: result.match?.via,
+        target: result.match && options.dryRun ? ("planned" as const) : undefined,
+        reason: result.reason,
+        suggestion: result.match ? undefined : `"${node.path}": "<project identifier>"`,
+      };
+      report.projects.push(reportEntry);
+      if (result.match) {
+        projectTargets.set(node, result.match);
+        const entry = entries.get(node);
+        if (entry) entry.project = result.match.project.identifier;
+        log(`project  ${node.path} → ${result.match.project.identifier} (${result.match.via})`);
+      } else {
+        warnings.push({
+          path: node.path,
+          message: `unmatched project page${result.reason ? ` (${result.reason})` : ""}; kept under the Projects folder page`,
+        });
+      }
+    }
+  } else if (projectNodes.length) {
+    warnings.push({
+      path: "Projects",
+      message: "project pages were not matched to Plane projects (needs API access; pass credentials to the dry run)",
+    });
+  }
+  const projectsFolder = tree.nodes.get(PROJECTS_FOLDER_KEY);
+  // The fallback folder page is only needed for project pages without a project
+  const projectsFolderRedundant =
+    !!projectsFolder?.isFolder &&
+    !projectsFolder.source &&
+    projectTargets.size > 0 &&
+    projectsFolder.children.every((child) => projectTargets.has(child));
+  const omitted = new Set<TTreeNode>();
+  if (projectsFolder && projectsFolderRedundant) omitted.add(projectsFolder);
+
   if (options.dryRun) {
     for (const line of renderTree(tree.roots.filter((root) => shells.has(root)))) {
       // the rendered tree covers everything; filter by selection when --only is set
@@ -137,10 +205,63 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     for (const page of await options.api.listPages()) existing.set(page.id, page);
     const claimed = new Set(Object.values(state.pages).map((p) => p.id));
 
+    const replaced: { id: string; path: string }[] = [];
     for (const node of all) {
       const entry = entries.get(node);
-      if (!entry) continue;
-      const parentId = node.parent ? (state.pages[node.parent.key]?.id ?? null) : null;
+      if (!entry || omitted.has(node)) continue;
+      let parentId = node.parent ? (state.pages[node.parent.key]?.id ?? null) : null;
+
+      const target = projectTargets.get(node);
+      if (target) {
+        try {
+          const section = await options.api.ensureProjectWiki(target.project.id);
+          const rootId = section.root_page;
+          const previous = state.pages[node.key];
+          const previousPage = previous ? existing.get(previous.id) : undefined;
+          const rootClaimed = Object.entries(state.pages).some(([key, p]) => key !== node.key && p.id === rootId);
+          const needsRoot =
+            previous?.id !== rootId && !(previousPage && previousPage.parent === rootId) && !rootClaimed;
+          const rootPage = needsRoot ? await options.api.getPage(rootId) : undefined;
+          if (rootPage) existing.set(rootId, { ...existing.get(rootId), ...rootPage });
+          const mode = decideMergeTarget({
+            statePageId: previous?.id,
+            statePageParent: previousPage?.archived_at ? undefined : previousPage?.parent,
+            rootId,
+            rootDescriptionHtml: rootPage?.description_html,
+            rootClaimed,
+          });
+          entry.project = target.project.identifier;
+          const reportProject = report.projects.find((p) => p.path === node.path);
+          if (reportProject) reportProject.target = mode;
+          if (mode === "root") {
+            const moved = !!previous && previous.id !== rootId;
+            if (moved && previousPage && !previousPage.archived_at) replaced.push({ id: previous.id, path: node.path });
+            state.pages[node.key] = {
+              id: rootId,
+              path: node.path,
+              title: node.title,
+              project: target.project.identifier,
+              rootName: existing.get(rootId)?.name ?? section.root_page_name,
+              contentHash: previous?.id === rootId ? previous.contentHash : undefined,
+            };
+            if (previous?.id !== rootId) delete state.assets[node.key];
+            entry.action = moved ? "moved" : previous ? "unchanged" : "merged";
+            entry.pageId = rootId;
+            if (entry.action !== "unchanged")
+              log(`${entry.action.padEnd(8)} ${node.path} → ${target.project.identifier} section root`);
+            saveState(options.statePath, state);
+            continue;
+          }
+          // Child of the section root (an existing page elsewhere is moved there)
+          if (previousPage && !previousPage.archived_at && previousPage.parent !== rootId) entry.action = "moved";
+          parentId = rootId;
+        } catch (error) {
+          entry.action = "failed";
+          entry.error = `project section: ${(error as Error).message}`;
+          log(`FAILED   ${node.path}: ${entry.error}`);
+          continue;
+        }
+      }
       if (node.parent && !parentId) {
         entry.action = "failed";
         entry.error = "parent page missing";
@@ -164,7 +285,12 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
         if (!current) {
           const created = await options.api.createPage({ ...desired, access: PLANE_PUBLIC_ACCESS });
           existing.set(created.id, created);
-          state.pages[node.key] = { id: created.id, path: node.path, title: node.title };
+          state.pages[node.key] = {
+            id: created.id,
+            path: node.path,
+            title: node.title,
+            project: target?.project.identifier,
+          };
           delete state.assets[node.key];
           entry.action = "created";
           log(`created  ${node.path} → ${created.id}`);
@@ -177,8 +303,8 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
           if (Object.keys(changes).length) {
             const updated = await options.api.updatePage(current.id, changes);
             existing.set(updated.id, { ...current, ...updated });
-            if (entry.action !== "adopted") entry.action = "updated";
-            log(`updated  ${node.path} (${Object.keys(changes).join(", ")})`);
+            if (entry.action !== "adopted" && entry.action !== "moved") entry.action = "updated";
+            log(`${entry.action.padEnd(8)} ${node.path} (${Object.keys(changes).join(", ")})`);
           } else if (entry.action !== "adopted") entry.action = "unchanged";
           const previous = state.pages[node.key];
           state.pages[node.key] = {
@@ -186,6 +312,8 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
             id: current.id,
             path: node.path,
             title: node.title,
+            project: target?.project.identifier,
+            rootName: undefined,
           };
         }
         entry.pageId = state.pages[node.key]?.id;
@@ -195,6 +323,51 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
         entry.error = (error as Error).message;
         log(`FAILED   ${node.path}: ${entry.error}`);
       }
+    }
+
+    // Pages this tool created that were replaced by a project section root
+    const liveChildren = (id: string) => [...existing.values()].filter((p) => p.parent === id && !p.archived_at);
+    for (const old of replaced) {
+      if (liveChildren(old.id).length) {
+        warnings.push({ path: old.path, message: `old page ${old.id} kept: it still has child pages` });
+        continue;
+      }
+      try {
+        await options.api.deletePage(old.id);
+        existing.delete(old.id);
+        log(`deleted  old page of ${old.path} (${old.id})`);
+      } catch (error) {
+        warnings.push({ path: old.path, message: `old page ${old.id} not deleted: ${(error as Error).message}` });
+      }
+    }
+    if (projectsFolder && projectsFolderRedundant) {
+      const folderEntry = entries.get(projectsFolder);
+      const folderState = state.pages[projectsFolder.key];
+      if (folderEntry) folderEntry.action = "skipped";
+      if (folderState) {
+        const stillUsed = Object.entries(state.pages).some(
+          ([key, p]) => key !== projectsFolder.key && existing.get(p.id)?.parent === folderState.id
+        );
+        if (stillUsed || liveChildren(folderState.id).length) {
+          warnings.push({ path: projectsFolder.path, message: "Projects folder page kept: it still has child pages" });
+        } else {
+          try {
+            if (existing.has(folderState.id)) await options.api.deletePage(folderState.id);
+            existing.delete(folderState.id);
+            delete state.pages[projectsFolder.key];
+            delete state.assets[projectsFolder.key];
+            if (folderEntry) folderEntry.action = "deleted";
+            log(`deleted  ${projectsFolder.path} folder page (every project page moved to its project)`);
+          } catch (error) {
+            warnings.push({
+              path: projectsFolder.path,
+              message: `folder page not deleted: ${(error as Error).message}`,
+            });
+          }
+        }
+      }
+      if (folderEntry) folderEntry.pageId = state.pages[projectsFolder.key]?.id;
+      saveState(options.statePath, state);
     }
   }
 
@@ -210,7 +383,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
 
   for (const node of all) {
     const entry = entries.get(node);
-    if (!entry || !contentNodes.has(node) || entry.action === "failed") continue;
+    if (!entry || !contentNodes.has(node) || entry.action === "failed" || omitted.has(node)) continue;
     const pageId = entry.pageId;
     const pageWarnings: TWarning[] = [];
     try {
@@ -288,13 +461,15 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
         entry.content = node.source ? "planned" : "empty";
         continue;
       }
-      const hash = sha(`${node.title}\n${html}\n${codeLanguages.join(",")}`);
       const pageState = state.pages[node.key];
+      // A project section root keeps its own name (the project's)
+      const title = pageState?.rootName ?? node.title;
+      const hash = sha(`${title}\n${html}\n${codeLanguages.join(",")}`);
       if (pageState?.contentHash === hash && !options.force) {
         entry.content = "unchanged";
         continue;
       }
-      const description = await buildDescription(html, node.title, codeLanguages);
+      const description = await buildDescription(html, title, codeLanguages);
       if (description.codeBlockMismatch) {
         pageWarnings.push({ path: node.path, message: "code block languages could not be matched; some were dropped" });
       }
@@ -347,7 +522,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     };
     for (const node of all) {
       const entry = entries.get(node);
-      if (!entry || !contentNodes.has(node) || !entry.pageId) continue;
+      if (!entry || !contentNodes.has(node) || !entry.pageId || omitted.has(node)) continue;
       try {
         if ((await publishNode(node, entry)) === "unavailable") pending.push(node);
       } catch (error) {

@@ -12,7 +12,11 @@ export type TPageState = {
   path: string;
   title: string;
   /** Hash of the last description written (skips unchanged pages on re-runs). */
-  contentHash?: string;
+  contentHash?: string | undefined;
+  /** Identifier of the Plane project whose wiki section holds the page. */
+  project?: string | undefined;
+  /** Set when the page is the project section's root page: the root keeps this name. */
+  rootName?: string | undefined;
 };
 
 export type TImportState = {

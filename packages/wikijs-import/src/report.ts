@@ -6,7 +6,31 @@
 
 import type { TVisibility, TWarning } from "./types";
 
-export type TPageAction = "created" | "updated" | "unchanged" | "adopted" | "skipped" | "failed" | "planned";
+export type TPageAction =
+  | "created"
+  | "updated"
+  | "unchanged"
+  | "adopted"
+  | "merged"
+  | "moved"
+  | "deleted"
+  | "skipped"
+  | "failed"
+  | "planned";
+
+export type TReportProject = {
+  path: string;
+  title: string;
+  /** Matched project identifier, absent when unmatched. */
+  project?: string | undefined;
+  projectName?: string | undefined;
+  via?: "map" | "exact" | "prefix" | "created" | undefined;
+  /** Where the content went: the section root page or a child of it. */
+  target?: "root" | "child" | "planned" | undefined;
+  reason?: string | undefined;
+  /** For unmatched pages: the `--project-map` line to copy. */
+  suggestion?: string | undefined;
+};
 
 export type TReportPage = {
   path: string;
@@ -22,6 +46,7 @@ export type TReportPage = {
   content?: "written" | "unchanged" | "empty" | "failed" | "planned" | undefined;
   images?: number | undefined;
   convertedImages?: string[] | undefined;
+  project?: string | undefined;
   publish?: "published" | "already-published" | "unpublished" | "unavailable" | "not-published" | "failed" | undefined;
   error?: string | undefined;
 };
@@ -38,6 +63,7 @@ export type TImportReport = {
   pages: TReportPage[];
   warnings: TWarning[];
   publishPending: string[];
+  projects: TReportProject[];
 };
 
 export function summarize(report: TImportReport): void {
@@ -72,6 +98,35 @@ export function renderMarkdownReport(report: TImportReport): string {
   if (report.publishPending.length) {
     lines.push("", "## Pages still to publish (publish endpoint unavailable)", "");
     for (const path of report.publishPending) lines.push(`- ${path}`);
+  }
+  if (report.projects.length) {
+    lines.push(
+      "",
+      "## Project pages",
+      "",
+      "| Wiki.js page | Title | Plane project | Match | Target |",
+      "| --- | --- | --- | --- | --- |"
+    );
+    for (const p of report.projects) {
+      const project = p.project ? `${p.projectName} (${p.project})` : `unmatched${p.reason ? ` — ${p.reason}` : ""}`;
+      lines.push(
+        `| \`${p.path}\` | ${p.title.replace(/\|/g, "\\|")} | ${project} | ${p.via ?? ""} | ${p.target ?? ""} |`
+      );
+    }
+    const unmatched = report.projects.filter((p) => !p.project);
+    if (unmatched.length) {
+      lines.push(
+        "",
+        "### Unmatched project pages",
+        "",
+        "They stay under the Projects folder page. Map them with `--project-map`:",
+        "",
+        "```json",
+        "{"
+      );
+      lines.push(unmatched.map((p) => `  ${p.suggestion}`).join(",\n"));
+      lines.push("}", "```");
+    }
   }
   lines.push("", "## Pages", "", "| Path | Title | Visibility | Action | Content | Images | Publish |");
   lines.push("| --- | --- | --- | --- | --- | --- | --- |");

@@ -14,6 +14,7 @@ export * from "./links";
 export * from "./main";
 export * from "./markdown";
 export * from "./paths";
+export * from "./projects";
 export * from "./report";
 export * from "./source";
 export * from "./state";
