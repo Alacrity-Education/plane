@@ -111,9 +111,20 @@ function markCellBreaks(node: Element): void {
   }
 }
 
+/** Prefixes a root-relative URL with the site's base URL (Docusaurus does this for Markdown only). */
+export function withBaseUrl(url: string, baseUrl = "/"): string {
+  if (!url.startsWith("/") || url.startsWith("//")) return url;
+  const base = baseUrl.replace(/\/+$/, "");
+  return base && !url.startsWith(`${base}/`) ? `${base}${url}` : url;
+}
+
 /** Serialises a table as one CommonMark HTML block (no blank lines, which would end the block). */
-export function tableToRawHtml(table: Element): string {
+export function tableToRawHtml(table: Element, baseUrl = "/"): string {
   visit(table, "element", (node) => {
+    if (node.tagName === "img" && node.properties) {
+      node.properties.src = withBaseUrl(str(node.properties.src), baseUrl);
+      return;
+    }
     if (node.tagName !== "a" || !node.properties?.[FILE_LINK_ATTRIBUTE]) return;
     delete node.properties[FILE_LINK_ATTRIBUTE];
     const href = str(node.properties.href);
@@ -122,7 +133,7 @@ export function tableToRawHtml(table: Element): string {
   return toHtml(table, { closeSelfClosing: true }).replace(/\n\s*\n/g, "\n");
 }
 
-const handlers: Record<string, Handle> = {
+const createHandlers = (baseUrl: string): Record<string, Handle> => ({
   img: (state, node) => {
     const url = str(node.properties?.src);
     if (!url) return undefined;
@@ -131,7 +142,7 @@ const handlers: Record<string, Handle> = {
     return image;
   },
   table: (state, node) => {
-    if (!isSimpleTable(node)) return html(tableToRawHtml(node));
+    if (!isSimpleTable(node)) return html(tableToRawHtml(node, baseUrl));
     markCellBreaks(node);
     return defaultHandlers.table(state, node);
   },
@@ -151,7 +162,7 @@ const handlers: Record<string, Handle> = {
     const title = str(props.dataTitle).replace(/[[\]\\]/g, "");
     return [html(`${fence}${str(props.dataKind) || "note"}${title ? `[${title}]` : ""}`), ...body, html(fence)];
   },
-};
+});
 
 /**
  * TipTap has no loose lists, but every <li> wraps its text in <p>, which hast-util-to-mdast reads
@@ -176,7 +187,7 @@ export function convertWikiHtmlToMarkdown(descriptionHtml: string, ctx: TMarkdow
     .use(rehypeParse, { fragment: true })
     .use(rehypeWikiPreprocess, ctx)
     .use(addSpacesToCheckboxes)
-    .use(rehypeRemark, { handlers })
+    .use(rehypeRemark, { handlers: createHandlers(ctx.baseUrl ?? "/") })
     .use(remarkGfm)
     .use(remarkTightLists)
     .use(remarkStringify, {

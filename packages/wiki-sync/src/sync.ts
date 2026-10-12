@@ -42,6 +42,8 @@ export type TSyncOptions = {
   publicPath: string;
   /** routeBasePath of the docs instance, used for rewritten links ("/wiki"). */
   routeBasePath: string;
+  /** Docusaurus baseUrl ("/" or "/<repo>/"), applied to raw-HTML image URLs. */
+  baseUrl?: string | undefined;
   cachePath: string;
   concurrency: number;
   callouts: TCalloutMode;
@@ -192,6 +194,7 @@ export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
         files: linkedFiles,
         members,
         callouts: options.callouts,
+        baseUrl: options.baseUrl,
       });
       const frontMatter = buildFrontMatter(
         { ...node, page: { ...page, ...detail, parent: page.parent } },

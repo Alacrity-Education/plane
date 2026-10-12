@@ -11,7 +11,7 @@ import { FixtureSource } from "./fixture";
 import { runSync } from "./sync";
 import type { IWikiSource, TCalloutMode } from "./types";
 
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 
 const HELP = `plane-wiki-sync ${VERSION}
 
@@ -31,6 +31,7 @@ Options:
   --assets <dir>         Folder for images and linked files   (default: static/wiki-assets)
   --public-path <path>   URL of the assets folder on the site (default: /wiki-assets)
   --route-base <path>    routeBasePath of the docs instance   (default: /wiki)
+  --base-url <path>      Docusaurus baseUrl, e.g. /my-repo/    (default: $DOCS_BASE_URL or /)
   --cache <file>         Manifest used for incremental runs   (default: .wiki-cache/manifest.json)
   --concurrency <n>      Parallel API requests                (default: 5)
   --callouts <mode>      admonition | html                    (default: admonition)
@@ -59,6 +60,7 @@ export async function main(argv: string[], io: TCliIO): Promise<number> {
         assets: { type: "string", default: "static/wiki-assets" },
         "public-path": { type: "string", default: "/wiki-assets" },
         "route-base": { type: "string", default: "/wiki" },
+        "base-url": { type: "string" },
         cache: { type: "string", default: ".wiki-cache/manifest.json" },
         concurrency: { type: "string", default: "5" },
         callouts: { type: "string", default: "admonition" },
@@ -92,6 +94,12 @@ export async function main(argv: string[], io: TCliIO): Promise<number> {
   const concurrency = Number.parseInt(values.concurrency, 10);
   if (!Number.isFinite(concurrency) || concurrency < 1) {
     io.stderr(`--concurrency must be a positive integer, got "${values.concurrency}"`);
+    return 2;
+  }
+
+  const baseUrl = (values["base-url"] ?? io.env.DOCS_BASE_URL ?? "/").trim() || "/";
+  if (!baseUrl.startsWith("/") || baseUrl.startsWith("//")) {
+    io.stderr(`--base-url must be a root-relative path such as "/" or "/my-repo/", got "${baseUrl}"`);
     return 2;
   }
 
@@ -137,6 +145,7 @@ export async function main(argv: string[], io: TCliIO): Promise<number> {
       assetsDir: resolve(values.assets),
       publicPath: values["public-path"],
       routeBasePath: values["route-base"],
+      baseUrl,
       cachePath: resolve(values.cache),
       concurrency,
       callouts,

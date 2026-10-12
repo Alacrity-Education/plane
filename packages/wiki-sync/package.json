@@ -1,6 +1,6 @@
 {
   "name": "@plane/wiki-sync",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Export a Plane workspace Wiki to a Docusaurus docs instance (CommonMark .md + _category_.json)",
   "license": "AGPL-3.0",

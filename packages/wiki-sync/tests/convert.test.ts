@@ -142,6 +142,17 @@ describe("convertWikiHtmlToMarkdown: TipTap nodes", () => {
     ).toBe(`![diagram.png](/wiki-assets/${ASSET}.png)\n\n_Diode construction._\\\n_Electron&#x20;_**_pressure_**\n`);
   });
 
+  it("raw HTML tables get the site base URL on image sources", () => {
+    const table =
+      '<table><tbody><tr><th colspan="2"><img src="/wiki-assets/logo.png" alt="logo" /></th></tr><tr><td><p>a</p></td><td><p>b</p></td></tr></tbody></table>';
+    expect(md(table)).toContain('<img src="/wiki-assets/logo.png" alt="logo" />');
+    expect(md(table, { baseUrl: "/wiki-docs/" })).toContain('<img src="/wiki-docs/wiki-assets/logo.png" alt="logo" />');
+    // Already prefixed or external sources are left alone.
+    expect(
+      md(table.replace("/wiki-assets/logo.png", "https://cdn.example.com/x.png"), { baseUrl: "/wiki-docs/" })
+    ).toContain('src="https://cdn.example.com/x.png"');
+  });
+
   it("merged cells -> raw HTML table with sanitised attributes", () => {
     expect(
       md(

@@ -77,6 +77,7 @@ Environment:
 | `PLANE_URL`            | `https://plane.example.com` | Plane base URL (also used for "Edit this page" links) |
 | `PLANE_WORKSPACE_SLUG` | `acme`                      | workspace slug                                        |
 | `PLANE_API_KEY`        | `plane_api_...`             | API token, sent as `X-Api-Key`                        |
+| `DOCS_BASE_URL`        | `/wiki-docs/`               | Docusaurus `baseUrl`, same as `--base-url` (optional) |
 
 Only pages that are **published to the docs site** are exported: open the page in Plane and choose
 **Publish to docs site** in its actions menu (workspace admins and members; the header then shows a
@@ -95,6 +96,7 @@ Flags:
 --assets <dir>         Folder for images and linked files   (default: static/wiki-assets)
 --public-path <path>   URL of the assets folder on the site (default: /wiki-assets)
 --route-base <path>    routeBasePath of the docs instance   (default: /wiki)
+--base-url <path>      Docusaurus baseUrl, e.g. /my-repo/    (default: $DOCS_BASE_URL or /)
 --cache <file>         Manifest used for incremental runs   (default: .wiki-cache/manifest.json)
 --concurrency <n>      Parallel API requests                (default: 5)
 --callouts <mode>      admonition | html                    (default: admonition)

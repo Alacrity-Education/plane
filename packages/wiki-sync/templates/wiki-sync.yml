@@ -45,6 +45,9 @@ jobs:
       PLANE_URL: ${{ vars.PLANE_URL }}
       PLANE_WORKSPACE_SLUG: ${{ vars.PLANE_WORKSPACE_SLUG }}
       PLANE_API_KEY: ${{ secrets.PLANE_API_KEY }}
+      # Docusaurus baseUrl: "/<repo>/" for a GitHub Pages project site. Set the DOCS_BASE_URL
+      # repository variable to "/" when the site is served from a custom domain.
+      DOCS_BASE_URL: ${{ vars.DOCS_BASE_URL || format('/{0}/', github.event.repository.name) }}
     steps:
       - uses: actions/checkout@v4
 

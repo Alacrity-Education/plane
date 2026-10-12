@@ -30,6 +30,12 @@ export type TPreprocessContext = {
    * (`/api/assets/v2/workspaces/<slug>/download/<id>/`); missing ids keep the link text only.
    */
   files?: Map<string, TPreprocessAsset>;
+  /**
+   * Docusaurus `baseUrl` ("/" or "/<repo>/"). Markdown images and links get it from Docusaurus,
+   * but raw HTML (tables with merged cells) is passed through untouched, so `<img src>` there is
+   * prefixed explicitly.
+   */
+  baseUrl?: string | undefined;
   /** user id -> display name; unknown users render as "@member". */
   members?: Map<string, string>;
   callouts: TCalloutMode;
