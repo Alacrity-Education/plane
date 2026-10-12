@@ -161,7 +161,7 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
       .join(", ")}`
   );
   for (const [folder, counts] of Object.entries(report.visibility)) {
-    io.stdout(`  ${folder}: ${counts.public} public, ${counts.private} private`);
+    io.stdout(`  ${folder}: ${counts.public} public, ${counts.members} members only, ${counts.admins} admins only`);
   }
   const unmatched = report.projects.filter((p) => !p.project);
   if (report.projects.length) {

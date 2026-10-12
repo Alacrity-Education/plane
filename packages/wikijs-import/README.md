@@ -74,7 +74,7 @@ is skipped for pages that are already published.
 | Root page / `home.md`                                                                                                | Top-level page (home first)                                      |
 | Same page twice (folder variants, `.md` and `.html` copies)                                                          | The copy with the newest `date` wins; a warning names the other  |
 | Sibling order                                                                                                        | Alphabetical by title, `sort_order` 1000, 2000, …                |
-| Plane access                                                                                                         | Always public (= visible to workspace members)                   |
+| Plane access                                                                                                         | Public, members only or admins only (see Visibility)             |
 
 ### Project pages → project wiki sections
 
@@ -135,27 +135,39 @@ Content:
 
 ## Visibility (private/public separation)
 
-| Location                                                          | Default                           | Override                              |
-| ----------------------------------------------------------------- | --------------------------------- | ------------------------------------- |
-| Root pages                                                        | public                            |                                       |
-| `/Courses/`, `/Infrastructure/`                                   | public                            |                                       |
-| `/Projects/`, `/Activities/`, `/Meetings/`, `/Guides/`, `/Board/` | private                           | tag `public` makes the page public    |
-| Any other top-level folder                                        | private (warned)                  | tag `public`                          |
-| `published: false`                                                | private, regardless of the above  |                                       |
-| Folder pages                                                      | default of their top-level folder | flags of their auxiliary page, if any |
+| Location                                               | Wiki.js visibility                | Override                              |
+| ------------------------------------------------------ | --------------------------------- | ------------------------------------- |
+| Root pages                                             | public                            |                                       |
+| `/Courses/`, `/Infrastructure/`                        | public                            |                                       |
+| `/Projects/`, `/Activities/`, `/Meetings/`, `/Guides/` | private                           | tag `public` makes the page public    |
+| `/Board/` (and the Board folder page)                  | admins                            | none: tags and flags are ignored      |
+| Any other top-level folder                             | private (warned)                  | tag `public`                          |
+| `published: false`                                     | private (Board pages stay admins) |                                       |
+| Folder pages                                           | default of their top-level folder | flags of their auxiliary page, if any |
 
-Every page is created with Plane access _public_ (workspace members can read it). Pages that resolve
-to **public** are additionally published to the docs site (`POST …/wiki/pages/<id>/publish/`);
-private pages that are found published are unpublished (`DELETE`). If the publish endpoint is not
-available, the run continues, retries once at the end and lists the pages still to publish in the
-report (`publishPending`).
+Each visibility maps to a Plane page access level:
+
+| Visibility | Plane access     | Who sees the page                                | Docs site | Dry run     |
+| ---------- | ---------------- | ------------------------------------------------ | --------- | ----------- |
+| public     | `0` public       | every workspace member, guests included          | published | `[public]`  |
+| private    | `3` members only | workspace admins and members, never guests       | never     | `[members]` |
+| admins     | `2` admins only  | workspace admins (and the importing user, owner) | never     | `[admins]`  |
+
+Public pages are published to the docs site (`POST …/wiki/pages/<id>/publish/`); other pages that
+are found published are unpublished (`DELETE`; the API also unpublishes a page when its access stops
+being public). Re-runs compare the access of every existing page (including project section roots)
+with the resolved one and update it (`PATCH`); those pages are reported as `updated` with
+`accessUpdated: true` and counted in the summary as `access_updated`. If the publish endpoint is
+not available, the run continues, retries once at the end and lists the pages still to publish in
+the report (`publishPending`).
 
 ## Report
 
 `report.json` / `report.md` list every page with its source file, visibility (and why), what
-happened to the page (`created`, `updated`, `unchanged`, `adopted`, `failed`), to its content
-(`written`, `unchanged`, `empty`), image count, conversions and publish result, followed by
-counts per top-level folder and all warnings.
+happened to the page (`created`, `updated`, `unchanged`, `adopted`, `failed`; `(access updated)` when
+its Plane access changed), to its content (`written`, `unchanged`, `empty`), image count, conversions
+and publish result, followed by counts per top-level folder and access level (public / members only /
+admins only) and all warnings.
 
 ## Development
 

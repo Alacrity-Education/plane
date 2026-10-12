@@ -32,8 +32,9 @@ import type { TImportState } from "./state";
 import { saveState } from "./state";
 import { buildTree, flattenTree, renderTree } from "./tree";
 import type { TTreeNode, TWarning } from "./types";
+import { PLANE_ACCESS, planeAccessFor } from "./visibility";
 
-export const PLANE_PUBLIC_ACCESS = 0;
+export const PLANE_PUBLIC_ACCESS = PLANE_ACCESS.public;
 
 export type TImportOptions = {
   sourceDir: string;
@@ -136,6 +137,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
       source: node.source?.file,
       visibility: node.visibility,
       visibilityReason: node.visibilityReason,
+      access: planeAccessFor(node.visibility),
       action: options.dryRun ? "planned" : "skipped",
       pageId: state.pages[node.key]?.id,
     };
@@ -252,6 +254,15 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
             if (previous?.id !== rootId) delete state.assets[node.key];
             entry.action = moved ? "moved" : previous ? "unchanged" : "merged";
             entry.pageId = rootId;
+            // the section root carries the page's access too
+            const rootAccess = planeAccessFor(node.visibility);
+            const currentRoot = existing.get(rootId);
+            if (currentRoot && currentRoot.access !== rootAccess) {
+              const updated = await options.api.updatePage(rootId, { access: rootAccess });
+              existing.set(rootId, { ...currentRoot, ...updated });
+              entry.accessUpdated = true;
+              if (entry.action === "unchanged") entry.action = "updated";
+            }
             if (entry.action !== "unchanged")
               log(`${entry.action.padEnd(8)} ${node.path} → ${target.project.identifier} section root`);
             saveState(options.statePath, state);
@@ -273,6 +284,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
         continue;
       }
       const desired = { name: node.title.slice(0, 255), parent: parentId, sort_order: node.sortOrder };
+      const desiredAccess = planeAccessFor(node.visibility);
       try {
         let current = state.pages[node.key] ? existing.get(state.pages[node.key]?.id ?? "") : undefined;
         if (current?.archived_at) current = undefined;
@@ -288,7 +300,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
           }
         }
         if (!current) {
-          const created = await options.api.createPage({ ...desired, access: PLANE_PUBLIC_ACCESS });
+          const created = await options.api.createPage({ ...desired, access: desiredAccess });
           existing.set(created.id, created);
           state.pages[node.key] = {
             id: created.id,
@@ -304,7 +316,11 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
           if (current.name !== desired.name) changes.name = desired.name;
           if ((current.parent ?? null) !== desired.parent) changes.parent = desired.parent;
           if (current.sort_order !== desired.sort_order) changes.sort_order = desired.sort_order;
-          if (current.access !== PLANE_PUBLIC_ACCESS) changes.access = PLANE_PUBLIC_ACCESS;
+          // the API unpublishes pages that stop being public
+          if (current.access !== desiredAccess) {
+            changes.access = desiredAccess;
+            entry.accessUpdated = true;
+          }
           if (Object.keys(changes).length) {
             const updated = await options.api.updatePage(current.id, changes);
             existing.set(updated.id, { ...current, ...updated });

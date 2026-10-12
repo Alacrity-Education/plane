@@ -30,7 +30,11 @@ export type TSourcePage = {
   body: string;
 };
 
-export type TVisibility = "public" | "private";
+/**
+ * Resolved Wiki.js visibility: `public` (published to the docs site), `private` (Wiki.js-private, kept from
+ * guests) or `admins` (the Board folder, workspace admins only).
+ */
+export type TVisibility = "public" | "private" | "admins";
 
 export type TTreeNode = {
   /** Normalized key (see TSourcePage.key). */

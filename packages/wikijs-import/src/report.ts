@@ -5,6 +5,7 @@
  */
 
 import type { TVisibility, TWarning } from "./types";
+import { accessLabel } from "./visibility";
 
 export type TPageAction =
   | "created"
@@ -48,6 +49,10 @@ export type TReportPage = {
   convertedImages?: string[] | undefined;
   project?: string | undefined;
   publish?: "published" | "already-published" | "unpublished" | "unavailable" | "not-published" | "failed" | undefined;
+  /** Plane access the page gets (0 public, 2 admins only, 3 members only). */
+  access?: number | undefined;
+  /** Set when an existing page had another access and was updated to `access`. */
+  accessUpdated?: boolean | undefined;
   error?: string | undefined;
 };
 
@@ -59,7 +64,8 @@ export type TImportReport = {
   workspaceSlug?: string | undefined;
   baseUrl?: string | undefined;
   summary: Record<string, number>;
-  visibility: Record<string, { public: number; private: number }>;
+  /** Pages per top-level folder and Plane access level. */
+  visibility: Record<string, { public: number; members: number; admins: number }>;
   pages: TReportPage[];
   warnings: TWarning[];
   publishPending: string[];
@@ -73,10 +79,11 @@ export function summarize(report: TImportReport): void {
     summary[page.action] = (summary[page.action] ?? 0) + 1;
     if (page.content) summary[`content_${page.content}`] = (summary[`content_${page.content}`] ?? 0) + 1;
     if (page.publish) summary[`publish_${page.publish}`] = (summary[`publish_${page.publish}`] ?? 0) + 1;
+    if (page.accessUpdated) summary.access_updated = (summary.access_updated ?? 0) + 1;
     summary.images = (summary.images ?? 0) + (page.images ?? 0);
     const top = page.path.includes("/") || page.kind === "folder" ? (page.path.split("/")[0] ?? "") : "(root)";
-    const bucket = (visibility[top] ??= { public: 0, private: 0 });
-    bucket[page.visibility]++;
+    const bucket = (visibility[top] ??= { public: 0, members: 0, admins: 0 });
+    bucket[accessLabel(page.visibility)]++;
   }
   summary.warnings = report.warnings.length;
   report.summary = summary;
@@ -91,9 +98,15 @@ export function renderMarkdownReport(report: TImportReport): string {
   lines.push(`- Started: ${report.startedAt}`, `- Finished: ${report.finishedAt ?? "-"}`, "");
   lines.push("## Summary", "", "| Metric | Count |", "| --- | --- |");
   for (const [key, value] of Object.entries(report.summary)) lines.push(`| ${key} | ${value} |`);
-  lines.push("", "## Visibility per top-level folder", "", "| Folder | Public | Private |", "| --- | --- | --- |");
+  lines.push(
+    "",
+    "## Visibility per top-level folder",
+    "",
+    "| Folder | Public | Members only | Admins only |",
+    "| --- | --- | --- | --- |"
+  );
   for (const [folder, counts] of Object.entries(report.visibility)) {
-    lines.push(`| ${folder} | ${counts.public} | ${counts.private} |`);
+    lines.push(`| ${folder} | ${counts.public} | ${counts.members} | ${counts.admins} |`);
   }
   if (report.publishPending.length) {
     lines.push("", "## Pages still to publish (publish endpoint unavailable)", "");
@@ -134,8 +147,10 @@ export function renderMarkdownReport(report: TImportReport): string {
     const cells = [
       `\`${page.path}\`${page.kind === "folder" ? " (folder)" : ""}`,
       page.title.replace(/\|/g, "\\|"),
-      `${page.visibility} (${page.visibilityReason})`,
-      page.action + (page.error ? `: ${page.error.replace(/\|/g, "\\|").slice(0, 120)}` : ""),
+      `[${accessLabel(page.visibility)}] ${page.visibility} (${page.visibilityReason})`,
+      page.action +
+        (page.accessUpdated ? " (access updated)" : "") +
+        (page.error ? `: ${page.error.replace(/\|/g, "\\|").slice(0, 120)}` : ""),
       page.content ?? "",
       String(page.images ?? 0) + (page.convertedImages?.length ? ` (${page.convertedImages.length} converted)` : ""),
       page.publish ?? "",

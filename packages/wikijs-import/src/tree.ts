@@ -6,7 +6,7 @@
 
 import { pathKey } from "./paths";
 import type { TSourcePage, TTreeNode, TWarning } from "./types";
-import { resolveVisibility } from "./visibility";
+import { accessLabel, resolveVisibility } from "./visibility";
 
 export const SORT_ORDER_STEP = 1000;
 
@@ -147,7 +147,7 @@ export function flattenTree(roots: TTreeNode[]): TTreeNode[] {
 export function renderTree(roots: TTreeNode[]): string[] {
   const lines: string[] = [];
   const visit = (node: TTreeNode, depth: number) => {
-    const marker = node.visibility === "public" ? "[public] " : "[private]";
+    const marker = `[${accessLabel(node.visibility)}]`.padEnd(9);
     const kind = node.isFolder ? `${node.title}/${node.source ? "" : " (folder only)"}` : node.title;
     lines.push(`${"  ".repeat(depth)}${marker} ${kind}  — ${node.path} (${node.visibilityReason})`);
     node.children.forEach((child) => visit(child, depth + 1));
