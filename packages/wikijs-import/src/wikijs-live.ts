@@ -77,7 +77,7 @@ export function unquotePath(value: string): string {
 export function pageFileContent(page: TWikiJsPage): string {
   const tags = page.tags.map((t) => t.tag).join(", ");
   const meta =
-    `title: ${page.title}\ndescription: ${page.description ?? "None"}\npublished: ${page.isPublished ? "true" : "false"}\n` +
+    `title: ${page.title}\ndescription: ${page.description ?? ""}\npublished: ${page.isPublished ? "true" : "false"}\n` +
     `date: ${page.updatedAt}\ntags: ${tags}\neditor: ${page.editor}\ndateCreated: ${page.createdAt}\n`;
   const header = page.editor === "markdown" ? `---\n${meta}---\n\n` : `<!--\n${meta}-->\n\n`;
   return `${header}${page.content.replace(/\n+$/, "")}\n`;
