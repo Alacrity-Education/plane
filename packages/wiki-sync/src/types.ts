@@ -29,6 +29,8 @@ export type TWikiPageSummary = {
   created_at?: string;
   updated_at: string;
   workspace?: string;
+  /** Always true in the feed, which only lists pages published to the docs site (missing on older Plane versions). */
+  is_published?: boolean;
   /** Missing on older Plane versions; treated as null. */
   project_wiki?: TWikiProjectWiki | null;
 };

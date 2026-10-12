@@ -1,6 +1,6 @@
 # @plane/wiki-sync
 
-`plane-wiki-sync` exports the public pages of a Plane workspace **Wiki** into a
+`plane-wiki-sync` exports the published pages of a Plane workspace **Wiki** into a
 [Docusaurus 3](https://docusaurus.io) docs instance: one CommonMark `.md` file per page, a folder
 with `index.md` + `_category_.json` for every page with children, and the page images downloaded
 into `static/`. It runs before `docusaurus build`, typically in GitHub Actions on a schedule.
@@ -78,8 +78,13 @@ Environment:
 | `PLANE_WORKSPACE_SLUG` | `acme`                      | workspace slug                                        |
 | `PLANE_API_KEY`        | `plane_api_...`             | API token, sent as `X-Api-Key`                        |
 
+Only pages that are **published to the docs site** are exported: open the page in Plane and choose
+**Publish to docs site** in its actions menu (workspace admins and members; the header then shows a
+globe icon). Only public, non-archived pages can be published, and making a page private, archiving
+or deleting it unpublishes it. **Unpublish from docs site** removes it from the next export.
+
 Create the token for a dedicated bot user that is a workspace **guest**: the export endpoint only
-returns public, non-archived wiki pages anyway, and a guest token cannot change anything. Store it
+returns published, public, non-archived wiki pages anyway, and a guest token cannot change anything. Store it
 as the `PLANE_API_KEY` repository secret; `PLANE_URL` and `PLANE_WORKSPACE_SLUG` as repository
 variables.
 
@@ -105,17 +110,17 @@ scheduled run usually costs one list request plus one request per edited page.
 
 ## Output
 
-| Plane                                  | Docusaurus                                                                                     |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| page without children                  | `wiki/<path>.md`                                                                               |
-| page with children                     | `wiki/<path>/index.md` + `wiki/<path>/_category_.json` (`link` to that doc, `collapsed: true`) |
-| `id`                                   | front matter `id` (stable across renames); doc id = folder + uuid                              |
-| `name`                                 | `title`, `sidebar_label`; slug from the name, de-duplicated among siblings (`faq`, `faq-2`)    |
-| `sort_order`                           | `sidebar_position` / category `position`                                                       |
-| `description_stripped`                 | `description` (160 chars)                                                                      |
-| `updated_at`                           | `last_update.date`                                                                             |
-| page URL in Plane                      | `custom_edit_url`                                                                              |
-| parent not exported (private/archived) | page moves to the root                                                                         |
+| Plane                             | Docusaurus                                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| page without children             | `wiki/<path>.md`                                                                               |
+| page with children                | `wiki/<path>/index.md` + `wiki/<path>/_category_.json` (`link` to that doc, `collapsed: true`) |
+| `id`                              | front matter `id` (stable across renames); doc id = folder + uuid                              |
+| `name`                            | `title`, `sidebar_label`; slug from the name, de-duplicated among siblings (`faq`, `faq-2`)    |
+| `sort_order`                      | `sidebar_position` / category `position`                                                       |
+| `description_stripped`            | `description` (160 chars)                                                                      |
+| `updated_at`                      | `last_update.date`                                                                             |
+| page URL in Plane                 | `custom_edit_url`                                                                              |
+| parent not exported (unpublished) | page moves to the root                                                                         |
 
 ### Project wiki sections
 
