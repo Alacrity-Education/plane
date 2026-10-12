@@ -191,4 +191,29 @@ describe("runImport: project pages", () => {
     expect(state.pages.projects).toBeUndefined();
     expect(state.pages["projects/spin-motor"]?.project).toBe("SPINMOTOR");
   });
+
+  it("keeps every project page under the Projects folder with --no-project-sections", async () => {
+    const repo = makeRepo();
+    const api = new FakeApi();
+    api.addProject("Spin Motor", "SPINMOTOR"); // would match by name
+    const state = emptyState();
+    const result = await runImport({
+      sourceDir: repo,
+      dryRun: false,
+      statePath: join(repo, ".state", "state.json"),
+      state,
+      cacheDir: join(repo, ".state", "cache"),
+      maxImageBytes: 5_000_000,
+      api: api as unknown as PlaneWikiApi,
+      workspaceSlug: "ws",
+      noProjectSections: true,
+      log: () => undefined,
+    });
+    const folderId = state.pages.projects!.id;
+    expect(api.childrenOf(folderId).toSorted()).toEqual(["Ongoing notes", "Spin Motor"]);
+    expect(state.pages["projects/spin-motor"]?.project).toBeUndefined();
+    expect(result.projects).toEqual([]);
+    expect(result.warnings.filter((w) => w.message.includes("unmatched project page"))).toEqual([]);
+    expect(api.projects).toHaveLength(1);
+  });
 });

@@ -32,6 +32,7 @@ node packages/wikijs-import/dist/cli.js --source /path/to/wikijs-repo
 | `--report <file>`                   | Report, default `.wikijs-import/report.json` (a `.md` twin is written next to it)                                                            |
 | `--project-map <json>`              | JSON object `{ "<Wiki.js path>": "<project identifier or name>" }` placing `Projects/` pages into those projects' wiki sections              |
 | `--create-missing-projects`         | Create a Plane project for every `Projects/` page that matches none (see below)                                                              |
+| `--no-project-sections`             | Never match `Projects/` pages to Plane projects: all of them stay under the plain "Projects" folder page (to move into projects by hand)     |
 | `--force`                           | Rewrite descriptions even when unchanged since the last run                                                                                  |
 | `--adopt`                           | Without a state entry, reuse an existing page with the same name and parent (recovery after losing the state file; that page is overwritten) |
 | `--login-email`, `--login-password` | Sign in with email/password instead of a cookie (also `PLANE_LOGIN_EMAIL` / `PLANE_LOGIN_PASSWORD`)                                          |

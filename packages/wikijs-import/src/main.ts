@@ -27,6 +27,8 @@ Options:
                           Projects/ pages into those projects' wiki sections (else matched by name)
   --create-missing-projects
                           Create a Plane project for every Projects/ page that matches none
+  --no-project-sections   Never match Projects/ pages to Plane projects: keep them all under the
+                          plain "Projects" folder page (move them into projects by hand later)
   --adopt                 Without a state entry, reuse an existing page with the same name and
                           parent instead of creating one (recovery after losing the state file)
   --login-email <email>   Sign in with email/password instead of a session cookie
@@ -60,6 +62,7 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
       adopt: { type: "boolean", default: false },
       "project-map": { type: "string" },
       "create-missing-projects": { type: "boolean", default: false },
+      "no-project-sections": { type: "boolean", default: false },
       "login-email": { type: "string" },
       "login-password": { type: "string" },
       help: { type: "boolean", short: "h", default: false },
@@ -135,6 +138,7 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
     adopt: values.adopt,
     projectMap,
     createMissingProjects: values["create-missing-projects"],
+    noProjectSections: values["no-project-sections"],
     statePath,
     state,
     cacheDir: defaultCacheDir(statePath),

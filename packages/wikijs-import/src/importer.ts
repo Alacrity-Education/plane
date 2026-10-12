@@ -52,6 +52,11 @@ export type TImportOptions = {
   projectMap?: Map<string, string> | undefined;
   /** Create a Plane project for every unmatched project page. */
   createMissingProjects?: boolean | undefined;
+  /**
+   * `--no-project-sections`: never match `Projects/` pages to Plane projects; they all stay under
+   * the plain "Projects" folder page (for moving them into projects by hand later).
+   */
+  noProjectSections?: boolean | undefined;
   state: TImportState;
   cacheDir: string;
   /** Upload limit of the Plane instance (FILE_SIZE_LIMIT); larger images are re-encoded. */
@@ -141,7 +146,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
   // ------------------------------------------------------------ 0. project pages → Plane projects
   const projectTargets = new Map<TTreeNode, TProjectMatch>();
   const projectNodes = projectPageNodes(tree.roots).filter((node) => shells.has(node));
-  if (projectNodes.length && options.api) {
+  if (projectNodes.length && options.api && !options.noProjectSections) {
     const projects = await options.api.listProjects();
     for (const node of projectNodes) {
       let result = matchProject(node, projects, options.projectMap);
