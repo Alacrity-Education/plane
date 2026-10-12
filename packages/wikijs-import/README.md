@@ -113,6 +113,13 @@ Content:
 - The editor's Yjs document is built with `@plane/editor` (`getBinaryDataFromDocumentEditorHTMLString`)
   and the stored HTML/JSON are derived from it, exactly like the web app's fallback save, so what is
   stored is what the editor shows.
+- Wiki.js tables follow `markdown-it-multimd-table`, not only GFM: every row above the `| -- |`
+  delimiter is a header row, the delimiter may come first (no header), `||` merges a cell into the
+  one before it (colspan), and rows separated from a table by a blank line without a delimiter of
+  their own continue it (warned). One-column tables with an image row and caption rows (Wiki.js
+  "figures") become the image plus a centred italic caption; one-cell tables around an image become
+  the image. Other tables keep their images inside the cells; tables with images get columns
+  sharing the 720 px page width, and their images are sized against the column.
 - Callouts: a blockquote followed by `{.is-info}` / `{.is-warning}` / `{.is-success}` / `{.is-danger}`
   (or `<!-- {blockquote:.is-…} -->`, or ckeditor `<blockquote class="is-…">`) becomes a Plane callout:
   info → light blue ℹ️, warning → orange ⚠️, success → green ✅, danger → peach 🚨.

@@ -50,7 +50,18 @@ const UUID_RE = new RegExp(`^${UUID_SOURCE}$`, "i");
 const ALLOWED_STYLE_PROPERTIES = new Set(["color", "background-color", "text-align"]);
 const INVALID_STYLE_VALUES = new Set(["", "null", "none", "undefined", "inherit", "initial", "unset"]);
 
-const DROPPED_ATTRIBUTES = new Set(["colwidth", "colWidth", "target", "rel", "spellCheck", "spellcheck", "id"]);
+// `background` is the editor's table cell colour attribute (the colour itself is in the style);
+// on a <td>/<th> browsers read it as a background image URL ("none" -> a request for /none).
+const DROPPED_ATTRIBUTES = new Set([
+  "colwidth",
+  "colWidth",
+  "background",
+  "target",
+  "rel",
+  "spellCheck",
+  "spellcheck",
+  "id",
+]);
 
 const str = (value: unknown): string => {
   if (value === undefined || value === null || value === false) return "";

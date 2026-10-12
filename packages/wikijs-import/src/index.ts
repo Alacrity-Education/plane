@@ -13,6 +13,7 @@ export * from "./importer";
 export * from "./links";
 export * from "./main";
 export * from "./markdown";
+export * from "./multimd";
 export * from "./paths";
 export * from "./projects";
 export * from "./report";

@@ -107,6 +107,41 @@ describe("convertWikiHtmlToMarkdown: TipTap nodes", () => {
     ).toBe("| H1     | H2 |\n| ------ | -- |\n| a \\| b | c  |\n");
   });
 
+  it("screenshot table: image blocks in cells -> inline images in a GFM table", () => {
+    const out = md(
+      `<table><tbody><tr><th colspan="1" rowspan="1" colwidth="240"><p>Click <strong>Login</strong></p></th><th colwidth="240"><p>Select it</p></th></tr>` +
+        `<tr><th colwidth="240"><image-component src="${ASSET}" width="218px" height="109px" aspectratio="2" alignment="left" status="uploaded"></image-component></th>` +
+        `<th colwidth="240"><image-component src="${ASSET}" width="218px" status="uploaded"></image-component></th></tr></tbody></table>`
+    );
+    // column padding aside
+    expect(out.replace(/ {2,}/g, " ").replace(/-{3,}/g, "---")).toBe(
+      "| Click **Login** | Select it |\n" +
+        "| --- | --- |\n" +
+        `| ![diagram.png](/wiki-assets/${ASSET}.png) | ![diagram.png](/wiki-assets/${ASSET}.png) |\n`
+    );
+  });
+
+  it("table cells keep line breaks as <br>; the editor's background attribute is dropped", () => {
+    const out = md(
+      '<table><tbody><tr><th background="none"><p>Step one<br>then <code>this</code></p></th><th background="none"><p>b</p></th></tr>' +
+        '<tr><td background="none"><p>1</p></td><td><p>2</p></td></tr></tbody></table>' +
+        '<table><tbody><tr><th colspan="2" background="none"><p>Wide</p></th></tr></tbody></table>'
+    );
+    expect(out.replace(/ {2,}/g, " ").replace(/-{3,}/g, "---")).toBe(
+      "| Step one<br>then `this` | b |\n| --- | - |\n| 1 | 2 |\n\n" +
+        '<table><tbody><tr><th colspan="2"><p>Wide</p></th></tr></tbody></table>\n'
+    );
+  });
+
+  it("figure: image block and a centred italic caption -> image + emphasised paragraph", () => {
+    expect(
+      md(
+        `<image-component src="${ASSET}" width="720px" status="uploaded"></image-component>` +
+          '<p class="editor-paragraph-block" style="text-align: center"><em>Diode construction.</em><br><em>Electron </em><strong><em>pressure</em></strong></p>'
+      )
+    ).toBe(`![diagram.png](/wiki-assets/${ASSET}.png)\n\n_Diode construction._\\\n_Electron&#x20;_**_pressure_**\n`);
+  });
+
   it("merged cells -> raw HTML table with sanitised attributes", () => {
     expect(
       md(

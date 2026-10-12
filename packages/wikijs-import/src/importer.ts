@@ -190,12 +190,13 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     });
   }
   const projectsFolder = tree.nodes.get(PROJECTS_FOLDER_KEY);
-  // The fallback folder page is only needed for project pages without a project
+  // The fallback folder page is only needed for project pages without a project (with --only:
+  // among the selected ones; a page left out keeps an existing folder alive, see step 1b)
   const projectsFolderRedundant =
     !!projectsFolder?.isFolder &&
     !projectsFolder.source &&
     projectTargets.size > 0 &&
-    projectsFolder.children.every((child) => projectTargets.has(child));
+    projectsFolder.children.filter((child) => shells.has(child)).every((child) => projectTargets.has(child));
   const omitted = new Set<TTreeNode>();
   if (projectsFolder && projectsFolderRedundant) omitted.add(projectsFolder);
 

@@ -39,7 +39,11 @@ const isElement = (node: unknown): node is Element =>
 const escapeHtmlAttr = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** A table GFM can express: no merged cells, one paragraph (or plain text) per cell, no breaks. */
+/**
+ * A table GFM can express: no merged cells, one paragraph (or plain text) or one image per cell.
+ * An image block alone in a cell (screenshot tables) becomes an inline image; line breaks are
+ * written as `<br>` (see the table handler).
+ */
 export function isSimpleTable(table: Element): boolean {
   const rows: Element[] = [];
   const collectRows = (node: Element) => {
@@ -65,7 +69,7 @@ export function isSimpleTable(table: Element): boolean {
       const blocks = cell.children.filter((c) => isElement(c) || (c.type === "text" && c.value.trim() !== ""));
       if (blocks.length > 1) return false;
       const only = blocks[0];
-      if (only && isElement(only) && only.tagName !== "p") return false;
+      if (only && isElement(only) && only.tagName !== "p" && only.tagName !== "img") return false;
       if (only && isElement(only) && !isPhrasingOnly(only)) return false;
     }
   }
@@ -92,7 +96,20 @@ const BLOCK_TAGS = new Set([
 ]);
 
 const isPhrasingOnly = (node: Element): boolean =>
-  node.children.every((child) => !isElement(child) || (!BLOCK_TAGS.has(child.tagName) && isPhrasingOnly(child)));
+  node.children.every(
+    (child) => !isElement(child) || child.tagName === "br" || (!BLOCK_TAGS.has(child.tagName) && isPhrasingOnly(child))
+  );
+
+const CELL_BREAK_TAG = "wiki-cell-break";
+
+/** GFM cells cannot hold a hard break (hast-util-to-mdast turns it into a space): keep `<br>`. */
+function markCellBreaks(node: Element): void {
+  for (const child of node.children) {
+    if (!isElement(child)) continue;
+    if (child.tagName === "br") child.tagName = CELL_BREAK_TAG;
+    else markCellBreaks(child);
+  }
+}
 
 /** Serialises a table as one CommonMark HTML block (no blank lines, which would end the block). */
 export function tableToRawHtml(table: Element): string {
@@ -108,9 +125,11 @@ const handlers: Record<string, Handle> = {
     return image;
   },
   table: (state, node) => {
-    if (isSimpleTable(node)) return defaultHandlers.table(state, node);
-    return html(tableToRawHtml(node));
+    if (!isSimpleTable(node)) return html(tableToRawHtml(node));
+    markCellBreaks(node);
+    return defaultHandlers.table(state, node);
   },
+  [CELL_BREAK_TAG]: () => html("<br>"),
   [CALLOUT_TAG]: (state, node) => {
     const props = node.properties ?? {};
     const body = state.toFlow(state.all(node));

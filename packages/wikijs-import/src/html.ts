@@ -11,6 +11,10 @@ import type { TWarning } from "./types";
 /** Width of the Plane page body the Wiki.js percentages are mapped onto, in px. */
 export const EDITOR_CONTENT_WIDTH = 720;
 const MIN_IMAGE_WIDTH = 32;
+/** The editor's default table column width (`DEFAULT_COLUMN_WIDTH`), in px. */
+const TABLE_COLUMN_WIDTH = 150;
+/** Horizontal padding plus border of an editor table cell, in px. */
+const TABLE_CELL_PADDING = 22;
 
 /** An uploaded image: Plane asset id plus its natural display size. */
 export type TResolvedImage = { assetId: string; width: number; height: number };
@@ -189,6 +193,26 @@ export function textContent(node: RootContent | Root): string {
   return "";
 }
 
+/** Images only, apart from whitespace, line breaks and empty paragraphs around them. */
+function isImageOnly(nodes: ElementContent[]): boolean {
+  let images = 0;
+  const visit = (list: ElementContent[]): boolean =>
+    list.every((n) => {
+      if (n.type === "text") return n.value.trim() === "";
+      if (n.type !== "element") return true;
+      if (n.tagName === "img") return ++images > 0;
+      if (n.tagName === "br") return true;
+      return n.tagName === "p" && visit(n.children);
+    });
+  return visit(nodes) && images > 0;
+}
+
+function containsImage(node: Element): boolean {
+  return node.children.some((c) => c.type === "element" && (c.tagName === "img" || containsImage(c)));
+}
+
+const colSpan = (cell: Element) => Math.max(1, Number(cell.properties?.colSpan) || 1);
+
 const isImageMarker = (node: ElementContent): node is Element =>
   node.type === "element" && node.tagName === "image-component";
 
@@ -281,6 +305,8 @@ function takeCheckbox(parent: Element, depth: number): boolean | null {
 
 class Converter {
   readonly codeLanguages: (string | null)[] = [];
+  /** Width images are sized against: the page, or the table column they sit in. */
+  private imageWidth: number | undefined;
 
   constructor(private readonly ctx: TConvertContext) {}
 
@@ -340,7 +366,10 @@ class Converter {
         const rest = node.children.filter((c) => c !== caption);
         const blocks = this.blocks(rest);
         if (caption && caption.type === "element" && hasContent(caption.children)) {
-          blocks.push(...this.paragraphs([el("em", {}, caption.children)], "p"));
+          // Centred italic caption (the editor's text-align attribute is the paragraph style)
+          const captions = this.paragraphs([el("em", {}, caption.children)], "p");
+          for (const block of captions) if (block.tagName === "p") block.properties.style = "text-align: center";
+          blocks.push(...captions);
         }
         return blocks;
       }
@@ -455,25 +484,50 @@ class Converter {
       }
     };
     collect(node);
+    const cellsOf = (row: Element) =>
+      row.children.filter((c): c is Element => c.type === "element" && (c.tagName === "td" || c.tagName === "th"));
+    // A one-cell table around a picture (Wiki.js framed image): just the image
+    const only = rows.length === 1 && rows[0] ? cellsOf(rows[0]) : [];
+    if (only.length === 1 && only[0] && isImageOnly(only[0].children)) return this.blocks(only[0].children);
+    // Screenshot tables: the editor's default 150 px columns would shrink the images to
+    // thumbnails, so the columns share the page width and the images fit their column.
+    const columns = Math.max(1, ...rows.map((row) => cellsOf(row).reduce((sum, cell) => sum + colSpan(cell), 0)));
+    const colwidth = containsImage(node) ? Math.max(TABLE_COLUMN_WIDTH, Math.floor(this.editorWidth / columns)) : null;
     const outRows = rows
       .map((row) => {
-        const cells = row.children
-          .filter((c): c is Element => c.type === "element" && (c.tagName === "td" || c.tagName === "th"))
-          .map((cell) => {
-            const content = this.blocks(cell.children);
-            if (!content.length) content.push(el("p"));
-            const props: Properties = {};
-            const colspan = Number(cell.properties?.colSpan);
-            const rowspan = Number(cell.properties?.rowSpan);
-            if (colspan > 1) props.colspan = colspan;
-            if (rowspan > 1) props.rowspan = rowspan;
-            return el(cell.tagName, props, content);
-          });
+        const cells = cellsOf(row).map((cell) => {
+          const content = this.withImageWidth(colwidth ? colwidth * colSpan(cell) - TABLE_CELL_PADDING : null, () =>
+            this.blocks(cell.children)
+          );
+          if (!content.length) content.push(el("p"));
+          const props: Properties = {};
+          const colspan = colSpan(cell);
+          const rowspan = Number(cell.properties?.rowSpan);
+          if (colspan > 1) props.colspan = colspan;
+          if (rowspan > 1) props.rowspan = rowspan;
+          if (colwidth && colspan === 1) props.colwidth = colwidth;
+          return el(cell.tagName, props, content);
+        });
         return cells.length ? el("tr", {}, cells) : null;
       })
       .filter((row): row is Element => row !== null);
     if (!outRows.length) return [];
     return [el("table", {}, [el("tbody", {}, outRows)])];
+  }
+
+  private get editorWidth(): number {
+    return this.ctx.editorWidth ?? EDITOR_CONTENT_WIDTH;
+  }
+
+  /** Runs `fn` with images sized against `width` (a table column) instead of the page. */
+  private withImageWidth<T>(width: number | null, fn: () => T): T {
+    const previous = this.imageWidth;
+    if (width) this.imageWidth = width;
+    try {
+      return fn();
+    } finally {
+      this.imageWidth = previous;
+    }
   }
 
   private embed(node: Element): ElementContent[] {
@@ -576,7 +630,7 @@ class Converter {
       const label = alt || src.split("/").pop() || "image";
       return el("em", {}, [text(`[image not available: ${label}]`)]);
     }
-    const size = computeImageSize(resolved, parseImageSize(node), this.ctx.editorWidth);
+    const size = computeImageSize(resolved, parseImageSize(node), this.imageWidth ?? this.ctx.editorWidth);
     return el("image-component", {
       src: resolved.assetId,
       width: `${size.width}px`,

@@ -172,6 +172,12 @@ describe("runImport: project pages", () => {
     expect(fourth.summary.moved ?? 0).toBe(0);
     expect(fourth.summary.content_written ?? 0).toBe(0);
     expect(fourth.pages.find((p) => p.path === "Projects/spin-motor")?.action).toBe("unchanged");
+
+    // 5. --only on one project page does not bring the fallback folder page back
+    const pagesBefore = api.pages.size;
+    await run({ projectMap: new Map([["projects/notes", "LAB"]]), only: "Projects/spin-motor", force: true });
+    expect(state.pages.projects).toBeUndefined();
+    expect(api.pages.size).toBe(pagesBefore);
   });
 
   it("creates missing projects on request", async () => {
