@@ -39,14 +39,26 @@ def wiki_pages_queryset(slug):
 # - PUBLIC_ACCESS (0): every active workspace member (admin, member, guest)
 # - PRIVATE_ACCESS (1): the owner only (workspace admins included)
 # - ADMIN_ACCESS (2): workspace admins and the owner
+# - MEMBERS_ACCESS (3): workspace admins and members (not guests) and the owner
+#
+#            public(0)  private(1)  admins(2)  members(3)
+#   admin       yes      owner       yes        yes
+#   member      yes      owner       owner      yes
+#   guest       yes      owner       owner      owner
 # A page under a hidden page is reachable only if its own access allows it;
 # clients show it at the top of the tree (like children of private pages).
+
+
+# Access levels a wiki page may have (project pages only use public / private)
+WIKI_ACCESS_LEVELS = (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS, Page.ADMIN_ACCESS, Page.MEMBERS_ACCESS)
 
 
 def wiki_access_levels(role):
     """Access levels a workspace member with `role` sees on pages they don't own."""
     if role == ADMIN:
-        return (Page.PUBLIC_ACCESS, Page.ADMIN_ACCESS)
+        return (Page.PUBLIC_ACCESS, Page.ADMIN_ACCESS, Page.MEMBERS_ACCESS)
+    if role == MEMBER:
+        return (Page.PUBLIC_ACCESS, Page.MEMBERS_ACCESS)
     return (Page.PUBLIC_ACCESS,)
 
 
@@ -84,7 +96,8 @@ def can_view_wiki_page(page, user, role):
 def can_change_wiki_page_access(page, user, role, access):
     """
     The owner (admin or member) may set any access; a workspace admin may
-    toggle other users' pages between public and admins-only. Guests never.
+    move other users' pages between public, admins-only and members-only.
+    Guests never.
     """
     if access == page.access:
         return True
@@ -92,7 +105,7 @@ def can_change_wiki_page_access(page, user, role, access):
         return False
     if page.owned_by_id == user.id:
         return True
-    admin_levels = {Page.PUBLIC_ACCESS, Page.ADMIN_ACCESS}
+    admin_levels = {Page.PUBLIC_ACCESS, Page.ADMIN_ACCESS, Page.MEMBERS_ACCESS}
     return role == ADMIN and page.access in admin_levels and access in admin_levels
 
 
@@ -181,7 +194,8 @@ class WorkspacePagePermission(BasePermission):
     - POST / PUT / PATCH: ADMIN and MEMBER
     - DELETE: ADMIN (the page owner always passes)
     - private pages: owner only; admins-only pages: owner and workspace
-      admins (404 for everyone else)
+      admins; members-only pages: owner, admins and members (404 for
+      everyone else, see wiki_access_levels)
     """
 
     def has_permission(self, request, view):

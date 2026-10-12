@@ -48,7 +48,7 @@ def visible_wiki_page_ids(slug, user, public_only=False):
     """
     Ids of non-archived workspace wiki pages (global, no project link) the user
     may see (see visible_wiki_pages_queryset: public pages, the user's own
-    pages and, for workspace admins, admins-only pages); only public ones when
+    pages and the admins-only / members-only pages their role allows); only public ones when
     public_only. Empty for anyone who is not an active member of the workspace.
     """
     pages = visible_wiki_pages_queryset(slug, user).filter(archived_at__isnull=True)

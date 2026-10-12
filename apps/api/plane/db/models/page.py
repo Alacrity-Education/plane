@@ -25,9 +25,16 @@ class Page(BaseModel):
     PUBLIC_ACCESS = 0
     # Workspace wiki pages only: visible to workspace admins and the owner
     ADMIN_ACCESS = 2
+    # Workspace wiki pages only: visible to workspace admins, members and the owner (not guests)
+    MEMBERS_ACCESS = 3
     DEFAULT_SORT_ORDER = 65535
 
-    ACCESS_CHOICES = ((PRIVATE_ACCESS, "Private"), (PUBLIC_ACCESS, "Public"), (ADMIN_ACCESS, "Admins only"))
+    ACCESS_CHOICES = (
+        (PRIVATE_ACCESS, "Private"),
+        (PUBLIC_ACCESS, "Public"),
+        (ADMIN_ACCESS, "Admins only"),
+        (MEMBERS_ACCESS, "Members only"),
+    )
 
     workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="pages")
     name = models.TextField(blank=True)
@@ -36,7 +43,9 @@ class Page(BaseModel):
     description_html = models.TextField(blank=True, default="<p></p>")
     description_stripped = models.TextField(blank=True, null=True)
     owned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="pages")
-    access = models.PositiveSmallIntegerField(choices=((0, "Public"), (1, "Private"), (2, "Admins only")), default=0)
+    access = models.PositiveSmallIntegerField(
+        choices=((0, "Public"), (1, "Private"), (2, "Admins only"), (3, "Members only")), default=0
+    )
     color = models.CharField(max_length=255, blank=True)
     labels = models.ManyToManyField("db.Label", blank=True, related_name="pages", through="db.PageLabel")
     parent = models.ForeignKey(

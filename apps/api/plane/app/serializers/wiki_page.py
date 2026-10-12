@@ -6,7 +6,12 @@
 from rest_framework import serializers
 
 # Module imports
-from plane.app.permissions.wiki_page import get_workspace_role, project_wiki_data, visible_wiki_pages_queryset
+from plane.app.permissions.wiki_page import (
+    WIKI_ACCESS_LEVELS,
+    get_workspace_role,
+    project_wiki_data,
+    visible_wiki_pages_queryset,
+)
 from plane.app.serializers.page import PageSerializer
 from plane.db.models import Page, PageLabel, ProjectWiki
 from plane.utils.content_validator import validate_html_content
@@ -56,8 +61,8 @@ class WorkspacePageSerializer(PageSerializer):
         return super().validate(attrs)
 
     def validate_access(self, value):
-        # Wiki pages accept the admins-only level on top of public / private
-        if value not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS, Page.ADMIN_ACCESS):
+        # Wiki pages accept the admins-only and members-only levels on top of public / private
+        if value not in WIKI_ACCESS_LEVELS:
             raise serializers.ValidationError("Invalid access")
         return value
 

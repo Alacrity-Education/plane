@@ -40,6 +40,7 @@ from rest_framework.response import Response
 # Module imports
 from plane.app.permissions.wiki_page import (
     ADMIN,
+    WIKI_ACCESS_LEVELS,
     WorkspacePagePermission,
     WorkspacePagePublishPermission,
     annotate_is_published,
@@ -187,6 +188,8 @@ class WorkspacePageViewSet(BaseViewSet):
             queryset = queryset.filter(access=Page.PRIVATE_ACCESS, archived_at__isnull=True)
         elif page_type == "admins":
             queryset = queryset.filter(access=Page.ADMIN_ACCESS, archived_at__isnull=True)
+        elif page_type == "members":
+            queryset = queryset.filter(access=Page.MEMBERS_ACCESS, archived_at__isnull=True)
         elif page_type == "archived":
             queryset = queryset.filter(archived_at__isnull=False)
 
@@ -251,7 +254,7 @@ class WorkspacePageViewSet(BaseViewSet):
         if page.is_locked:
             return Response({"error": "Page is locked"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # The owner sets any access; admins toggle public <-> admins-only
+        # The owner sets any access; admins move pages between public / admins / members
         if "access" in request.data and not can_change_wiki_page_access(
             page, request.user, get_workspace_role(request.user, slug), request.data.get("access")
         ):
@@ -316,12 +319,12 @@ class WorkspacePageViewSet(BaseViewSet):
 
     def access(self, request, slug, page_id):
         access = request.data.get("access", 0)
-        if access not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS, Page.ADMIN_ACCESS):
+        if access not in WIKI_ACCESS_LEVELS:
             return Response({"error": "Invalid access"}, status=status.HTTP_400_BAD_REQUEST)
 
         page = self._get_page(slug, page_id)
 
-        # The owner sets any access; admins toggle public <-> admins-only
+        # The owner sets any access; admins move pages between public / admins / members
         if not can_change_wiki_page_access(page, request.user, get_workspace_role(request.user, slug), access):
             return Response({"error": ACCESS_DENIED_ERROR}, status=status.HTTP_403_FORBIDDEN)
 
@@ -434,6 +437,13 @@ class WorkspacePageViewSet(BaseViewSet):
             admin_pages=Count(
                 Case(
                     When(access=Page.ADMIN_ACCESS, archived_at__isnull=True, then=1),
+                    output_field=IntegerField(),
+                )
+            ),
+            # Guests only count the members-only pages they own
+            members_pages=Count(
+                Case(
+                    When(access=Page.MEMBERS_ACCESS, archived_at__isnull=True, then=1),
                     output_field=IntegerField(),
                 )
             ),

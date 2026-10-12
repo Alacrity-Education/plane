@@ -293,15 +293,15 @@ class TestAdminsOnlyAccessChanges:
         page = _wiki_page(workspace, create_user)
 
         assert (
-            session_client.post(_pages_url(page.id, "access/"), {"access": 3}, format="json").status_code
+            session_client.post(_pages_url(page.id, "access/"), {"access": 9}, format="json").status_code
             == status.HTTP_400_BAD_REQUEST
         )
         assert (
-            session_client.patch(_pages_url(page.id), {"access": 3}, format="json").status_code
+            session_client.patch(_pages_url(page.id), {"access": 9}, format="json").status_code
             == status.HTTP_400_BAD_REQUEST
         )
         assert (
-            session_client.post(_pages_url(), {"name": "x", "access": 3}, format="json").status_code
+            session_client.post(_pages_url(), {"name": "x", "access": 9}, format="json").status_code
             == status.HTTP_400_BAD_REQUEST
         )
 

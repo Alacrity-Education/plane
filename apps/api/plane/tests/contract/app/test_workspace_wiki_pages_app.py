@@ -330,6 +330,7 @@ class TestWikiNesting:
             "public_pages": 1,
             "private_pages": 1,
             "admin_pages": 0,
+            "members_pages": 0,
             "archived_pages": 1,
             "published_pages": 0,
         }
