@@ -2,14 +2,11 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
-# Django imports
-from django.db.models import Q
-
 # Third party imports
 from rest_framework import serializers
 
 # Module imports
-from plane.app.permissions.wiki_page import project_wiki_data, wiki_pages_queryset
+from plane.app.permissions.wiki_page import get_workspace_role, project_wiki_data, visible_wiki_pages_queryset
 from plane.app.serializers.page import PageSerializer
 from plane.db.models import Page, PageLabel, ProjectWiki
 from plane.utils.content_validator import validate_html_content
@@ -58,6 +55,12 @@ class WorkspacePageSerializer(PageSerializer):
             raise serializers.ValidationError({"parent": ["project wiki root cannot be moved"]})
         return super().validate(attrs)
 
+    def validate_access(self, value):
+        # Wiki pages accept the admins-only level on top of public / private
+        if value not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS, Page.ADMIN_ACCESS):
+            raise serializers.ValidationError("Invalid access")
+        return value
+
     def validate_sort_order(self, value):
         if value <= 0:
             raise serializers.ValidationError("sort_order must be greater than 0")
@@ -75,13 +78,11 @@ class WorkspacePageSerializer(PageSerializer):
             return value
 
         slug = self.context.get("slug")
-        user_id = self.context.get("owned_by_id")
         # The parent must be a wiki page of the same workspace that the
         # requesting user can see
-        parent_qs = wiki_pages_queryset(slug).filter(pk=value.pk)
-        if user_id:
-            parent_qs = parent_qs.filter(Q(owned_by_id=user_id) | Q(access=Page.PUBLIC_ACCESS))
-        if not parent_qs.exists():
+        user = self.context.get("request_user")
+        parent_qs = visible_wiki_pages_queryset(slug, user, get_workspace_role(user, slug)) if user else None
+        if parent_qs is None or not parent_qs.filter(pk=value.pk).exists():
             raise serializers.ValidationError("Parent must be a wiki page of this workspace")
 
         if value.archived_at is not None:

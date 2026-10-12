@@ -3,7 +3,7 @@
 # See the LICENSE file for details.
 
 # Django imports
-from django.db.models import CharField, Exists, OuterRef, Subquery, UUIDField
+from django.db.models import CharField, Exists, OuterRef, Q, Subquery, UUIDField
 
 # Third party imports
 from rest_framework.exceptions import NotFound
@@ -31,6 +31,69 @@ def wiki_pages_queryset(slug):
         .annotate(has_project=Exists(ProjectPage.objects.filter(page_id=OuterRef("pk"))))
         .filter(has_project=False)
     )
+
+
+# Wiki page visibility
+#
+# Access is evaluated per page, never inherited from the parent:
+# - PUBLIC_ACCESS (0): every active workspace member (admin, member, guest)
+# - PRIVATE_ACCESS (1): the owner only (workspace admins included)
+# - ADMIN_ACCESS (2): workspace admins and the owner
+# A page under a hidden page is reachable only if its own access allows it;
+# clients show it at the top of the tree (like children of private pages).
+
+
+def wiki_access_levels(role):
+    """Access levels a workspace member with `role` sees on pages they don't own."""
+    if role == ADMIN:
+        return (Page.PUBLIC_ACCESS, Page.ADMIN_ACCESS)
+    return (Page.PUBLIC_ACCESS,)
+
+
+def wiki_page_visibility_q(user, role, prefix=""):
+    """
+    Q for wiki pages visible to `user` with workspace `role`; `prefix` targets
+    a relation (e.g. "child_page__"). The single source of the visibility rule.
+    """
+    return Q(**{f"{prefix}access__in": wiki_access_levels(role)}) | Q(**{f"{prefix}owned_by_id": user.id})
+
+
+def visible_wiki_pages_queryset(slug, user, role=None):
+    """
+    Wiki pages of the workspace `user` may see (archived pages included);
+    empty for anyone who is not an active member. `role` skips the lookup.
+    """
+    if role is None:
+        role = get_workspace_role(user, slug)
+    if not role:
+        return wiki_pages_queryset(slug).none()
+    return wiki_pages_queryset(slug).filter(wiki_page_visibility_q(user, role))
+
+
+def hidden_wiki_page_ids(slug, user, role=None):
+    """Ids of the workspace's wiki pages `user` may not see (for excluding favorites, recents)."""
+    if role is None:
+        role = get_workspace_role(user, slug)
+    return wiki_pages_queryset(slug).exclude(wiki_page_visibility_q(user, role)).values("id")
+
+
+def can_view_wiki_page(page, user, role):
+    return page.owned_by_id == user.id or page.access in wiki_access_levels(role)
+
+
+def can_change_wiki_page_access(page, user, role, access):
+    """
+    The owner (admin or member) may set any access; a workspace admin may
+    toggle other users' pages between public and admins-only. Guests never.
+    """
+    if access == page.access:
+        return True
+    if role not in (ADMIN, MEMBER):
+        return False
+    if page.owned_by_id == user.id:
+        return True
+    admin_levels = {Page.PUBLIC_ACCESS, Page.ADMIN_ACCESS}
+    return role == ADMIN and page.access in admin_levels and access in admin_levels
 
 
 def published_pages_queryset():
@@ -117,7 +180,8 @@ class WorkspacePagePermission(BasePermission):
     - SAFE methods: all active workspace members (GUEST is read-only)
     - POST / PUT / PATCH: ADMIN and MEMBER
     - DELETE: ADMIN (the page owner always passes)
-    - private pages: owner only (404 for everyone else)
+    - private pages: owner only; admins-only pages: owner and workspace
+      admins (404 for everyone else)
     """
 
     def has_permission(self, request, view):
@@ -140,8 +204,8 @@ class WorkspacePagePermission(BasePermission):
                 if page.owned_by_id == request.user.id:
                     return True
 
-                # Private pages are owner-only and invisible to everyone else
-                if page.access == Page.PRIVATE_ACCESS:
+                # Private / admins-only pages are invisible to everyone else
+                if not can_view_wiki_page(page, request.user, role):
                     raise NotFound("Page not found")
 
         return self._check_workspace_action_access(request, role)
@@ -166,7 +230,7 @@ class WorkspacePagePublishPermission(BasePermission):
     """
     Publishing a wiki page to the docs site (POST) and unpublishing it
     (DELETE): workspace ADMIN and MEMBER only. Guests are refused even on
-    pages they own; private pages of other users stay invisible (404).
+    pages they own; pages the user can't see stay invisible (404).
     """
 
     def has_permission(self, request, view):
@@ -179,6 +243,6 @@ class WorkspacePagePublishPermission(BasePermission):
             return False
 
         page = wiki_pages_queryset(slug).filter(id=view.kwargs.get("page_id")).first()
-        if page is not None and page.access == Page.PRIVATE_ACCESS and page.owned_by_id != request.user.id:
+        if page is not None and not can_view_wiki_page(page, request.user, role):
             raise NotFound("Page not found")
         return True

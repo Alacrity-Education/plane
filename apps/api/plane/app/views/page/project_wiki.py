@@ -11,7 +11,6 @@ the project to the page; pages keep normal wiki visibility rules.
 
 # Django imports
 from django.db import IntegrityError, transaction
-from django.db.models import Q
 
 # Third party imports
 from rest_framework import status
@@ -19,6 +18,7 @@ from rest_framework.response import Response
 
 # Module imports
 from plane.app.permissions import ROLE, allow_permission
+from plane.app.permissions.wiki_page import get_workspace_role, wiki_page_visibility_q
 from plane.app.serializers.wiki_page import ProjectWikiSerializer
 from plane.app.views.base import BaseAPIView
 from plane.db.models import Page, Project, ProjectWiki
@@ -38,11 +38,11 @@ def _live_sections(slug, project_id):
 class ProjectWikiEndpoint(BaseAPIView):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
     def get(self, request, slug, project_id):
-        # The root page follows wiki visibility: private roots are owner-only
+        # The root page follows wiki visibility (private: owner only,
+        # admins-only: owner and workspace admins)
+        role = get_workspace_role(request.user, slug)
         section = (
-            _live_sections(slug, project_id)
-            .filter(Q(root_page__access=Page.PUBLIC_ACCESS) | Q(root_page__owned_by=request.user))
-            .first()
+            _live_sections(slug, project_id).filter(wiki_page_visibility_q(request.user, role, "root_page__")).first()
         )
         if section is None:
             return Response({"error": "Project wiki not found"}, status=status.HTTP_404_NOT_FOUND)

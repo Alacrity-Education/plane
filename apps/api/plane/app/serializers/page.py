@@ -58,6 +58,12 @@ class PageSerializer(BaseSerializer):
         ]
         read_only_fields = ["workspace", "owned_by"]
 
+    def validate_access(self, value):
+        # Admins-only access (Page.ADMIN_ACCESS) exists for workspace wiki pages only
+        if value not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS):
+            raise serializers.ValidationError("Invalid access")
+        return value
+
     def create(self, validated_data):
         labels = validated_data.pop("labels", None)
         project_id = self.context["project_id"]

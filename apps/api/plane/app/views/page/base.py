@@ -285,6 +285,9 @@ class PageViewSet(BaseViewSet):
 
     def access(self, request, slug, project_id, page_id):
         access = request.data.get("access", 0)
+        # Admins-only access (Page.ADMIN_ACCESS) exists for workspace wiki pages only
+        if access not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS):
+            return Response({"error": "Invalid access"}, status=status.HTTP_400_BAD_REQUEST)
         page = Page.objects.get(
             pk=page_id,
             workspace__slug=slug,

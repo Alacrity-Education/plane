@@ -15,6 +15,7 @@ from plane.app.views.base import BaseAPIView
 from plane.db.models import UserFavorite, Workspace
 from plane.app.serializers import UserFavoriteSerializer
 from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions.wiki_page import hidden_wiki_page_ids
 
 
 class WorkspaceFavoriteEndpoint(BaseAPIView):
@@ -30,6 +31,10 @@ class WorkspaceFavoriteEndpoint(BaseAPIView):
                 & Q(project__project_projectmember__member=request.user)
                 & Q(project__project_projectmember__is_active=True)
             )
+        )
+        # Wiki pages the user can't (or no longer) see, e.g. made admins-only
+        favorites = favorites.exclude(
+            entity_type="page", entity_identifier__in=hidden_wiki_page_ids(slug, request.user)
         )
         serializer = UserFavoriteSerializer(favorites, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -92,6 +97,10 @@ class WorkspaceFavoriteGroupEndpoint(BaseAPIView):
                 & Q(project__project_projectmember__member=request.user)
                 & Q(project__project_projectmember__is_active=True)
             )
+        )
+        # Wiki pages the user can't (or no longer) see, e.g. made admins-only
+        favorites = favorites.exclude(
+            entity_type="page", entity_identifier__in=hidden_wiki_page_ids(slug, request.user)
         )
         serializer = UserFavoriteSerializer(favorites, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

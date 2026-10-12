@@ -326,7 +326,13 @@ class TestWikiNesting:
         assert _ids(session_client.get(_pages_url(), {"type": "archived"})) == {str(archived.id)}
 
         summary = session_client.get(f"{BASE}/pages-summary/").json()
-        assert summary == {"public_pages": 1, "private_pages": 1, "archived_pages": 1, "published_pages": 0}
+        assert summary == {
+            "public_pages": 1,
+            "private_pages": 1,
+            "admin_pages": 0,
+            "archived_pages": 1,
+            "published_pages": 0,
+        }
 
     @pytest.mark.django_db
     def test_create_with_parent(self, session_client, workspace, create_user):

@@ -44,8 +44,12 @@ from plane.app.permissions.wiki_page import (
     WorkspacePagePublishPermission,
     annotate_is_published,
     annotate_project_wiki,
+    can_change_wiki_page_access,
+    can_view_wiki_page,
     get_workspace_role,
     unpublish_wiki_pages,
+    visible_wiki_pages_queryset,
+    wiki_page_visibility_q,
     wiki_pages_queryset,
 )
 from plane.app.serializers.page import (
@@ -80,8 +84,11 @@ from plane.utils.order_queryset import PAGE_ORDER_BY_ALLOWLIST, sanitize_order_b
 # from description_html on the first open of a page
 
 
-def _visible_wiki_pages(slug, user):
-    return wiki_pages_queryset(slug).filter(Q(owned_by=user) | Q(access=Page.PUBLIC_ACCESS))
+def _visible_wiki_pages(slug, user, role=None):
+    return visible_wiki_pages_queryset(slug, user, role)
+
+
+ACCESS_DENIED_ERROR = "Access cannot be updated since this page is owned by someone else"
 
 
 def annotated_wiki_pages(slug, user, order_by=None):
@@ -89,6 +96,7 @@ def annotated_wiki_pages(slug, user, order_by=None):
     Visible wiki pages annotated to match the project PageSerializer output
     (is_favorite, label_ids, project_ids=[]) plus the nesting fields.
     """
+    role = get_workspace_role(user, slug)
     favorite_subquery = UserFavorite.objects.filter(
         user=user,
         entity_type="page",
@@ -98,14 +106,14 @@ def annotated_wiki_pages(slug, user, order_by=None):
     # Sub pages the user can see (archived and soft-deleted excluded)
     sub_pages_subquery = (
         Page.objects.filter(parent_id=OuterRef("pk"), archived_at__isnull=True)
-        .filter(Q(owned_by=user) | Q(access=Page.PUBLIC_ACCESS))
+        .filter(wiki_page_visibility_q(user, role))
         .order_by()
         .values("parent_id")
         .annotate(count=Count("id"))
         .values("count")
     )
     return (
-        annotate_is_published(annotate_project_wiki(_visible_wiki_pages(slug, user)))
+        annotate_is_published(annotate_project_wiki(_visible_wiki_pages(slug, user, role)))
         .select_related("workspace")
         .select_related("owned_by")
         .prefetch_related("labels")
@@ -164,6 +172,7 @@ class WorkspacePageViewSet(BaseViewSet):
             "slug": slug,
             "workspace_id": workspace_id,
             "owned_by_id": self.request.user.id,
+            "request_user": self.request.user,
         }
 
     def list(self, request, slug):
@@ -176,6 +185,8 @@ class WorkspacePageViewSet(BaseViewSet):
             queryset = queryset.filter(access=Page.PUBLIC_ACCESS, archived_at__isnull=True)
         elif page_type == "private":
             queryset = queryset.filter(access=Page.PRIVATE_ACCESS, archived_at__isnull=True)
+        elif page_type == "admins":
+            queryset = queryset.filter(access=Page.ADMIN_ACCESS, archived_at__isnull=True)
         elif page_type == "archived":
             queryset = queryset.filter(archived_at__isnull=False)
 
@@ -240,16 +251,11 @@ class WorkspacePageViewSet(BaseViewSet):
         if page.is_locked:
             return Response({"error": "Page is locked"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Only the page owner can change the access
-        if (
-            "access" in request.data
-            and page.access != request.data.get("access")
-            and page.owned_by_id != request.user.id
+        # The owner sets any access; admins toggle public <-> admins-only
+        if "access" in request.data and not can_change_wiki_page_access(
+            page, request.user, get_workspace_role(request.user, slug), request.data.get("access")
         ):
-            return Response(
-                {"error": "Access cannot be updated since this page is owned by someone else"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            return Response({"error": ACCESS_DENIED_ERROR}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = WorkspacePageDetailSerializer(
             page,
@@ -260,8 +266,8 @@ class WorkspacePageViewSet(BaseViewSet):
         page_description = page.description_html
         if serializer.is_valid():
             serializer.save()
-            # A private page can't stay published
-            if serializer.instance.access == Page.PRIVATE_ACCESS:
+            # Only public pages stay published
+            if serializer.instance.access != Page.PUBLIC_ACCESS:
                 unpublish_wiki_pages([page.id], page.workspace_id)
             # capture the page transaction
             if request.data.get("description_html"):
@@ -310,23 +316,20 @@ class WorkspacePageViewSet(BaseViewSet):
 
     def access(self, request, slug, page_id):
         access = request.data.get("access", 0)
-        if access not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS):
+        if access not in (Page.PUBLIC_ACCESS, Page.PRIVATE_ACCESS, Page.ADMIN_ACCESS):
             return Response({"error": "Invalid access"}, status=status.HTTP_400_BAD_REQUEST)
 
         page = self._get_page(slug, page_id)
 
-        # Only the page owner can change the access
-        if page.access != access and page.owned_by_id != request.user.id:
-            return Response(
-                {"error": "Access cannot be updated since this page is owned by someone else"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        # The owner sets any access; admins toggle public <-> admins-only
+        if not can_change_wiki_page_access(page, request.user, get_workspace_role(request.user, slug), access):
+            return Response({"error": ACCESS_DENIED_ERROR}, status=status.HTTP_403_FORBIDDEN)
 
         page.access = access
         page.save()
 
-        # A private page can't stay published
-        if access == Page.PRIVATE_ACCESS:
+        # Only public pages stay published
+        if access != Page.PUBLIC_ACCESS:
             unpublish_wiki_pages([page.id], page.workspace_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -427,6 +430,13 @@ class WorkspacePageViewSet(BaseViewSet):
                     output_field=IntegerField(),
                 )
             ),
+            # Non-admins only count the admins-only pages they own
+            admin_pages=Count(
+                Case(
+                    When(access=Page.ADMIN_ACCESS, archived_at__isnull=True, then=1),
+                    output_field=IntegerField(),
+                )
+            ),
             archived_pages=Count(Case(When(archived_at__isnull=False, then=1), output_field=IntegerField())),
             published_pages=Count(Case(When(is_published=True, then=1), output_field=IntegerField())),
         )
@@ -524,7 +534,7 @@ class WorkspacePageDuplicateEndpoint(BaseAPIView):
         page = wiki_pages_queryset(slug).get(pk=page_id)
 
         # check for permission
-        if page.access == Page.PRIVATE_ACCESS and page.owned_by_id != request.user.id:
+        if not can_view_wiki_page(page, request.user, get_workspace_role(request.user, slug)):
             return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
         # The copy keeps parent, sort_order and is_global; no ProjectPage rows

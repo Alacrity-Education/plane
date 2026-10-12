@@ -12,6 +12,7 @@ from plane.app.serializers import WorkspaceRecentVisitSerializer
 # Modules imports
 from ..base import BaseViewSet
 from plane.app.permissions import allow_permission, ROLE
+from plane.app.permissions.wiki_page import hidden_wiki_page_ids
 
 
 class UserRecentVisitViewSet(BaseViewSet):
@@ -31,6 +32,10 @@ class UserRecentVisitViewSet(BaseViewSet):
             user_recent_visits = user_recent_visits.filter(entity_name=entity_name)
 
         user_recent_visits = user_recent_visits.filter(entity_name__in=["issue", "page", "project"])
+        # Wiki pages the user can't (or no longer) see, e.g. made admins-only
+        user_recent_visits = user_recent_visits.exclude(
+            entity_name="page", entity_identifier__in=hidden_wiki_page_ids(slug, request.user)
+        )
 
         serializer = WorkspaceRecentVisitSerializer(user_recent_visits[:20], many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

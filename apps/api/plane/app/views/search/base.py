@@ -29,7 +29,7 @@ from rest_framework.response import Response
 # Module imports
 from plane.app.views.base import BaseAPIView
 from plane.app.permissions import WorkspaceUserPermission
-from plane.app.permissions.wiki_page import wiki_pages_queryset
+from plane.app.permissions.wiki_page import visible_wiki_pages_queryset
 from plane.db.models import (
     Workspace,
     Project,
@@ -47,13 +47,14 @@ from plane.db.models import (
 def visible_wiki_page_ids(slug, user, public_only=False):
     """
     Ids of non-archived workspace wiki pages (global, no project link) the user
-    may see: public ones plus, unless public_only, the user's own private ones.
-    Empty for anyone who is not an active member of the workspace.
+    may see (see visible_wiki_pages_queryset: public pages, the user's own
+    pages and, for workspace admins, admins-only pages); only public ones when
+    public_only. Empty for anyone who is not an active member of the workspace.
     """
-    access = Q(access=Page.PUBLIC_ACCESS) if public_only else Q(access=Page.PUBLIC_ACCESS) | Q(owned_by=user)
-    is_member = WorkspaceMember.objects.filter(workspace__slug=slug, member=user, is_active=True).exists()
-    pages = wiki_pages_queryset(slug).filter(access, archived_at__isnull=True)
-    return (pages if is_member else pages.none()).values("id")
+    pages = visible_wiki_pages_queryset(slug, user).filter(archived_at__isnull=True)
+    if public_only:
+        pages = pages.filter(access=Page.PUBLIC_ACCESS)
+    return pages.values("id")
 
 
 class GlobalSearchEndpoint(BaseAPIView):
