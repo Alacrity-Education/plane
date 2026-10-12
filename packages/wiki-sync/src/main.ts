@@ -28,7 +28,7 @@ Environment:
 
 Options:
   --out <dir>            Docs instance folder                 (default: wiki)
-  --assets <dir>         Folder for downloaded images         (default: static/wiki-assets)
+  --assets <dir>         Folder for images and linked files   (default: static/wiki-assets)
   --public-path <path>   URL of the assets folder on the site (default: /wiki-assets)
   --route-base <path>    routeBasePath of the docs instance   (default: /wiki)
   --cache <file>         Manifest used for incremental runs   (default: .wiki-cache/manifest.json)

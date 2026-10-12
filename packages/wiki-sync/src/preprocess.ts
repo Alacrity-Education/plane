@@ -12,6 +12,7 @@ import { toHtml } from "hast-util-to-html";
 import rehypeParse from "rehype-parse";
 import { unified } from "unified";
 import { SKIP, visit } from "unist-util-visit";
+import { assetDownloadId } from "./assets";
 import type { TCalloutMode } from "./types";
 
 export type TPreprocessAsset = { url: string; name: string };
@@ -24,6 +25,11 @@ export type TPreprocessContext = {
   linkMap: Map<string, string>;
   /** asset id -> local public URL; missing ids drop the image. */
   assets: Map<string, TPreprocessAsset>;
+  /**
+   * asset id -> local public URL of files linked through Plane's download route
+   * (`/api/assets/v2/workspaces/<slug>/download/<id>/`); missing ids keep the link text only.
+   */
+  files?: Map<string, TPreprocessAsset>;
   /** user id -> display name; unknown users render as "@member". */
   members?: Map<string, string>;
   callouts: TCalloutMode;
@@ -40,6 +46,13 @@ export const CALLOUT_ADMONITION_TYPES: Record<string, string> = {
   "light-blue": "info",
   "dark-blue": "info",
 };
+
+/**
+ * Set on links to downloaded files (static assets). Markdown links to them are bundled by
+ * Docusaurus, but in raw HTML (tables with merged cells) Docusaurus reports a link to a static
+ * file as broken: there the href gets the `pathname://` protocol (base URL still applied).
+ */
+export const FILE_LINK_ATTRIBUTE = "dataWikiFile";
 
 /** Intermediate tag the Markdown step turns into ":::type[title]" fences or a raw <div>. */
 export const CALLOUT_TAG = "wiki-callout";
@@ -236,7 +249,18 @@ export function rehypeWikiPreprocess(ctx: TPreprocessContext) {
           break;
         }
         case "a": {
-          const href = rewriteHref(getAttr(node, "href"), ctx);
+          const rawHref = getAttr(node, "href");
+          const fileId = assetDownloadId(rawHref, ctx);
+          if (fileId) {
+            const file = ctx.files?.get(fileId);
+            if (!file) return replace(node.children);
+            cleanProperties(node);
+            node.properties.href = file.url;
+            // marks static-file links for the raw-HTML table serializer (see FILE_LINK_ATTRIBUTE)
+            node.properties[FILE_LINK_ATTRIBUTE] = "true";
+            return undefined;
+          }
+          const href = rewriteHref(rawHref, ctx);
           cleanProperties(node);
           if (href) node.properties.href = href;
           return undefined;

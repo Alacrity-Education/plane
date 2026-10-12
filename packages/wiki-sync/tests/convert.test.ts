@@ -313,3 +313,31 @@ describe("Docusaurus md-mode compile smoke test", () => {
     await expect(compile(body, { format: "mdx" })).rejects.toThrow();
   });
 });
+
+describe("links to downloaded files", () => {
+  const FILE = "44444444-4444-4444-8444-444444444444";
+  const files = new Map([[FILE, { url: `/wiki-assets/${FILE}.svg`, name: "logo.svg" }]]);
+  const link = `<a target="_blank" href="/api/assets/v2/workspaces/acme/download/${FILE}/">Vector</a>`;
+
+  it("are Markdown links in text and simple tables", () => {
+    expect(md(`<p>${link}</p>`, { files })).toBe(`[Vector](/wiki-assets/${FILE}.svg)\n`);
+    const table = md(`<table><tbody><tr><th><p>A</p></th></tr><tr><td><p>${link}</p></td></tr></tbody></table>`, {
+      files,
+    });
+    expect(table).toContain(`| [Vector](/wiki-assets/${FILE}.svg) |`);
+  });
+
+  it("use pathname:// in raw HTML tables (Docusaurus checks raw links against routes)", () => {
+    const out = md(
+      `<table><tbody><tr><th colspan="2"><p>Logo</p></th></tr><tr><td><p>${link}</p></td><td><p><a href="/acme/wiki/x">Page</a></p></td></tr></tbody></table>`,
+      { files }
+    );
+    expect(out).toContain(`<a href="pathname:///wiki-assets/${FILE}.svg">Vector</a>`);
+    expect(out).not.toMatch(/data-wiki-file|dataWikiFile/);
+    expect(out).toContain('<a href="https://plane.example.com/acme/wiki/x">Page</a>');
+  });
+
+  it("keep only their text when the file is missing", () => {
+    expect(md(`<p>Get ${link} here</p>`, { files: new Map() })).toBe("Get Vector here\n");
+  });
+});

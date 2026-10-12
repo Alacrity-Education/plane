@@ -5,7 +5,7 @@
  */
 
 import { rm } from "node:fs/promises";
-import { AssetStore, extractImageAssetIds } from "./assets";
+import { AssetStore, extractFileAssetIds, extractImageAssetIds } from "./assets";
 import { createLimit } from "./limit";
 import { convertWikiHtmlToMarkdown } from "./markdown";
 import type { TPreprocessAsset } from "./preprocess";
@@ -98,6 +98,8 @@ export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
   const previous = await readManifest(options.cachePath);
   const currentFingerprint = fingerprint({
     v: MANIFEST_VERSION,
+    // 0.3.0: links to Plane asset downloads are exported (re-render pages synced before)
+    fileLinks: true,
     links: [...linkMap].toSorted(([a], [b]) => (a < b ? -1 : 1)),
     callouts: options.callouts,
     publicPath: options.publicPath,
@@ -163,15 +165,23 @@ export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
       const html = detail.description_html ?? "";
       const assetMeta = new Map<string, TWikiAsset>((detail.assets ?? []).map((a) => [a.id.toLowerCase(), a]));
       const resolved = new Map<string, TPreprocessAsset>();
-      const assetFiles: string[] = [];
-      await Promise.all(
-        extractImageAssetIds(html).map(async (id) => {
+      const linkedFiles = new Map<string, TPreprocessAsset>();
+      const assetFiles = new Set<string>();
+      await Promise.all([
+        ...extractImageAssetIds(html).map(async (id) => {
           const asset = await assets.resolve(id, assetMeta.get(id));
           if (!asset) return;
           resolved.set(id, { url: asset.url, name: asset.name });
-          assetFiles.push(asset.fileName);
-        })
-      );
+          assetFiles.add(asset.fileName);
+        }),
+        // Links to files (downloads) go to the same folder as the images
+        ...extractFileAssetIds(html, options).map(async (id) => {
+          const asset = await assets.resolve(id, assetMeta.get(id), "file");
+          if (!asset) return;
+          linkedFiles.set(id, { url: asset.url, name: asset.name });
+          assetFiles.add(asset.fileName);
+        }),
+      ]);
 
       const members = html.includes("mention-component") ? await getMembers() : new Map<string, string>();
       const body = convertWikiHtmlToMarkdown(html, {
@@ -179,6 +189,7 @@ export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
         planeUrl: options.planeUrl,
         linkMap,
         assets: resolved,
+        files: linkedFiles,
         members,
         callouts: options.callouts,
       });
@@ -193,7 +204,7 @@ export async function runSync(options: TSyncOptions): Promise<TSyncResult> {
         file,
         ...(category ? { category } : {}),
         updated_at: detail.updated_at ?? page.updated_at,
-        assets: assetFiles.toSorted(),
+        assets: [...assetFiles].toSorted(),
       };
     })
   );

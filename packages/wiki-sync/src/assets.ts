@@ -37,14 +37,18 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const isAssetId = (value: string): boolean => UUID.test(value);
 
-/** File extension from the MIME type, falling back to the original file name. */
-export function getAssetExtension(type?: string | null, name?: string | null): string {
+/**
+ * File extension from the MIME type, falling back to the original file name. Linked files
+ * (downloads) prefer the name (`preferName`): `report.docx` keeps `.docx` whatever its type says.
+ */
+export function getAssetExtension(type?: string | null, name?: string | null, preferName = false): string {
   const mime = (type ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
   const fromMime = MIME_EXTENSIONS[mime];
-  if (fromMime) return fromMime;
-  const fromName = (name ?? "").split(/[?#]/)[0]?.split(".").pop()?.toLowerCase() ?? "";
-  if (name?.includes(".") && SAFE_EXTENSION.test(fromName)) return fromName === "jpeg" ? "jpg" : fromName;
-  return "bin";
+  const rawName = (name ?? "").split(/[?#]/)[0] ?? "";
+  const fromName = rawName.includes(".") ? (rawName.split(".").pop()?.toLowerCase() ?? "") : "";
+  const nameExtension = SAFE_EXTENSION.test(fromName) ? (fromName === "jpeg" ? "jpg" : fromName) : "";
+  if (preferName && nameExtension) return nameExtension;
+  return fromMime || nameExtension || "bin";
 }
 
 /** Asset ids referenced by <image-component src="<uuid>"> / <excalidraw-component src="<uuid>"> in TipTap HTML. */
@@ -54,6 +58,42 @@ export function extractImageAssetIds(html: string): string[] {
   for (const match of html.matchAll(re)) {
     const src = match[1]?.trim() ?? "";
     if (isAssetId(src)) ids.add(src.toLowerCase());
+  }
+  return [...ids];
+}
+
+const UUID_SOURCE = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+
+/**
+ * Asset id of a link to Plane's session download route
+ * (`/api/assets/v2/workspaces/<slug>/download/<id>/`, also the project variant), root-relative
+ * or absolute on the Plane origin; null for any other href.
+ */
+export function assetDownloadId(href: string, ctx: { workspaceSlug: string; planeUrl: string }): string | null {
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+  const planeOrigin = ctx.planeUrl ? new URL(ctx.planeUrl).origin : "";
+  const isRelative = !/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !trimmed.startsWith("//");
+  let url: URL;
+  try {
+    url = new URL(trimmed, planeOrigin ? `${planeOrigin}/` : "https://plane.invalid/");
+  } catch {
+    return null;
+  }
+  if (!isRelative && (!planeOrigin || url.origin !== planeOrigin)) return null;
+  const slug = encodeURIComponent(ctx.workspaceSlug).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = url.pathname.match(
+    new RegExp(`^/api/assets/v2/workspaces/${slug}/(?:projects/${UUID_SOURCE}/)?download/(${UUID_SOURCE})/?$`, "i")
+  );
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+/** Asset ids of the links (`<a href>`) to Plane's download route in TipTap HTML. */
+export function extractFileAssetIds(html: string, ctx: { workspaceSlug: string; planeUrl: string }): string[] {
+  const ids = new Set<string>();
+  for (const match of html.matchAll(/<a\b[^>]*?\bhref\s*=\s*["']([^"']+)["']/gi)) {
+    const id = assetDownloadId((match[1] ?? "").replace(/&amp;/g, "&"), ctx);
+    if (id) ids.add(id);
   }
   return [...ids];
 }
@@ -101,17 +141,25 @@ export class AssetStore {
     return map;
   }
 
-  resolve(assetId: string, meta?: TWikiAsset): Promise<TResolvedAsset | null> {
+  /**
+   * `kind: "file"` is a linked download: its extension comes from the asset name first, and a
+   * failure keeps the link text instead of dropping an image.
+   */
+  resolve(assetId: string, meta?: TWikiAsset, kind: "image" | "file" = "image"): Promise<TResolvedAsset | null> {
     const id = assetId.toLowerCase();
     let pending = this.inflight.get(id);
     if (!pending) {
-      pending = this.fetchAsset(id, meta);
+      pending = this.fetchAsset(id, meta, kind);
       this.inflight.set(id, pending);
     }
     return pending;
   }
 
-  private async fetchAsset(id: string, meta?: TWikiAsset): Promise<TResolvedAsset | null> {
+  private async fetchAsset(
+    id: string,
+    meta: TWikiAsset | undefined,
+    kind: "image" | "file"
+  ): Promise<TResolvedAsset | null> {
     const existing = await this.scanExisting();
     const cached = existing.get(id);
     const name = meta?.name ?? "";
@@ -122,7 +170,11 @@ export class AssetStore {
     try {
       const info = await this.options.source.getAssetUrl(id);
       const file = await this.options.source.download(info.asset_url);
-      const ext = getAssetExtension(meta?.type || info.asset_type || file.contentType, meta?.name || info.asset_name);
+      const ext = getAssetExtension(
+        meta?.type || info.asset_type || file.contentType,
+        meta?.name || info.asset_name,
+        kind === "file"
+      );
       const fileName = `${id}.${ext}`;
       await mkdir(this.options.dir, { recursive: true });
       const target = join(this.options.dir, fileName);
@@ -132,7 +184,8 @@ export class AssetStore {
       this.used.add(fileName);
       return { id, name: name || info.asset_name || "", url: this.publicUrl(fileName), fileName };
     } catch (error) {
-      this.options.logger.warn(`asset ${id}: download failed, image dropped (${(error as Error).message})`);
+      const effect = kind === "file" ? "link kept as text" : "image dropped";
+      this.options.logger.warn(`asset ${id}: download failed, ${effect} (${(error as Error).message})`);
       return null;
     }
   }

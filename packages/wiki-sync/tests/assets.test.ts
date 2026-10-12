@@ -2,7 +2,13 @@ import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { AssetStore, extractImageAssetIds } from "../src/assets";
+import {
+  AssetStore,
+  assetDownloadId,
+  extractFileAssetIds,
+  extractImageAssetIds,
+  getAssetExtension,
+} from "../src/assets";
 import { FixtureSource } from "../src/fixture";
 
 const FIXTURE = new URL("./fixtures/wiki-fixture.json", import.meta.url).pathname;
@@ -62,5 +68,34 @@ describe("AssetStore with excalidraw drawings", () => {
     const png = await readFile(join(dir, `${DRAWING}.png`));
     expect([...png.subarray(1, 4)].map((c) => String.fromCharCode(c)).join("")).toBe("PNG");
     expect(warnings).toEqual([expect.stringContaining(`asset ${MISSING}: download failed`)]);
+  });
+});
+
+describe("linked file assets", () => {
+  const ID = "cccccccc-0000-4000-8000-000000000001";
+  const ctx = { workspaceSlug: "acme", planeUrl: "https://plane.example.com" };
+
+  it("recognizes Plane download links (root-relative or on the Plane origin)", () => {
+    expect(assetDownloadId(`/api/assets/v2/workspaces/acme/download/${ID}/`, ctx)).toBe(ID);
+    expect(
+      assetDownloadId(`https://plane.example.com/api/assets/v2/workspaces/acme/download/${ID.toUpperCase()}`, ctx)
+    ).toBe(ID);
+    expect(assetDownloadId(`/api/assets/v2/workspaces/acme/projects/${ID}/download/${ID}/`, ctx)).toBe(ID);
+    expect(assetDownloadId(`https://other.example.com/api/assets/v2/workspaces/acme/download/${ID}/`, ctx)).toBeNull();
+    expect(assetDownloadId(`/api/assets/v2/workspaces/other/download/${ID}/`, ctx)).toBeNull();
+    expect(assetDownloadId("/acme/wiki/page", ctx)).toBeNull();
+    expect(
+      extractFileAssetIds(
+        `<p><a target="_blank" href="/api/assets/v2/workspaces/acme/download/${ID}/">x</a><a href="#y">y</a></p>`,
+        ctx
+      )
+    ).toEqual([ID]);
+  });
+
+  it("names linked files by their original extension first", () => {
+    expect(getAssetExtension("image/svg+xml", "logo.svg", true)).toBe("svg");
+    expect(getAssetExtension("application/octet-stream", "board.zip", true)).toBe("zip");
+    expect(getAssetExtension("application/pdf", "no-extension", true)).toBe("pdf");
+    expect(getAssetExtension("image/png", "photo.jpeg")).toBe("png");
   });
 });

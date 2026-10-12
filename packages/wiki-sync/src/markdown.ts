@@ -26,7 +26,7 @@ import remarkGfm from "remark-gfm";
 import remarkStringify from "remark-stringify";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
-import { CALLOUT_TAG, rehypeWikiPreprocess, type TPreprocessContext } from "./preprocess";
+import { CALLOUT_TAG, FILE_LINK_ATTRIBUTE, rehypeWikiPreprocess, type TPreprocessContext } from "./preprocess";
 import { addSpacesToCheckboxes } from "./vendor/markdown-parser";
 
 const html = (value: string): Html => ({ type: "html", value });
@@ -113,6 +113,12 @@ function markCellBreaks(node: Element): void {
 
 /** Serialises a table as one CommonMark HTML block (no blank lines, which would end the block). */
 export function tableToRawHtml(table: Element): string {
+  visit(table, "element", (node) => {
+    if (node.tagName !== "a" || !node.properties?.[FILE_LINK_ATTRIBUTE]) return;
+    delete node.properties[FILE_LINK_ATTRIBUTE];
+    const href = str(node.properties.href);
+    if (href.startsWith("/")) node.properties.href = `pathname://${href}`;
+  });
   return toHtml(table, { closeSelfClosing: true }).replace(/\n\s*\n/g, "\n");
 }
 

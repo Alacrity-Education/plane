@@ -1,7 +1,8 @@
-import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { PlaneApiError } from "../src/api";
 import { FixtureSource, type TWikiFixture } from "../src/fixture";
 import { runSync, type TSyncOptions } from "../src/sync";
 import { buildPageTree } from "../src/tree";
@@ -24,6 +25,9 @@ const listFiles = async (dir: string): Promise<string[]> => {
   await walk(dir).catch(() => undefined);
   return out.toSorted();
 };
+
+/** Plane session download route of an asset (what the Wiki.js importer writes for linked files). */
+const download = (id: string) => `/api/assets/v2/workspaces/acme/download/${id}/`;
 
 /** FixtureSource that counts detail fetches. */
 class CountingSource extends FixtureSource {
@@ -389,5 +393,84 @@ describe("runSync (temp dir)", () => {
     const smoke = await readFile(join(root, "wiki/smoke-fixture-mdx-check.md"), "utf8");
     expect(smoke).not.toContain("wiki-assets");
     expect(logs.some((l) => l.startsWith("warn: asset aaaaaaaa"))).toBe(true);
+  });
+
+  it("exports files linked through Plane's download route next to the images", async () => {
+    const CACHED = "bbbbbbbb-0000-4000-8000-000000000001";
+    const FETCHED = "bbbbbbbb-0000-4000-8000-000000000002";
+    const GONE = "bbbbbbbb-0000-4000-8000-000000000003";
+    const fixture = await loadFixture();
+    fixture.pages.push({
+      id: "0000000f-0000-4000-8000-00000000000f",
+      name: "Branding",
+      parent: null,
+      sort_order: 99_000,
+      updated_at: "2026-10-01T00:00:00Z",
+      description_html: [
+        "<table><tbody><tr>",
+        `<td><p><a target="_blank" rel="noopener" href="${download(CACHED)}">Vector</a></p></td>`,
+        `<td><p><a href="https://plane.example.com${download(FETCHED)}">4000px</a></p></td>`,
+        `<td><p><a href="${download(GONE)}">Removed</a></p></td>`,
+        "</tr></tbody></table>",
+        `<p><a href="https://elsewhere.example.com${download(FETCHED)}">Other host</a> and <a href="${download(CACHED)}">again</a></p>`,
+      ].join(""),
+    } as TWikiFixture["pages"][number]);
+    const fetched: string[] = [];
+    class FileSource extends FixtureSource {
+      override async getAssetUrl(assetId: string) {
+        if (assetId.startsWith("bbbbbbbb")) fetched.push(assetId);
+        if (assetId === FETCHED) {
+          return {
+            asset_id: assetId,
+            asset_url: "https://s3.example.com/x?sig=1",
+            asset_name: "logo-4000.png",
+            asset_type: "image/png",
+          };
+        }
+        if (assetId === CACHED) {
+          return {
+            asset_id: assetId,
+            asset_url: "https://s3.example.com/y",
+            asset_name: "logo.svg",
+            asset_type: "image/svg+xml",
+          };
+        }
+        if (assetId === GONE) throw new PlaneApiError(404, `assets/${assetId}/`, '{"error":"Asset not found"}');
+        return super.getAssetUrl(assetId);
+      }
+      override async download(url: string) {
+        if (url.startsWith("https://s3.example.com/x"))
+          return { data: new Uint8Array([1, 2, 3]), contentType: "image/png" };
+        if (url.startsWith("https://s3.example.com/")) throw new Error("cached files must not be downloaded");
+        return super.download(url);
+      }
+    }
+    const assetsDir = join(root, "static/wiki-assets");
+    await mkdir(assetsDir, { recursive: true });
+    await writeFile(join(assetsDir, `${CACHED}.svg`), "<svg/>");
+
+    await runSync(options(new FileSource(fixture, FIXTURE_DIR)));
+    const page = await readFile(join(root, "wiki/branding.md"), "utf8");
+    expect(page).toContain(`[Vector](/wiki-assets/${CACHED}.svg)`);
+    expect(page).toContain(`[4000px](/wiki-assets/${FETCHED}.png)`);
+    expect(page).toContain(`[again](/wiki-assets/${CACHED}.svg)`);
+    // a missing asset keeps its text without a link
+    expect(page).toMatch(/\| Removed \|/);
+    expect(page).not.toContain(GONE);
+    // another host is not Plane: left alone
+    expect(page).toContain(`[Other host](https://elsewhere.example.com${download(FETCHED)})`);
+    expect(fetched.toSorted()).toEqual([FETCHED, GONE]);
+    expect([...(await readFile(join(assetsDir, `${FETCHED}.png`)))]).toEqual([1, 2, 3]);
+    expect(logs).toContainEqual(
+      expect.stringMatching(new RegExp(`^warn: asset ${GONE}: download failed, link kept as text`))
+    );
+    const manifest = await readManifest(join(root, ".wiki-cache/manifest.json"));
+    expect(manifest.pages["0000000f-0000-4000-8000-00000000000f"]?.assets).toEqual([`${CACHED}.svg`, `${FETCHED}.png`]);
+
+    // a second run neither refetches nor deletes the files
+    fetched.length = 0;
+    await runSync(options(new FileSource(fixture, FIXTURE_DIR), { force: true }));
+    expect(fetched).toEqual([GONE]);
+    expect(await listFiles(assetsDir)).toEqual(expect.arrayContaining([`${CACHED}.svg`, `${FETCHED}.png`]));
   });
 });
