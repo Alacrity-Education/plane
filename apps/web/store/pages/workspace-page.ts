@@ -43,6 +43,10 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
       updateAccess: async (payload) => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
         await workspacePageService.updateAccess(workspaceSlug, page.id, payload);
+        // the server unpublishes pages made private
+        if (payload.access === EPageAccess.PRIVATE) {
+          store.workspacePages.getPageById(page.id)?.mutateProperties({ is_published: false });
+        }
       },
       lock: async () => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
@@ -55,8 +59,11 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
       archive: async () => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
         const response = await workspacePageService.archive(workspaceSlug, page.id);
-        // the server archives the descendants as well
+        // the server archives (and unpublishes) the descendants as well
         store.workspacePages.setDescendantsArchivedAt(page.id, response.archived_at);
+        [page.id, ...store.workspacePages.getDescendantIds(page.id)].forEach((id) =>
+          store.workspacePages.getPageById(id)?.mutateProperties({ is_published: false })
+        );
         return response;
       },
       restore: async () => {
@@ -173,10 +180,11 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
   }
 
   /**
-   * @description publishing wiki pages is not supported yet
+   * @description returns true if the current logged in user can publish the page to the docs site
+   * (workspace admins and members, guests never)
    */
   get canCurrentUserPublishPage() {
-    return false;
+    return this.isAtLeastWorkspaceMember;
   }
 
   /**

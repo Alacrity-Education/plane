@@ -31,6 +31,7 @@ const WIKI_ROW_OPTIONS_ORDER: TPageActions[] = [
   "move",
   "move-to-project-wiki",
   "move-out-of-project-wiki",
+  "publish",
   "toggle-lock",
   "toggle-access",
   "archive-restore",

@@ -24,6 +24,7 @@ import { CreateWikiPageModal } from "@/components/wiki/modals/create-wiki-page-m
 import { MoveWikiPageModal } from "@/components/wiki/modals/move-page-modal";
 import { MoveToProjectWikiModal } from "@/components/wiki/modals/move-to-project-wiki-modal";
 import { useWikiPageExtraOptions } from "@/components/wiki/use-wiki-page-extra-options";
+import { WikiPagePublishedIndicator } from "@/components/wiki/wiki-page-published-indicator";
 // hooks
 import { EPageStoreType, usePage, usePageStore } from "@/hooks/store";
 import { useAppRouter } from "@/hooks/use-app-router";
@@ -159,6 +160,7 @@ export const WikiPageDetailsHeader = observer(function WikiPageDetailsHeader() {
       </Header.LeftItem>
       <Header.RightItem>
         <PageSyncingBadge syncStatus={page.isSyncingWithServer} />
+        <WikiPagePublishedIndicator page={page} />
         <PageHeaderActions page={page} storeType={storeType} extraOptions={extraOptions} />
         <CreateWikiPageModal
           isOpen={!!subPageParentId}

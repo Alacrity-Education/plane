@@ -213,6 +213,17 @@
         "success": "页面已移出项目 Wiki。",
         "error": "无法将页面移出项目 Wiki，请重试。"
       }
+    },
+    "publish": {
+      "action": "发布到文档站点",
+      "unpublish_action": "从文档站点取消发布",
+      "disabled_private": "请将页面设为公开后再发布",
+      "disabled_archived": "已归档的页面无法发布",
+      "published_tooltip": "已发布到文档站点",
+      "success": "页面已发布到文档站点。",
+      "unpublish_success": "页面已从文档站点移除。",
+      "error": "无法发布页面，请重试。",
+      "unpublish_error": "无法从文档站点移除页面，请重试。"
     }
   }
 }

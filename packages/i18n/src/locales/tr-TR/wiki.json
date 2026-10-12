@@ -213,6 +213,17 @@
         "success": "Sayfa proje wiki'sinden çıkarıldı.",
         "error": "Sayfa proje wiki'sinden çıkarılamadı. Lütfen tekrar deneyin."
       }
+    },
+    "publish": {
+      "action": "Dokümantasyon sitesinde yayınla",
+      "unpublish_action": "Dokümantasyon sitesinden yayından kaldır",
+      "disabled_private": "Yayınlamak için sayfayı herkese açık yapın",
+      "disabled_archived": "Arşivlenmiş sayfalar yayınlanamaz",
+      "published_tooltip": "Dokümantasyon sitesinde yayınlandı",
+      "success": "Sayfa dokümantasyon sitesinde yayınlandı.",
+      "unpublish_success": "Sayfa dokümantasyon sitesinden kaldırıldı.",
+      "error": "Sayfa yayınlanamadı. Lütfen tekrar deneyin.",
+      "unpublish_error": "Sayfa dokümantasyon sitesinden kaldırılamadı. Lütfen tekrar deneyin."
     }
   }
 }

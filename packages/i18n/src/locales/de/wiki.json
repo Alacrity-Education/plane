@@ -213,6 +213,17 @@
         "success": "Seite aus dem Projekt-Wiki verschoben.",
         "error": "Die Seite konnte nicht aus dem Projekt-Wiki verschoben werden. Bitte versuchen Sie es erneut."
       }
+    },
+    "publish": {
+      "action": "Auf der Dokumentationsseite veröffentlichen",
+      "unpublish_action": "Von der Dokumentationsseite entfernen",
+      "disabled_private": "Seite öffentlich machen, um sie zu veröffentlichen",
+      "disabled_archived": "Archivierte Seiten können nicht veröffentlicht werden",
+      "published_tooltip": "Auf der Dokumentationsseite veröffentlicht",
+      "success": "Seite auf der Dokumentationsseite veröffentlicht.",
+      "unpublish_success": "Seite von der Dokumentationsseite entfernt.",
+      "error": "Die Seite konnte nicht veröffentlicht werden. Bitte erneut versuchen.",
+      "unpublish_error": "Die Seite konnte nicht von der Dokumentationsseite entfernt werden. Bitte erneut versuchen."
     }
   }
 }

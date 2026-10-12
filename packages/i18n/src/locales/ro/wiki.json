@@ -213,6 +213,17 @@
         "success": "Pagina a fost scoasă din wiki-ul proiectului.",
         "error": "Pagina nu a putut fi scoasă din wiki-ul proiectului. Vă rugăm să încercați din nou."
       }
+    },
+    "publish": {
+      "action": "Publică pe site-ul de documentație",
+      "unpublish_action": "Anulează publicarea pe site-ul de documentație",
+      "disabled_private": "Faceți pagina publică pentru a o publica",
+      "disabled_archived": "Paginile arhivate nu pot fi publicate",
+      "published_tooltip": "Publicată pe site-ul de documentație",
+      "success": "Pagina a fost publicată pe site-ul de documentație.",
+      "unpublish_success": "Pagina a fost eliminată de pe site-ul de documentație.",
+      "error": "Pagina nu a putut fi publicată. Încercați din nou.",
+      "unpublish_error": "Pagina nu a putut fi eliminată de pe site-ul de documentație. Încercați din nou."
     }
   }
 }

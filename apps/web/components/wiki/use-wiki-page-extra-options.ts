@@ -6,9 +6,10 @@
 
 import { useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { AddPageOutline, LogOutOutline, MovePageOutline, ProjectsOutline } from "@makeplane/propel/icons";
+import { AddPageOutline, GlobeOutline, LogOutOutline, MovePageOutline, ProjectsOutline } from "@makeplane/propel/icons";
 // plane imports
 import { setToast } from "@plane/blocks/toast";
+import { EPageAccess } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 // components
 import type { TPageActionsMenuItem } from "@/components/pages/dropdowns";
@@ -16,6 +17,7 @@ import type { TPageActionsMenuItem } from "@/components/pages/dropdowns";
 import { EPageStoreType, usePageStore } from "@/hooks/store";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
+import type { TWorkspacePage } from "@/store/pages/workspace-page";
 
 type TArgs = {
   page: TPageInstance | undefined;
@@ -25,7 +27,7 @@ type TArgs = {
 };
 
 /**
- * @description wiki only page actions ("Add sub-page", "Move" and the project wiki moves),
+ * @description wiki only page actions ("Add sub-page", "Move", the project wiki moves and docs site publishing),
  * injected into PageActions via extraOptions
  */
 export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => {
@@ -35,7 +37,9 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
   // plane hooks
   const { t } = useTranslation();
   // store hooks
-  const { canCurrentUserCreatePage, getProjectWikiRootForPage, movePage } = usePageStore(EPageStoreType.WORKSPACE);
+  const { canCurrentUserCreatePage, getProjectWikiRootForPage, movePage, publishPage, unpublishPage } = usePageStore(
+    EPageStoreType.WORKSPACE
+  );
   // derived values
   const pageId = page?.id;
   const isArchived = !!page?.archived_at;
@@ -46,6 +50,10 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
   const projectWikiRootId = pageId && !isProjectWikiRoot ? getProjectWikiRootForPage(pageId) : null;
   const isInsideProjectWiki = !!projectWikiRootId;
   const canCurrentUserMovePage = !!page?.canCurrentUserMovePage;
+  // docs site publishing (only workspace pages carry the publish permission)
+  const canCurrentUserPublishPage = !!(page as TWorkspacePage | undefined)?.canCurrentUserPublishPage;
+  const isPublished = !!page?.is_published;
+  const isPrivate = page?.access === EPageAccess.PRIVATE;
 
   // moving a page out of a project wiki section makes it a top level page (with its own sub-pages)
   const handleMoveOutOfProjectWiki = useCallback(async () => {
@@ -65,6 +73,36 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
       });
     }
   }, [pageId, workspaceSlug, movePage, t]);
+
+  const handleTogglePublish = useCallback(async () => {
+    if (!pageId) return;
+    try {
+      if (isPublished) await unpublishPage(pageId);
+      else await publishPage(pageId);
+      setToast({
+        type: "success",
+        title: t("toast.success"),
+        message: t(isPublished ? "wiki.publish.unpublish_success" : "wiki.publish.success"),
+      });
+    } catch (error) {
+      setToast({
+        type: "error",
+        title: t("toast.error"),
+        message:
+          (error as { error?: string } | undefined)?.error ||
+          t(isPublished ? "wiki.publish.unpublish_error" : "wiki.publish.error"),
+      });
+    }
+  }, [pageId, isPublished, publishPage, unpublishPage, t]);
+
+  // a published page can always be unpublished, publishing needs a public, active page
+  const publishDisabledReason = isPublished
+    ? undefined
+    : isArchived
+      ? t("wiki.publish.disabled_archived")
+      : isPrivate
+        ? t("wiki.publish.disabled_private")
+        : undefined;
 
   return useMemo(
     (): TPageActionsMenuItem[] => [
@@ -114,6 +152,17 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
         disabled: isLocked,
         shouldRender: !!pageId && canCurrentUserMovePage && !isArchived && isInsideProjectWiki,
       },
+      {
+        key: "publish",
+        action: () => {
+          void handleTogglePublish();
+        },
+        title: t(isPublished ? "wiki.publish.unpublish_action" : "wiki.publish.action"),
+        description: publishDisabledReason,
+        icon: GlobeOutline,
+        disabled: !!publishDisabledReason,
+        shouldRender: !!pageId && canCurrentUserPublishPage,
+      },
     ],
     [
       pageId,
@@ -127,6 +176,10 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
       onMove,
       onMoveToProject,
       handleMoveOutOfProjectWiki,
+      canCurrentUserPublishPage,
+      isPublished,
+      publishDisabledReason,
+      handleTogglePublish,
       t,
     ]
   );

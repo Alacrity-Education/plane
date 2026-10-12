@@ -213,6 +213,17 @@
         "success": "Halaman dikeluarkan dari wiki projek.",
         "error": "Halaman tidak dapat dikeluarkan dari wiki projek. Silakan coba lagi."
       }
+    },
+    "publish": {
+      "action": "Terbitkan ke situs dokumentasi",
+      "unpublish_action": "Batalkan penerbitan dari situs dokumentasi",
+      "disabled_private": "Jadikan halaman publik untuk menerbitkannya",
+      "disabled_archived": "Halaman yang diarsipkan tidak dapat diterbitkan",
+      "published_tooltip": "Diterbitkan ke situs dokumentasi",
+      "success": "Halaman diterbitkan ke situs dokumentasi.",
+      "unpublish_success": "Halaman dihapus dari situs dokumentasi.",
+      "error": "Tidak dapat menerbitkan halaman. Silakan coba lagi.",
+      "unpublish_error": "Tidak dapat menghapus halaman dari situs dokumentasi. Silakan coba lagi."
     }
   }
 }

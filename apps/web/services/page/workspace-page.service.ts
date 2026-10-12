@@ -14,6 +14,7 @@ export type TWorkspacePagesSummary = {
   public_pages: number;
   private_pages: number;
   archived_pages: number;
+  published_pages?: number;
 };
 
 export type TWorkspacePageListParams = {
@@ -159,6 +160,28 @@ export class WorkspacePageService extends APIService {
 
   async duplicate(workspaceSlug: string, pageId: string): Promise<TPage> {
     return this.post(`${this.getBasePath(workspaceSlug)}/pages/${pageId}/duplicate/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * @description publish the page to the public docs site (idempotent), returns the updated page
+   */
+  async publish(workspaceSlug: string, pageId: string): Promise<TPage> {
+    return this.post(`${this.getBasePath(workspaceSlug)}/pages/${pageId}/publish/`)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * @description remove the page from the public docs site (idempotent), returns the updated page
+   */
+  async unpublish(workspaceSlug: string, pageId: string): Promise<TPage> {
+    return this.delete(`${this.getBasePath(workspaceSlug)}/pages/${pageId}/publish/`)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

@@ -56,7 +56,8 @@ export type TPageActions =
   | "move"
   | "add-sub-page"
   | "move-to-project-wiki"
-  | "move-out-of-project-wiki";
+  | "move-out-of-project-wiki"
+  | "publish";
 
 export type TPageActionsMenuItem = TContextMenuItem & { key: TPageActions };
 
@@ -75,7 +76,7 @@ export const PageActions = observer(function PageActions(props: Props) {
   const { t } = useTranslation();
   // states
   const [deletePageModal, setDeletePageModal] = useState(false);
-  const [movePageModal, setMovePageModal] = useState(false);
+  const [, setMovePageModal] = useState(false);
   // params
   const { workspaceSlug } = useParams();
   // page flag

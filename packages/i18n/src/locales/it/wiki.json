@@ -213,6 +213,17 @@
         "success": "Pagina spostata fuori dalla wiki del progetto.",
         "error": "Impossibile spostare la pagina fuori dalla wiki del progetto. Riprovi."
       }
+    },
+    "publish": {
+      "action": "Pubblica sul sito della documentazione",
+      "unpublish_action": "Rimuovi dal sito della documentazione",
+      "disabled_private": "Rendi pubblica la pagina per pubblicarla",
+      "disabled_archived": "Le pagine archiviate non possono essere pubblicate",
+      "published_tooltip": "Pubblicata sul sito della documentazione",
+      "success": "Pagina pubblicata sul sito della documentazione.",
+      "unpublish_success": "Pagina rimossa dal sito della documentazione.",
+      "error": "Impossibile pubblicare la pagina. Riprova.",
+      "unpublish_error": "Impossibile rimuovere la pagina dal sito della documentazione. Riprova."
     }
   }
 }

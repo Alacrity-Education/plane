@@ -12,6 +12,8 @@ export type TPageExtended = {
   is_global?: boolean;
   sort_order?: number;
   sub_pages_count?: number;
+  // read only, true when the page is exported to the public docs site
+  is_published?: boolean;
   // read only, set only on the root page of a project wiki section
   project_wiki?: TPageProjectWiki | null;
 };

@@ -213,6 +213,17 @@
         "success": "頁面已移出專案 Wiki。",
         "error": "無法將頁面移出專案 Wiki，請再試一次。"
       }
+    },
+    "publish": {
+      "action": "發布到文件網站",
+      "unpublish_action": "從文件網站取消發布",
+      "disabled_private": "請將頁面設為公開後再發布",
+      "disabled_archived": "已封存的頁面無法發布",
+      "published_tooltip": "已發布到文件網站",
+      "success": "頁面已發布到文件網站。",
+      "unpublish_success": "頁面已從文件網站移除。",
+      "error": "無法發布頁面，請重試。",
+      "unpublish_error": "無法從文件網站移除頁面，請重試。"
     }
   }
 }

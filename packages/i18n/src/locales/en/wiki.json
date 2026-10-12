@@ -213,6 +213,17 @@
         "success": "Page moved out of the project wiki.",
         "error": "The page could not be moved out of the project wiki. Please try again."
       }
+    },
+    "publish": {
+      "action": "Publish to docs site",
+      "unpublish_action": "Unpublish from docs site",
+      "disabled_private": "Make the page public to publish it",
+      "disabled_archived": "Archived pages can't be published",
+      "published_tooltip": "Published to the docs site",
+      "success": "Page published to the docs site.",
+      "unpublish_success": "Page removed from the docs site.",
+      "error": "Couldn't publish the page. Please try again.",
+      "unpublish_error": "Couldn't remove the page from the docs site. Please try again."
     }
   }
 }

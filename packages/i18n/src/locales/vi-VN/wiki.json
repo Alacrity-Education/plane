@@ -213,6 +213,17 @@
         "success": "Đã chuyển trang ra khỏi wiki dự án.",
         "error": "Không thể chuyển trang ra khỏi wiki dự án. Vui lòng thử lại."
       }
+    },
+    "publish": {
+      "action": "Xuất bản lên trang tài liệu",
+      "unpublish_action": "Hủy xuất bản khỏi trang tài liệu",
+      "disabled_private": "Hãy đặt trang ở chế độ công khai để xuất bản",
+      "disabled_archived": "Không thể xuất bản trang đã lưu trữ",
+      "published_tooltip": "Đã xuất bản lên trang tài liệu",
+      "success": "Đã xuất bản trang lên trang tài liệu.",
+      "unpublish_success": "Đã gỡ trang khỏi trang tài liệu.",
+      "error": "Không thể xuất bản trang. Vui lòng thử lại.",
+      "unpublish_error": "Không thể gỡ trang khỏi trang tài liệu. Vui lòng thử lại."
     }
   }
 }

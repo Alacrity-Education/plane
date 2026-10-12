@@ -213,6 +213,17 @@
         "success": "Strona została przeniesiona poza wiki projektu.",
         "error": "Nie udało się przenieść strony poza wiki projektu. Spróbuj ponownie."
       }
+    },
+    "publish": {
+      "action": "Opublikuj w serwisie dokumentacji",
+      "unpublish_action": "Cofnij publikację w serwisie dokumentacji",
+      "disabled_private": "Aby opublikować stronę, ustaw ją jako publiczną",
+      "disabled_archived": "Zarchiwizowanych stron nie można publikować",
+      "published_tooltip": "Opublikowano w serwisie dokumentacji",
+      "success": "Strona została opublikowana w serwisie dokumentacji.",
+      "unpublish_success": "Strona została usunięta z serwisu dokumentacji.",
+      "error": "Nie udało się opublikować strony. Spróbuj ponownie.",
+      "unpublish_error": "Nie udało się usunąć strony z serwisu dokumentacji. Spróbuj ponownie."
     }
   }
 }

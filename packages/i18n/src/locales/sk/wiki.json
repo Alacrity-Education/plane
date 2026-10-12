@@ -213,6 +213,17 @@
         "success": "Stránka bola presunutá z wiki projektu.",
         "error": "Stránku sa nepodarilo presunúť z wiki projektu. Skúste to prosím znova."
       }
+    },
+    "publish": {
+      "action": "Publikovať na webe dokumentácie",
+      "unpublish_action": "Zrušiť publikovanie na webe dokumentácie",
+      "disabled_private": "Na publikovanie nastavte stránku ako verejnú",
+      "disabled_archived": "Archivované stránky nie je možné publikovať",
+      "published_tooltip": "Publikované na webe dokumentácie",
+      "success": "Stránka bola publikovaná na webe dokumentácie.",
+      "unpublish_success": "Stránka bola odstránená z webu dokumentácie.",
+      "error": "Stránku sa nepodarilo publikovať. Skúste to znova.",
+      "unpublish_error": "Stránku sa nepodarilo odstrániť z webu dokumentácie. Skúste to znova."
     }
   }
 }

@@ -213,6 +213,17 @@
         "success": "Página retirada da wiki do projeto.",
         "error": "Não foi possível tirar a página da wiki do projeto. Tente novamente."
       }
+    },
+    "publish": {
+      "action": "Publicar no site de documentação",
+      "unpublish_action": "Despublicar do site de documentação",
+      "disabled_private": "Torne a página pública para publicá-la",
+      "disabled_archived": "Páginas arquivadas não podem ser publicadas",
+      "published_tooltip": "Publicada no site de documentação",
+      "success": "Página publicada no site de documentação.",
+      "unpublish_success": "Página removida do site de documentação.",
+      "error": "Não foi possível publicar a página. Tente novamente.",
+      "unpublish_error": "Não foi possível remover a página do site de documentação. Tente novamente."
     }
   }
 }

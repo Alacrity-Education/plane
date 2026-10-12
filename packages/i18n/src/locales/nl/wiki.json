@@ -213,6 +213,17 @@
         "success": "Pagina uit de projectwiki verplaatst.",
         "error": "De pagina kon niet uit de projectwiki worden verplaatst. Probeer het opnieuw."
       }
+    },
+    "publish": {
+      "action": "Publiceren op de documentatiesite",
+      "unpublish_action": "Publicatie op de documentatiesite intrekken",
+      "disabled_private": "Maak de pagina openbaar om deze te publiceren",
+      "disabled_archived": "Gearchiveerde pagina's kunnen niet worden gepubliceerd",
+      "published_tooltip": "Gepubliceerd op de documentatiesite",
+      "success": "Pagina gepubliceerd op de documentatiesite.",
+      "unpublish_success": "Pagina verwijderd van de documentatiesite.",
+      "error": "De pagina kon niet worden gepubliceerd. Probeer het opnieuw.",
+      "unpublish_error": "De pagina kon niet van de documentatiesite worden verwijderd. Probeer het opnieuw."
     }
   }
 }

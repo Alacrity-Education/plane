@@ -71,6 +71,9 @@ export interface IWorkspacePageStore {
   createPage: (pageData: Partial<TPage>) => Promise<TPage | undefined>;
   removePage: (params: { pageId: string; shouldSync?: boolean }) => Promise<void>;
   movePage: (workspaceSlug: string, pageId: string, parentId: string | null, sortOrder?: number) => Promise<void>;
+  // docs site publishing
+  publishPage: (pageId: string) => Promise<void>;
+  unpublishPage: (pageId: string) => Promise<void>;
   // project wiki sections
   fetchProjectWikiSection: (workspaceSlug: string, projectId: string) => Promise<TProjectWikiSection | null>;
   createProjectWikiSection: (workspaceSlug: string, projectId: string) => Promise<TProjectWikiSection>;
@@ -112,6 +115,8 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       createPage: action,
       removePage: action,
       movePage: action,
+      publishPage: action,
+      unpublishPage: action,
       setDescendantsArchivedAt: action,
       fetchProjectWikiSection: action,
       createProjectWikiSection: action,
@@ -502,6 +507,32 @@ export class WorkspacePageStore implements IWorkspacePageStore {
       });
       throw error;
     }
+  };
+
+  /**
+   * @description publish a page to the public docs site
+   * @param {string} pageId
+   */
+  publishPage = async (pageId: string) => {
+    const { workspaceSlug } = this.store.router;
+    if (!workspaceSlug || !pageId) return;
+    const response = await this.service.publish(workspaceSlug, pageId);
+    runInAction(() => {
+      this.getPageById(pageId)?.mutateProperties({ is_published: response?.is_published ?? true });
+    });
+  };
+
+  /**
+   * @description remove a page from the public docs site
+   * @param {string} pageId
+   */
+  unpublishPage = async (pageId: string) => {
+    const { workspaceSlug } = this.store.router;
+    if (!workspaceSlug || !pageId) return;
+    const response = await this.service.unpublish(workspaceSlug, pageId);
+    runInAction(() => {
+      this.getPageById(pageId)?.mutateProperties({ is_published: response?.is_published ?? false });
+    });
   };
 
   /**
