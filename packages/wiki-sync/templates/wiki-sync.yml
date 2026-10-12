@@ -6,7 +6,8 @@
 #   Variables: PLANE_URL (e.g. https://plane.example.com), PLANE_WORKSPACE_SLUG
 #   Secrets:   PLANE_API_KEY (token of a bot user that is a workspace member)
 #
-# Trigger a rebuild from Plane or a script:
+# Triggers: every 6 hours as a safety net, manually, and `repository_dispatch`
+# (event `plane-wiki-updated`) sent by a script or a poller (e.g. the trigger worker in the docs repository):
 #   curl -X POST https://api.github.com/repos/OWNER/REPO/dispatches \
 #     -H "Authorization: Bearer <token with contents:write>" \
 #     -d '{"event_type":"plane-wiki-updated"}'
@@ -26,9 +27,11 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
+# One build at a time; bursts of triggers collapse into at most one queued run.
 concurrency:
   group: wiki-sync
   cancel-in-progress: false
@@ -36,6 +39,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
     env:
       PLANE_URL: ${{ vars.PLANE_URL }}
       PLANE_WORKSPACE_SLUG: ${{ vars.PLANE_WORKSPACE_SLUG }}
@@ -45,7 +50,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
@@ -61,16 +66,39 @@ jobs:
           restore-keys: wiki-sync-
 
       - name: Sync wiki from Plane
-        run: npm run sync:wiki -- ${{ inputs.force && '--force' || '' }}
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          before=$(sha256sum .wiki-cache/manifest.json 2>/dev/null | cut -d' ' -f1 || true)
+          npm run sync:wiki -- ${{ inputs.force && '--force' || '' }}
+          after=$(sha256sum .wiki-cache/manifest.json | cut -d' ' -f1)
 
-      - run: npm run build
+          # Skip the build when the export is identical to the last one, unless the previous run
+          # of this workflow did not succeed (its deploy may be missing) or this is a manual/push run.
+          changed=true
+          if [ -n "$before" ] && [ "$before" = "$after" ] \
+             && [ "${{ github.event_name }}" != "workflow_dispatch" ] \
+             && [ "${{ github.event_name }}" != "push" ]; then
+            previous=$(gh api "repos/${{ github.repository }}/actions/workflows/wiki-sync.yml/runs?status=completed&per_page=1" \
+              --jq '.workflow_runs[0].conclusion // "none"')
+            if [ "$previous" = "success" ]; then changed=false; fi
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          echo "manifest before=$before after=$after -> changed=$changed"
+
+      - name: Build site
+        if: steps.sync.outputs.changed == 'true'
+        run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
+        if: steps.sync.outputs.changed == 'true'
         with:
           path: build
 
   deploy:
     needs: build
+    if: needs.build.outputs.changed == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
