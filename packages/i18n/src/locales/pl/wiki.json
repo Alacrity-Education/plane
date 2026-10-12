@@ -114,6 +114,8 @@
         "all": "Wszystkie",
         "public": "Publiczne",
         "private": "Prywatne",
+        "members": "Członkowie",
+        "admins": "Tylko administratorzy",
         "archived": "Zarchiwizowane"
       },
       "adding_page": "Dodawanie",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Brak prywatnych stron",
           "description": "Strony prywatne są widoczne tylko dla Ciebie."
+        },
+        "members": {
+          "title": "Brak stron tylko dla członków",
+          "description": "Strony tylko dla członków widzą administratorzy i członkowie przestrzeni roboczej, ale nie goście."
+        },
+        "admins": {
+          "title": "Brak stron tylko dla administratorów",
+          "description": "Strony tylko dla administratorów widzą wyłącznie administratorzy przestrzeni roboczej i ich właściciel."
         },
         "archived": {
           "title": "Brak zarchiwizowanych stron",
@@ -154,8 +164,15 @@
         "name_placeholder": "Bez tytułu",
         "name_max_length": "Tytuł strony musi mieć mniej niż 255 znaków",
         "parent_label": "Utwórz w",
+        "access_label": "Dostęp",
+        "public_label": "Strona publiczna",
+        "public_description": "Widzą ją wszyscy w przestrzeni roboczej",
         "private_label": "Strona prywatna",
         "private_description": "Widoczna tylko dla Ciebie",
+        "members_label": "Tylko członkowie",
+        "members_description": "Widzą ją administratorzy i członkowie przestrzeni roboczej, goście nie",
+        "admins_label": "Tylko administratorzy",
+        "admins_description": "Widzą ją tylko administratorzy przestrzeni roboczej i Ty",
         "submit": "Utwórz stronę",
         "submitting": "Tworzenie"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Strona została usunięta z serwisu dokumentacji.",
       "error": "Nie udało się opublikować strony. Spróbuj ponownie.",
       "unpublish_error": "Nie udało się usunąć strony z serwisu dokumentacji. Spróbuj ponownie."
+    },
+    "access": {
+      "admins_only": "Tylko administratorzy",
+      "make_admins_only": "Udostępnij tylko administratorom",
+      "admins_only_success": "Stronę widzą teraz tylko administratorzy przestrzeni roboczej i jej właściciel.",
+      "change_error": "Nie udało się zmienić dostępu do strony. Spróbuj ponownie.",
+      "members_only": "Tylko członkowie",
+      "make_members_only": "Udostępnij tylko członkom",
+      "members_only_success": "Strona jest teraz ukryta przed gośćmi."
     }
   }
 }

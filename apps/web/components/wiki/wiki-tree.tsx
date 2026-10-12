@@ -8,7 +8,6 @@ import { useCallback, useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { ChevronRightOutline, ProjectsOutline } from "@makeplane/propel/icons";
 // plane imports
-import { EPageAccess } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import type { TPageNavigationTabs } from "@plane/types";
 import { calculateTotalFilters, cn } from "@plane/utils";
@@ -20,6 +19,7 @@ import { EPageStoreType, usePageStore } from "@/hooks/store";
 import { CreateWikiPageModal } from "./modals/create-wiki-page-modal";
 import { MoveWikiPageModal } from "./modals/move-page-modal";
 import { MoveToProjectWikiModal } from "./modals/move-to-project-wiki-modal";
+import { getWikiPageAccessForTab } from "./wiki-tab-navigation";
 import { WikiTreeRow } from "./wiki-tree-row";
 
 const getExpandedStorageKey = (workspaceSlug: string) => `wiki_tree_${workspaceSlug}`;
@@ -254,7 +254,7 @@ export const WikiTree = observer(function WikiTree(props: Props) {
         onClose={() => setIsCreateModalOpen(false)}
         workspaceSlug={workspaceSlug}
         defaultParentId={createParentId}
-        defaultAccess={pageType === "private" ? EPageAccess.PRIVATE : EPageAccess.PUBLIC}
+        defaultAccess={getWikiPageAccessForTab(pageType)}
       />
       <MoveWikiPageModal
         isOpen={!!movePageId}

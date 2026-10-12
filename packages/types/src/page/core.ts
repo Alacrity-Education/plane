@@ -31,7 +31,8 @@ export type TPage = {
 } & TPageExtended;
 
 // page filters
-export type TPageNavigationTabs = "all" | "public" | "private" | "archived";
+// "admins" (admins-only pages) and "members" (members-only pages) are workspace wiki tabs only
+export type TPageNavigationTabs = "all" | "public" | "private" | "admins" | "members" | "archived";
 
 export type TPageFiltersSortKey = "name" | "created_at" | "updated_at" | "opened_at";
 

@@ -114,6 +114,8 @@
         "all": "Alle",
         "public": "Öffentlich",
         "private": "Privat",
+        "members": "Mitglieder",
+        "admins": "Nur Admins",
         "archived": "Archiviert"
       },
       "adding_page": "Wird hinzugefügt",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Noch keine privaten Seiten",
           "description": "Private Seiten sind nur für Sie sichtbar."
+        },
+        "members": {
+          "title": "Noch keine Seiten nur für Mitglieder",
+          "description": "Seiten nur für Mitglieder sind für Workspace-Admins und -Mitglieder sichtbar, aber nicht für Gäste."
+        },
+        "admins": {
+          "title": "Noch keine Seiten nur für Admins",
+          "description": "Seiten nur für Admins sind nur für Workspace-Admins und ihren Besitzer sichtbar."
         },
         "archived": {
           "title": "Noch keine archivierten Seiten",
@@ -154,8 +164,15 @@
         "name_placeholder": "Ohne Titel",
         "name_max_length": "Der Seitentitel muss weniger als 255 Zeichen haben",
         "parent_label": "Erstellen unter",
+        "access_label": "Zugriff",
+        "public_label": "Öffentliche Seite",
+        "public_description": "Alle im Workspace können sie sehen",
         "private_label": "Private Seite",
         "private_description": "Nur für Sie sichtbar",
+        "members_label": "Nur Mitglieder",
+        "members_description": "Workspace-Admins und -Mitglieder können sie sehen, Gäste nicht",
+        "admins_label": "Nur Admins",
+        "admins_description": "Nur Workspace-Admins und Sie können sie sehen",
         "submit": "Seite erstellen",
         "submitting": "Wird erstellt"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Seite von der Dokumentationsseite entfernt.",
       "error": "Die Seite konnte nicht veröffentlicht werden. Bitte erneut versuchen.",
       "unpublish_error": "Die Seite konnte nicht von der Dokumentationsseite entfernt werden. Bitte erneut versuchen."
+    },
+    "access": {
+      "admins_only": "Nur Admins",
+      "make_admins_only": "Nur für Admins freigeben",
+      "admins_only_success": "Die Seite ist jetzt nur für Workspace-Admins und ihren Besitzer sichtbar.",
+      "change_error": "Der Zugriff auf die Seite konnte nicht geändert werden. Bitte versuchen Sie es erneut.",
+      "members_only": "Nur Mitglieder",
+      "make_members_only": "Nur für Mitglieder freigeben",
+      "members_only_success": "Die Seite ist jetzt für Gäste ausgeblendet."
     }
   }
 }

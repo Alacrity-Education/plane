@@ -7,6 +7,10 @@
 export enum EPageAccess {
   PUBLIC = 0,
   PRIVATE = 1,
+  // workspace wiki pages only: visible to workspace admins and the page owner
+  ADMIN = 2,
+  // workspace wiki pages only: visible to workspace admins and members (not guests) and the page owner
+  MEMBERS = 3,
 }
 
 export type TCreatePageModal = {

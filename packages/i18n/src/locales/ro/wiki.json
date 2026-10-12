@@ -114,6 +114,8 @@
         "all": "Toate",
         "public": "Publice",
         "private": "Private",
+        "members": "Membri",
+        "admins": "Doar administratori",
         "archived": "Arhivate"
       },
       "adding_page": "Se adaugă",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Nu există încă pagini private",
           "description": "Paginile private sunt vizibile doar pentru dumneavoastră."
+        },
+        "members": {
+          "title": "Nicio pagină doar pentru membri încă",
+          "description": "Paginile doar pentru membri sunt vizibile administratorilor și membrilor spațiului de lucru, dar nu și invitaților."
+        },
+        "admins": {
+          "title": "Nicio pagină doar pentru administratori încă",
+          "description": "Paginile doar pentru administratori sunt vizibile doar administratorilor spațiului de lucru și proprietarului lor."
         },
         "archived": {
           "title": "Nu există încă pagini arhivate",
@@ -154,8 +164,15 @@
         "name_placeholder": "Fără titlu",
         "name_max_length": "Titlul paginii trebuie să aibă mai puțin de 255 de caractere",
         "parent_label": "Creează în",
+        "access_label": "Acces",
+        "public_label": "Pagină publică",
+        "public_description": "Toată lumea din spațiul de lucru o poate vedea",
         "private_label": "Pagină privată",
         "private_description": "Doar dumneavoastră o puteți vedea",
+        "members_label": "Doar membri",
+        "members_description": "Administratorii și membrii spațiului de lucru o pot vedea, invitații nu",
+        "admins_label": "Doar administratori",
+        "admins_description": "Doar administratorii spațiului de lucru și dumneavoastră o puteți vedea",
         "submit": "Creează pagina",
         "submitting": "Se creează"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Pagina a fost eliminată de pe site-ul de documentație.",
       "error": "Pagina nu a putut fi publicată. Încercați din nou.",
       "unpublish_error": "Pagina nu a putut fi eliminată de pe site-ul de documentație. Încercați din nou."
+    },
+    "access": {
+      "admins_only": "Doar administratori",
+      "make_admins_only": "Setează doar pentru administratori",
+      "admins_only_success": "Pagina este acum vizibilă doar administratorilor spațiului de lucru și proprietarului ei.",
+      "change_error": "Accesul la pagină nu a putut fi modificat. Vă rugăm să încercați din nou.",
+      "members_only": "Doar membri",
+      "make_members_only": "Setează doar pentru membri",
+      "members_only_success": "Pagina este acum ascunsă invitaților."
     }
   }
 }

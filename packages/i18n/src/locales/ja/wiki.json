@@ -114,6 +114,8 @@
         "all": "すべて",
         "public": "公開",
         "private": "非公開",
+        "members": "メンバー",
+        "admins": "管理者のみ",
         "archived": "アーカイブ済み"
       },
       "adding_page": "追加中",
@@ -128,6 +130,14 @@
         "private": {
           "title": "非公開ページはまだありません",
           "description": "非公開ページはあなたのみが閲覧できます。"
+        },
+        "members": {
+          "title": "メンバーのみのページはまだありません",
+          "description": "メンバーのみのページは、ワークスペースの管理者とメンバーが閲覧でき、ゲストは閲覧できません。"
+        },
+        "admins": {
+          "title": "管理者のみのページはまだありません",
+          "description": "管理者のみのページは、ワークスペースの管理者と所有者だけが閲覧できます。"
         },
         "archived": {
           "title": "アーカイブ済みのページはまだありません",
@@ -154,8 +164,15 @@
         "name_placeholder": "無題",
         "name_max_length": "ページタイトルは255文字未満にしてください",
         "parent_label": "作成先",
+        "access_label": "アクセス",
+        "public_label": "公開ページ",
+        "public_description": "ワークスペースの全員が閲覧できます",
         "private_label": "非公開ページ",
         "private_description": "自分だけが閲覧できます",
+        "members_label": "メンバーのみ",
+        "members_description": "ワークスペースの管理者とメンバーが閲覧でき、ゲストは閲覧できません",
+        "admins_label": "管理者のみ",
+        "admins_description": "ワークスペースの管理者とあなただけが閲覧できます",
         "submit": "ページを作成",
         "submitting": "作成中"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "ページをドキュメントサイトから削除しました。",
       "error": "ページを公開できませんでした。もう一度お試しください。",
       "unpublish_error": "ページをドキュメントサイトから削除できませんでした。もう一度お試しください。"
+    },
+    "access": {
+      "admins_only": "管理者のみ",
+      "make_admins_only": "管理者のみにする",
+      "admins_only_success": "このページはワークスペースの管理者と所有者だけが閲覧できるようになりました。",
+      "change_error": "ページのアクセス権を変更できませんでした。もう一度お試しください。",
+      "members_only": "メンバーのみ",
+      "make_members_only": "メンバーのみにする",
+      "members_only_success": "このページはゲストに表示されなくなりました。"
     }
   }
 }

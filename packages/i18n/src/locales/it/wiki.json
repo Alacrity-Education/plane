@@ -114,6 +114,8 @@
         "all": "Tutte",
         "public": "Pubbliche",
         "private": "Private",
+        "members": "Membri",
+        "admins": "Solo amministratori",
         "archived": "Archiviate"
       },
       "adding_page": "Aggiunta in corso",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Ancora nessuna pagina privata",
           "description": "Le pagine private sono visibili solo a Lei."
+        },
+        "members": {
+          "title": "Nessuna pagina solo per membri",
+          "description": "Le pagine solo per membri sono visibili agli amministratori e ai membri del workspace, ma non agli ospiti."
+        },
+        "admins": {
+          "title": "Nessuna pagina solo per amministratori",
+          "description": "Le pagine solo per amministratori sono visibili solo agli amministratori del workspace e al loro proprietario."
         },
         "archived": {
           "title": "Ancora nessuna pagina archiviata",
@@ -154,8 +164,15 @@
         "name_placeholder": "Senza titolo",
         "name_max_length": "Il titolo della pagina deve contenere meno di 255 caratteri",
         "parent_label": "Crea sotto",
+        "access_label": "Accesso",
+        "public_label": "Pagina pubblica",
+        "public_description": "Tutti nel workspace possono vederla",
         "private_label": "Pagina privata",
         "private_description": "Visibile solo a Lei",
+        "members_label": "Solo membri",
+        "members_description": "Gli amministratori e i membri del workspace possono vederla, gli ospiti no",
+        "admins_label": "Solo amministratori",
+        "admins_description": "Solo gli amministratori del workspace e Lei possono vederla",
         "submit": "Crea pagina",
         "submitting": "Creazione in corso"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Pagina rimossa dal sito della documentazione.",
       "error": "Impossibile pubblicare la pagina. Riprova.",
       "unpublish_error": "Impossibile rimuovere la pagina dal sito della documentazione. Riprova."
+    },
+    "access": {
+      "admins_only": "Solo amministratori",
+      "make_admins_only": "Rendi solo per amministratori",
+      "admins_only_success": "Ora la pagina è visibile solo agli amministratori del workspace e al suo proprietario.",
+      "change_error": "Impossibile modificare l'accesso alla pagina. Riprovi.",
+      "members_only": "Solo membri",
+      "make_members_only": "Rendi solo per membri",
+      "members_only_success": "Ora la pagina è nascosta agli ospiti."
     }
   }
 }

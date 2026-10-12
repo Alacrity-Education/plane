@@ -114,6 +114,8 @@
         "all": "Semua",
         "public": "Publik",
         "private": "Pribadi",
+        "members": "Anggota",
+        "admins": "Khusus admin",
         "archived": "Diarsipkan"
       },
       "adding_page": "Menambahkan",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Belum ada halaman pribadi",
           "description": "Halaman pribadi hanya dapat dilihat oleh Anda."
+        },
+        "members": {
+          "title": "Belum ada halaman khusus anggota",
+          "description": "Halaman khusus anggota terlihat oleh admin dan anggota ruang kerja, tetapi tidak oleh tamu."
+        },
+        "admins": {
+          "title": "Belum ada halaman khusus admin",
+          "description": "Halaman khusus admin hanya terlihat oleh admin ruang kerja dan pemiliknya."
         },
         "archived": {
           "title": "Belum ada halaman yang diarsipkan",
@@ -154,8 +164,15 @@
         "name_placeholder": "Tanpa judul",
         "name_max_length": "Judul halaman harus kurang dari 255 karakter",
         "parent_label": "Buat di bawah",
+        "access_label": "Akses",
+        "public_label": "Halaman publik",
+        "public_description": "Semua orang di ruang kerja dapat melihatnya",
         "private_label": "Halaman privat",
         "private_description": "Hanya Anda yang dapat melihatnya",
+        "members_label": "Khusus anggota",
+        "members_description": "Admin dan anggota ruang kerja dapat melihatnya, tamu tidak",
+        "admins_label": "Khusus admin",
+        "admins_description": "Hanya admin ruang kerja dan Anda yang dapat melihatnya",
         "submit": "Buat halaman",
         "submitting": "Membuat"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Halaman dihapus dari situs dokumentasi.",
       "error": "Tidak dapat menerbitkan halaman. Silakan coba lagi.",
       "unpublish_error": "Tidak dapat menghapus halaman dari situs dokumentasi. Silakan coba lagi."
+    },
+    "access": {
+      "admins_only": "Khusus admin",
+      "make_admins_only": "Jadikan khusus admin",
+      "admins_only_success": "Halaman kini hanya terlihat oleh admin ruang kerja dan pemiliknya.",
+      "change_error": "Akses halaman tidak dapat diubah. Silakan coba lagi.",
+      "members_only": "Khusus anggota",
+      "make_members_only": "Jadikan khusus anggota",
+      "members_only_success": "Halaman kini disembunyikan dari tamu."
     }
   }
 }

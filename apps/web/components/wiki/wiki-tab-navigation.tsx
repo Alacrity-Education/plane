@@ -4,11 +4,15 @@
  * See the LICENSE file for details.
  */
 
+import { observer } from "mobx-react";
 import Link from "next/link";
 // plane imports
+import { EPageAccess, EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import type { TPageNavigationTabs } from "@plane/types";
 import { cn } from "@plane/utils";
+// hooks
+import { useUserPermissions } from "@/hooks/store/user";
 
 type TWikiTabNavigation = {
   workspaceSlug: string;
@@ -16,7 +20,18 @@ type TWikiTabNavigation = {
 };
 
 // wiki tab options
-const WIKI_TABS: { key: TPageNavigationTabs; i18n_label: string }[] = [
+/**
+ * @description access of the pages created from a wiki tab (the private / admins-only tabs create pages of that access)
+ */
+export const getWikiPageAccessForTab = (pageType: string | null | undefined): EPageAccess => {
+  if (pageType === "private") return EPageAccess.PRIVATE;
+  if (pageType === "admins") return EPageAccess.ADMIN;
+  if (pageType === "members") return EPageAccess.MEMBERS;
+  return EPageAccess.PUBLIC;
+};
+
+// minRole: the tab is only shown to users with at least this workspace role
+const WIKI_TABS: { key: TPageNavigationTabs; i18n_label: string; minRole?: EUserPermissions }[] = [
   {
     key: "all",
     i18n_label: "wiki.pages.tabs.all",
@@ -30,15 +45,36 @@ const WIKI_TABS: { key: TPageNavigationTabs; i18n_label: string }[] = [
     i18n_label: "wiki.pages.tabs.private",
   },
   {
+    key: "members",
+    i18n_label: "wiki.pages.tabs.members",
+    minRole: EUserPermissions.MEMBER,
+  },
+  {
+    key: "admins",
+    i18n_label: "wiki.pages.tabs.admins",
+    minRole: EUserPermissions.ADMIN,
+  },
+  {
     key: "archived",
     i18n_label: "wiki.pages.tabs.archived",
   },
 ];
 
-export function WikiTabNavigation(props: TWikiTabNavigation) {
+export const WikiTabNavigation = observer(function WikiTabNavigation(props: TWikiTabNavigation) {
   const { workspaceSlug, pageType } = props;
   // plane hooks
   const { t } = useTranslation();
+  // store hooks
+  const { allowPermissions } = useUserPermissions();
+  // derived values
+  const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
+  const isAtLeastWorkspaceMember = allowPermissions(
+    [EUserPermissions.ADMIN, EUserPermissions.MEMBER],
+    EUserPermissionsLevel.WORKSPACE
+  );
+  const tabs = WIKI_TABS.filter(
+    (tab) => !tab.minRole || (tab.minRole === EUserPermissions.ADMIN ? isWorkspaceAdmin : isAtLeastWorkspaceMember)
+  );
 
   const handleTabClick = (e: React.MouseEvent<HTMLAnchorElement>, tabKey: TPageNavigationTabs) => {
     if (tabKey === pageType) e.preventDefault();
@@ -46,7 +82,7 @@ export function WikiTabNavigation(props: TWikiTabNavigation) {
 
   return (
     <div className="relative flex h-full items-center">
-      {WIKI_TABS.map((tab) => (
+      {tabs.map((tab) => (
         <Link
           key={tab.key}
           href={`/${workspaceSlug}/wiki?type=${tab.key}`}
@@ -69,4 +105,4 @@ export function WikiTabNavigation(props: TWikiTabNavigation) {
       ))}
     </div>
   );
-}
+});

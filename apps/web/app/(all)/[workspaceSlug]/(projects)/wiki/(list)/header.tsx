@@ -12,7 +12,6 @@ import { Icon } from "@makeplane/propel/components/icon";
 import { Menu, MenuContent, MenuItem } from "@makeplane/propel/components/menu";
 import { SplitButton } from "@makeplane/propel/components/split-button";
 import { AddPageOutline, PagesOutline } from "@makeplane/propel/icons";
-import { EPageAccess } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Breadcrumbs } from "@plane/blocks/breadcrumb";
 import { Header } from "@plane/blocks/layout";
@@ -22,6 +21,7 @@ import type { TPage } from "@plane/types";
 import { BreadcrumbLink } from "@/components/common/breadcrumb-link";
 import { CountChip } from "@/components/common/count-chip";
 import { CreateWikiPageModal } from "@/components/wiki/modals/create-wiki-page-modal";
+import { getWikiPageAccessForTab } from "@/components/wiki/wiki-tab-navigation";
 // hooks
 import { EPageStoreType, usePageStore } from "@/hooks/store";
 
@@ -48,7 +48,7 @@ export const WikiListHeader = observer(function WikiListHeader() {
     setIsCreatingPage(true);
 
     const payload: Partial<TPage> = {
-      access: pageType === "private" ? EPageAccess.PRIVATE : EPageAccess.PUBLIC,
+      access: getWikiPageAccessForTab(pageType),
     };
 
     await createPage(payload)
@@ -92,7 +92,7 @@ export const WikiListHeader = observer(function WikiListHeader() {
             isOpen={isCreateModalOpen}
             onClose={() => setIsCreateModalOpen(false)}
             workspaceSlug={workspaceSlug?.toString() ?? ""}
-            defaultAccess={pageType === "private" ? EPageAccess.PRIVATE : EPageAccess.PUBLIC}
+            defaultAccess={getWikiPageAccessForTab(pageType)}
           />
           <Menu>
             <SplitButton

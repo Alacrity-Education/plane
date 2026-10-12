@@ -114,6 +114,8 @@
         "all": "Todas",
         "public": "Públicas",
         "private": "Privadas",
+        "members": "Miembros",
+        "admins": "Solo administradores",
         "archived": "Archivadas"
       },
       "adding_page": "Agregando",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Aún no hay páginas privadas",
           "description": "Las páginas privadas solo son visibles para usted."
+        },
+        "members": {
+          "title": "Aún no hay páginas solo para miembros",
+          "description": "Las páginas solo para miembros son visibles para los administradores y miembros del espacio de trabajo, pero no para los invitados."
+        },
+        "admins": {
+          "title": "Aún no hay páginas solo para administradores",
+          "description": "Las páginas solo para administradores solo son visibles para los administradores del espacio de trabajo y su propietario."
         },
         "archived": {
           "title": "Aún no hay páginas archivadas",
@@ -154,8 +164,15 @@
         "name_placeholder": "Sin título",
         "name_max_length": "El título de la página debe tener menos de 255 caracteres",
         "parent_label": "Crear dentro de",
+        "access_label": "Acceso",
+        "public_label": "Página pública",
+        "public_description": "Todos en el espacio de trabajo pueden verla",
         "private_label": "Página privada",
         "private_description": "Solo usted puede verla",
+        "members_label": "Solo miembros",
+        "members_description": "Los administradores y miembros del espacio de trabajo pueden verla, los invitados no",
+        "admins_label": "Solo administradores",
+        "admins_description": "Solo los administradores del espacio de trabajo y usted pueden verla",
         "submit": "Crear página",
         "submitting": "Creando"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Página retirada del sitio de documentación.",
       "error": "No se pudo publicar la página. Inténtelo de nuevo.",
       "unpublish_error": "No se pudo retirar la página del sitio de documentación. Inténtelo de nuevo."
+    },
+    "access": {
+      "admins_only": "Solo administradores",
+      "make_admins_only": "Hacer solo para administradores",
+      "admins_only_success": "Ahora la página solo es visible para los administradores del espacio de trabajo y su propietario.",
+      "change_error": "No se pudo cambiar el acceso a la página. Inténtelo de nuevo.",
+      "members_only": "Solo miembros",
+      "make_members_only": "Hacer solo para miembros",
+      "members_only_success": "Ahora la página está oculta para los invitados."
     }
   }
 }

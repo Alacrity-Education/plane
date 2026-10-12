@@ -18,6 +18,8 @@ import type { Route } from "./+types/page";
 const getWikiPageType = (pageType?: string | null): TPageNavigationTabs => {
   if (pageType === "public") return "public";
   if (pageType === "private") return "private";
+  if (pageType === "admins") return "admins";
+  if (pageType === "members") return "members";
   if (pageType === "archived") return "archived";
   return "all";
 };

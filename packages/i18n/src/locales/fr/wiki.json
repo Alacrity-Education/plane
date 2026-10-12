@@ -114,6 +114,8 @@
         "all": "Toutes",
         "public": "Publiques",
         "private": "Privées",
+        "members": "Membres",
+        "admins": "Admins uniquement",
         "archived": "Archivées"
       },
       "adding_page": "Ajout en cours",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Aucune page privée pour l’instant",
           "description": "Les pages privées ne sont visibles que par vous."
+        },
+        "members": {
+          "title": "Aucune page réservée aux membres pour l’instant",
+          "description": "Les pages réservées aux membres sont visibles par les admins et les membres de l’espace de travail, mais pas par les invités."
+        },
+        "admins": {
+          "title": "Aucune page réservée aux admins pour l’instant",
+          "description": "Les pages réservées aux admins ne sont visibles que par les admins de l’espace de travail et leur propriétaire."
         },
         "archived": {
           "title": "Aucune page archivée pour l’instant",
@@ -154,8 +164,15 @@
         "name_placeholder": "Sans titre",
         "name_max_length": "Le titre de la page doit comporter moins de 255 caractères",
         "parent_label": "Créer sous",
+        "access_label": "Accès",
+        "public_label": "Page publique",
+        "public_description": "Tout l’espace de travail peut la voir",
         "private_label": "Page privée",
         "private_description": "Visible uniquement par vous",
+        "members_label": "Membres uniquement",
+        "members_description": "Les admins et les membres de l’espace de travail peuvent la voir, pas les invités",
+        "admins_label": "Admins uniquement",
+        "admins_description": "Seuls les admins de l’espace de travail et vous pouvez la voir",
         "submit": "Créer la page",
         "submitting": "Création"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Page retirée du site de documentation.",
       "error": "Impossible de publier la page. Veuillez réessayer.",
       "unpublish_error": "Impossible de retirer la page du site de documentation. Veuillez réessayer."
+    },
+    "access": {
+      "admins_only": "Admins uniquement",
+      "make_admins_only": "Réserver aux admins",
+      "admins_only_success": "La page n’est désormais visible que par les admins de l’espace de travail et son propriétaire.",
+      "change_error": "Impossible de modifier l’accès à la page. Veuillez réessayer.",
+      "members_only": "Membres uniquement",
+      "make_members_only": "Réserver aux membres",
+      "members_only_success": "La page est désormais masquée pour les invités."
     }
   }
 }

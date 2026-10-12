@@ -114,6 +114,8 @@
         "all": "전체",
         "public": "공개",
         "private": "비공개",
+        "members": "멤버",
+        "admins": "관리자 전용",
         "archived": "보관됨"
       },
       "adding_page": "추가 중",
@@ -128,6 +130,14 @@
         "private": {
           "title": "아직 비공개 페이지가 없어요",
           "description": "비공개 페이지는 나만 볼 수 있어요."
+        },
+        "members": {
+          "title": "아직 멤버 전용 페이지가 없습니다",
+          "description": "멤버 전용 페이지는 워크스페이스 관리자와 멤버가 볼 수 있으며 게스트는 볼 수 없습니다."
+        },
+        "admins": {
+          "title": "아직 관리자 전용 페이지가 없습니다",
+          "description": "관리자 전용 페이지는 워크스페이스 관리자와 소유자만 볼 수 있습니다."
         },
         "archived": {
           "title": "아직 보관된 페이지가 없어요",
@@ -154,8 +164,15 @@
         "name_placeholder": "제목 없음",
         "name_max_length": "페이지 제목은 255자 미만이어야 합니다",
         "parent_label": "생성 위치",
+        "access_label": "액세스",
+        "public_label": "공개 페이지",
+        "public_description": "워크스페이스의 모든 사람이 볼 수 있습니다",
         "private_label": "비공개 페이지",
         "private_description": "본인만 볼 수 있습니다",
+        "members_label": "멤버 전용",
+        "members_description": "워크스페이스 관리자와 멤버는 볼 수 있고 게스트는 볼 수 없습니다",
+        "admins_label": "관리자 전용",
+        "admins_description": "워크스페이스 관리자와 나만 볼 수 있습니다",
         "submit": "페이지 생성",
         "submitting": "생성 중"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "페이지를 문서 사이트에서 제거했습니다.",
       "error": "페이지를 게시하지 못했습니다. 다시 시도해 주세요.",
       "unpublish_error": "페이지를 문서 사이트에서 제거하지 못했습니다. 다시 시도해 주세요."
+    },
+    "access": {
+      "admins_only": "관리자 전용",
+      "make_admins_only": "관리자 전용으로 설정",
+      "admins_only_success": "이제 이 페이지는 워크스페이스 관리자와 소유자만 볼 수 있습니다.",
+      "change_error": "페이지 액세스를 변경할 수 없습니다. 다시 시도해 주세요.",
+      "members_only": "멤버 전용",
+      "make_members_only": "멤버 전용으로 설정",
+      "members_only_success": "이제 이 페이지는 게스트에게 표시되지 않습니다."
     }
   }
 }

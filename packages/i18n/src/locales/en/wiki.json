@@ -114,6 +114,8 @@
         "all": "All",
         "public": "Public",
         "private": "Private",
+        "members": "Members",
+        "admins": "Admins only",
         "archived": "Archived"
       },
       "adding_page": "Adding",
@@ -128,6 +130,14 @@
         "private": {
           "title": "No private pages yet",
           "description": "Private pages are only visible to you."
+        },
+        "members": {
+          "title": "No members-only pages yet",
+          "description": "Members-only pages are visible to workspace admins and members, but not to guests."
+        },
+        "admins": {
+          "title": "No admins-only pages yet",
+          "description": "Admins-only pages are visible only to workspace admins and their owner."
         },
         "archived": {
           "title": "No archived pages yet",
@@ -154,8 +164,15 @@
         "name_placeholder": "Untitled",
         "name_max_length": "Page title must be less than 255 characters",
         "parent_label": "Create under",
+        "access_label": "Access",
+        "public_label": "Public page",
+        "public_description": "Everyone in the workspace can see it",
         "private_label": "Private page",
         "private_description": "Only you can see it",
+        "members_label": "Members only",
+        "members_description": "Workspace admins and members can see it, guests can't",
+        "admins_label": "Admins only",
+        "admins_description": "Only workspace admins and you can see it",
         "submit": "Create page",
         "submitting": "Creating"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Page removed from the docs site.",
       "error": "Couldn't publish the page. Please try again.",
       "unpublish_error": "Couldn't remove the page from the docs site. Please try again."
+    },
+    "access": {
+      "admins_only": "Admins only",
+      "make_admins_only": "Make admins only",
+      "admins_only_success": "The page is now visible only to workspace admins and its owner.",
+      "change_error": "The page access couldn't be changed. Please try again.",
+      "members_only": "Members only",
+      "make_members_only": "Make members only",
+      "members_only_success": "The page is now hidden from guests."
     }
   }
 }

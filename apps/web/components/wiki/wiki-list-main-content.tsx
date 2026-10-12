@@ -9,7 +9,6 @@ import { observer } from "mobx-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 // plane imports
-import { EPageAccess } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { EmptyStateDetailed } from "@plane/blocks/empty-state";
 import { setToast } from "@plane/blocks/toast";
@@ -26,6 +25,7 @@ import publicLightAsset from "@/app/assets/empty-state/wiki/public-light.webp?ur
 // components
 import { DetailedEmptyState } from "@/components/empty-state/detailed-empty-state-root";
 import { PageLoader } from "@/components/pages/loaders/page-loader";
+import { getWikiPageAccessForTab } from "@/components/wiki/wiki-tab-navigation";
 // hooks
 import { EPageStoreType, usePageStore } from "@/hooks/store";
 
@@ -54,6 +54,18 @@ const WIKI_EMPTY_STATES: Record<
   private: {
     titleKey: "wiki.pages.empty_state.private.title",
     descriptionKey: "wiki.pages.empty_state.private.description",
+    lightAsset: privateLightAsset,
+    darkAsset: privateDarkAsset,
+  },
+  members: {
+    titleKey: "wiki.pages.empty_state.members.title",
+    descriptionKey: "wiki.pages.empty_state.members.description",
+    lightAsset: privateLightAsset,
+    darkAsset: privateDarkAsset,
+  },
+  admins: {
+    titleKey: "wiki.pages.empty_state.admins.title",
+    descriptionKey: "wiki.pages.empty_state.admins.description",
     lightAsset: privateLightAsset,
     darkAsset: privateDarkAsset,
   },
@@ -92,7 +104,7 @@ export const WikiListMainContent = observer(function WikiListMainContent(props: 
     setIsCreatingPage(true);
 
     const payload: Partial<TPage> = {
-      access: pageType === "private" ? EPageAccess.PRIVATE : EPageAccess.PUBLIC,
+      access: getWikiPageAccessForTab(pageType),
     };
 
     await createPage(payload)

@@ -5,11 +5,20 @@
  */
 
 import { observer } from "mobx-react";
-import { GlobeOutline, InfoOutline, LockOutline, MinusOutline } from "@makeplane/propel/icons";
+import {
+  GlobeOutline,
+  InfoOutline,
+  LockOutline,
+  MembersOutline,
+  MinusOutline,
+  ShieldOutline,
+} from "@makeplane/propel/icons";
 // plane imports
 import { Avatar } from "@makeplane/propel/components/avatar";
 import { Tooltip } from "@makeplane/propel/components/tooltip";
 import { FavoriteStar } from "@plane/blocks/common";
+import { EPageAccess } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { renderFormattedDate, getFileURL } from "@plane/utils";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
@@ -42,6 +51,8 @@ type Props = {
 
 export const BlockItemAction = observer(function BlockItemAction(props: Props) {
   const { extraOptions, optionsOrder = DEFAULT_OPTIONS_ORDER, page, parentRef, storeType } = props;
+  // plane hooks
+  const { t } = useTranslation();
   // store hooks
   const { getUserDetails } = useMember();
   // page operations
@@ -66,9 +77,20 @@ export const BlockItemAction = observer(function BlockItemAction(props: Props) {
         </Tooltip>
       </div>
       <div className="cursor-default text-tertiary">
-        <Tooltip label={access === 0 ? "Public" : "Private"}>
-          {access === 0 ? <GlobeOutline className="h-4 w-4" /> : <LockOutline className="h-4 w-4" />}
-        </Tooltip>
+        {/* admins-only and members-only exist for wiki pages only */}
+        {access === EPageAccess.ADMIN ? (
+          <Tooltip label={t("wiki.access.admins_only")}>
+            <ShieldOutline className="h-4 w-4" data-testid="page-access-admins-only" />
+          </Tooltip>
+        ) : access === EPageAccess.MEMBERS ? (
+          <Tooltip label={t("wiki.access.members_only")}>
+            <MembersOutline className="h-4 w-4" data-testid="page-access-members-only" />
+          </Tooltip>
+        ) : (
+          <Tooltip label={access === EPageAccess.PUBLIC ? "Public" : "Private"}>
+            {access === EPageAccess.PUBLIC ? <GlobeOutline className="h-4 w-4" /> : <LockOutline className="h-4 w-4" />}
+          </Tooltip>
+        )}
       </div>
       {/* vertical divider */}
       <MinusOutline className="-mx-3 h-5 w-5 rotate-90 text-placeholder" />

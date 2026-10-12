@@ -114,6 +114,8 @@
         "all": "Tümü",
         "public": "Herkese açık",
         "private": "Özel",
+        "members": "Üyeler",
+        "admins": "Yalnızca yöneticiler",
         "archived": "Arşivlenen"
       },
       "adding_page": "Ekleniyor",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Henüz özel sayfa yok",
           "description": "Özel sayfaları yalnızca siz görebilirsiniz."
+        },
+        "members": {
+          "title": "Henüz yalnızca üyelere özel sayfa yok",
+          "description": "Yalnızca üyelere özel sayfaları çalışma alanı yöneticileri ve üyeleri görebilir, misafirler göremez."
+        },
+        "admins": {
+          "title": "Henüz yalnızca yöneticilere özel sayfa yok",
+          "description": "Yalnızca yöneticilere özel sayfaları yalnızca çalışma alanı yöneticileri ve sayfa sahibi görebilir."
         },
         "archived": {
           "title": "Henüz arşivlenmiş sayfa yok",
@@ -154,8 +164,15 @@
         "name_placeholder": "Başlıksız",
         "name_max_length": "Sayfa başlığı 255 karakterden kısa olmalıdır",
         "parent_label": "Şunun altında oluştur",
+        "access_label": "Erişim",
+        "public_label": "Herkese açık sayfa",
+        "public_description": "Çalışma alanındaki herkes görebilir",
         "private_label": "Özel sayfa",
         "private_description": "Yalnızca siz görebilirsiniz",
+        "members_label": "Yalnızca üyeler",
+        "members_description": "Çalışma alanı yöneticileri ve üyeleri görebilir, misafirler göremez",
+        "admins_label": "Yalnızca yöneticiler",
+        "admins_description": "Yalnızca çalışma alanı yöneticileri ve siz görebilirsiniz",
         "submit": "Sayfa oluştur",
         "submitting": "Oluşturuluyor"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Sayfa dokümantasyon sitesinden kaldırıldı.",
       "error": "Sayfa yayınlanamadı. Lütfen tekrar deneyin.",
       "unpublish_error": "Sayfa dokümantasyon sitesinden kaldırılamadı. Lütfen tekrar deneyin."
+    },
+    "access": {
+      "admins_only": "Yalnızca yöneticiler",
+      "make_admins_only": "Yalnızca yöneticilere özel yap",
+      "admins_only_success": "Sayfa artık yalnızca çalışma alanı yöneticileri ve sahibi tarafından görülebilir.",
+      "change_error": "Sayfa erişimi değiştirilemedi. Lütfen tekrar deneyin.",
+      "members_only": "Yalnızca üyeler",
+      "make_members_only": "Yalnızca üyelere özel yap",
+      "members_only_success": "Sayfa artık misafirlerden gizlendi."
     }
   }
 }

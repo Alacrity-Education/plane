@@ -114,6 +114,8 @@
         "all": "全部",
         "public": "公開",
         "private": "私人",
+        "members": "成員",
+        "admins": "僅限管理員",
         "archived": "已封存"
       },
       "adding_page": "正在新增",
@@ -128,6 +130,14 @@
         "private": {
           "title": "尚無私人頁面",
           "description": "私人頁面僅對您可見。"
+        },
+        "members": {
+          "title": "尚無僅限成員的頁面",
+          "description": "僅限成員的頁面對工作區管理員和成員可見，對訪客不可見。"
+        },
+        "admins": {
+          "title": "尚無僅限管理員的頁面",
+          "description": "僅限管理員的頁面只有工作區管理員和頁面擁有者可以查看。"
         },
         "archived": {
           "title": "尚無已封存頁面",
@@ -154,8 +164,15 @@
         "name_placeholder": "未命名",
         "name_max_length": "頁面標題必須少於 255 個字元",
         "parent_label": "建立於",
+        "access_label": "存取權限",
+        "public_label": "公開頁面",
+        "public_description": "工作區中的所有人都可以查看",
         "private_label": "私人頁面",
         "private_description": "僅您可見",
+        "members_label": "僅限成員",
+        "members_description": "工作區管理員和成員可以查看，訪客無法查看",
+        "admins_label": "僅限管理員",
+        "admins_description": "只有工作區管理員和您可以查看",
         "submit": "建立頁面",
         "submitting": "正在建立"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "頁面已從文件網站移除。",
       "error": "無法發布頁面，請重試。",
       "unpublish_error": "無法從文件網站移除頁面，請重試。"
+    },
+    "access": {
+      "admins_only": "僅限管理員",
+      "make_admins_only": "設為僅限管理員",
+      "admins_only_success": "此頁面現在僅限工作區管理員和擁有者查看。",
+      "change_error": "無法變更頁面存取權限，請再試一次。",
+      "members_only": "僅限成員",
+      "make_members_only": "設為僅限成員",
+      "members_only_success": "此頁面現已對訪客隱藏。"
     }
   }
 }

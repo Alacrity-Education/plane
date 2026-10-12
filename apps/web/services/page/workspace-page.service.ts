@@ -13,6 +13,10 @@ import { APIService } from "@/services/api.service";
 export type TWorkspacePagesSummary = {
   public_pages: number;
   private_pages: number;
+  // admins-only pages the user can see (all of them for workspace admins, their own for others)
+  admin_pages?: number;
+  // members-only pages the user can see (none for guests unless they own some)
+  members_pages?: number;
   archived_pages: number;
   published_pages?: number;
 };

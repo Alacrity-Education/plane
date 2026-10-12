@@ -114,6 +114,8 @@
         "all": "Alle",
         "public": "Openbaar",
         "private": "Privé",
+        "members": "Leden",
+        "admins": "Alleen beheerders",
         "archived": "Gearchiveerd"
       },
       "adding_page": "Toevoegen",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Nog geen privépagina's",
           "description": "Privépagina's zijn alleen zichtbaar voor u."
+        },
+        "members": {
+          "title": "Nog geen pagina's alleen voor leden",
+          "description": "Pagina's alleen voor leden zijn zichtbaar voor werkruimtebeheerders en -leden, maar niet voor gasten."
+        },
+        "admins": {
+          "title": "Nog geen pagina's alleen voor beheerders",
+          "description": "Pagina's alleen voor beheerders zijn alleen zichtbaar voor werkruimtebeheerders en hun eigenaar."
         },
         "archived": {
           "title": "Nog geen gearchiveerde pagina's",
@@ -154,8 +164,15 @@
         "name_placeholder": "Naamloos",
         "name_max_length": "De paginatitel moet minder dan 255 tekens bevatten",
         "parent_label": "Aanmaken onder",
+        "access_label": "Toegang",
+        "public_label": "Openbare pagina",
+        "public_description": "Iedereen in de werkruimte kan deze zien",
         "private_label": "Privépagina",
         "private_description": "Alleen zichtbaar voor u",
+        "members_label": "Alleen leden",
+        "members_description": "Werkruimtebeheerders en -leden kunnen deze zien, gasten niet",
+        "admins_label": "Alleen beheerders",
+        "admins_description": "Alleen werkruimtebeheerders en u kunnen deze zien",
         "submit": "Pagina aanmaken",
         "submitting": "Bezig met aanmaken"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Pagina verwijderd van de documentatiesite.",
       "error": "De pagina kon niet worden gepubliceerd. Probeer het opnieuw.",
       "unpublish_error": "De pagina kon niet van de documentatiesite worden verwijderd. Probeer het opnieuw."
+    },
+    "access": {
+      "admins_only": "Alleen beheerders",
+      "make_admins_only": "Alleen voor beheerders maken",
+      "admins_only_success": "De pagina is nu alleen zichtbaar voor werkruimtebeheerders en de eigenaar.",
+      "change_error": "De toegang tot de pagina kon niet worden gewijzigd. Probeer het opnieuw.",
+      "members_only": "Alleen leden",
+      "make_members_only": "Alleen voor leden maken",
+      "members_only_success": "De pagina is nu verborgen voor gasten."
     }
   }
 }

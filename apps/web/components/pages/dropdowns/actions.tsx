@@ -57,6 +57,8 @@ export type TPageActions =
   | "add-sub-page"
   | "move-to-project-wiki"
   | "move-out-of-project-wiki"
+  | "make-members-only"
+  | "make-admins-only"
   | "publish";
 
 export type TPageActionsMenuItem = TContextMenuItem & { key: TPageActions };

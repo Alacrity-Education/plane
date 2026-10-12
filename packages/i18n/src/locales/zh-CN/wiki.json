@@ -114,6 +114,8 @@
         "all": "全部",
         "public": "公开",
         "private": "私密",
+        "members": "成员",
+        "admins": "仅管理员",
         "archived": "已归档"
       },
       "adding_page": "正在添加",
@@ -128,6 +130,14 @@
         "private": {
           "title": "暂无私密页面",
           "description": "私密页面仅对您可见。"
+        },
+        "members": {
+          "title": "暂无仅成员可见的页面",
+          "description": "仅成员可见的页面对工作区管理员和成员可见，对访客不可见。"
+        },
+        "admins": {
+          "title": "暂无仅管理员可见的页面",
+          "description": "仅管理员可见的页面只有工作区管理员和页面所有者可以查看。"
         },
         "archived": {
           "title": "暂无已归档页面",
@@ -154,8 +164,15 @@
         "name_placeholder": "无标题",
         "name_max_length": "页面标题必须少于 255 个字符",
         "parent_label": "创建于",
+        "access_label": "访问权限",
+        "public_label": "公开页面",
+        "public_description": "工作区中的所有人都可以查看",
         "private_label": "私有页面",
         "private_description": "仅您可见",
+        "members_label": "仅成员",
+        "members_description": "工作区管理员和成员可以查看，访客无法查看",
+        "admins_label": "仅管理员",
+        "admins_description": "只有工作区管理员和您可以查看",
         "submit": "创建页面",
         "submitting": "正在创建"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "页面已从文档站点移除。",
       "error": "无法发布页面，请重试。",
       "unpublish_error": "无法从文档站点移除页面，请重试。"
+    },
+    "access": {
+      "admins_only": "仅管理员",
+      "make_admins_only": "设为仅管理员可见",
+      "admins_only_success": "该页面现在仅工作区管理员和所有者可见。",
+      "change_error": "无法更改页面访问权限，请重试。",
+      "members_only": "仅成员",
+      "make_members_only": "设为仅成员可见",
+      "members_only_success": "该页面现已对访客隐藏。"
     }
   }
 }

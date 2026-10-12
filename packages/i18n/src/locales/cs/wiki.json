@@ -114,6 +114,8 @@
         "all": "Vše",
         "public": "Veřejné",
         "private": "Soukromé",
+        "members": "Členové",
+        "admins": "Jen správci",
         "archived": "Archivované"
       },
       "adding_page": "Přidávání",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Zatím žádné soukromé stránky",
           "description": "Soukromé stránky vidíte pouze Vy."
+        },
+        "members": {
+          "title": "Zatím žádné stránky jen pro členy",
+          "description": "Stránky jen pro členy vidí správci a členové pracovního prostoru, ale ne hosté."
+        },
+        "admins": {
+          "title": "Zatím žádné stránky jen pro správce",
+          "description": "Stránky jen pro správce vidí pouze správci pracovního prostoru a jejich vlastník."
         },
         "archived": {
           "title": "Zatím žádné archivované stránky",
@@ -154,8 +164,15 @@
         "name_placeholder": "Bez názvu",
         "name_max_length": "Název stránky musí mít méně než 255 znaků",
         "parent_label": "Vytvořit pod",
+        "access_label": "Přístup",
+        "public_label": "Veřejná stránka",
+        "public_description": "Vidí ji všichni v pracovním prostoru",
         "private_label": "Soukromá stránka",
         "private_description": "Vidíte ji pouze Vy",
+        "members_label": "Jen členové",
+        "members_description": "Vidí ji správci a členové pracovního prostoru, hosté ne",
+        "admins_label": "Jen správci",
+        "admins_description": "Vidí ji pouze správci pracovního prostoru a Vy",
         "submit": "Vytvořit stránku",
         "submitting": "Vytváření"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Stránka byla odebrána z webu dokumentace.",
       "error": "Stránku se nepodařilo publikovat. Zkuste to prosím znovu.",
       "unpublish_error": "Stránku se nepodařilo odebrat z webu dokumentace. Zkuste to prosím znovu."
+    },
+    "access": {
+      "admins_only": "Jen správci",
+      "make_admins_only": "Zpřístupnit jen správcům",
+      "admins_only_success": "Stránku nyní vidí pouze správci pracovního prostoru a její vlastník.",
+      "change_error": "Přístup ke stránce se nepodařilo změnit. Zkuste to prosím znovu.",
+      "members_only": "Jen členové",
+      "make_members_only": "Zpřístupnit jen členům",
+      "members_only_success": "Stránka je nyní skrytá před hosty."
     }
   }
 }

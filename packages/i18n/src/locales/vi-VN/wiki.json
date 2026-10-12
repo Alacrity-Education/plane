@@ -114,6 +114,8 @@
         "all": "Tất cả",
         "public": "Công khai",
         "private": "Riêng tư",
+        "members": "Thành viên",
+        "admins": "Chỉ quản trị viên",
         "archived": "Đã lưu trữ"
       },
       "adding_page": "Đang thêm",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Chưa có trang riêng tư nào",
           "description": "Trang riêng tư chỉ hiển thị với bạn."
+        },
+        "members": {
+          "title": "Chưa có trang chỉ dành cho thành viên",
+          "description": "Trang chỉ dành cho thành viên hiển thị với quản trị viên và thành viên không gian làm việc, nhưng không hiển thị với khách."
+        },
+        "admins": {
+          "title": "Chưa có trang chỉ dành cho quản trị viên",
+          "description": "Trang chỉ dành cho quản trị viên chỉ hiển thị với quản trị viên không gian làm việc và chủ sở hữu trang."
         },
         "archived": {
           "title": "Chưa có trang đã lưu trữ nào",
@@ -154,8 +164,15 @@
         "name_placeholder": "Không có tiêu đề",
         "name_max_length": "Tiêu đề trang phải ít hơn 255 ký tự",
         "parent_label": "Tạo bên trong",
+        "access_label": "Quyền truy cập",
+        "public_label": "Trang công khai",
+        "public_description": "Mọi người trong không gian làm việc đều có thể xem",
         "private_label": "Trang riêng tư",
         "private_description": "Chỉ bạn có thể xem",
+        "members_label": "Chỉ thành viên",
+        "members_description": "Quản trị viên và thành viên không gian làm việc có thể xem, khách thì không",
+        "admins_label": "Chỉ quản trị viên",
+        "admins_description": "Chỉ quản trị viên không gian làm việc và bạn có thể xem",
         "submit": "Tạo trang",
         "submitting": "Đang tạo"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Đã gỡ trang khỏi trang tài liệu.",
       "error": "Không thể xuất bản trang. Vui lòng thử lại.",
       "unpublish_error": "Không thể gỡ trang khỏi trang tài liệu. Vui lòng thử lại."
+    },
+    "access": {
+      "admins_only": "Chỉ quản trị viên",
+      "make_admins_only": "Đặt chỉ quản trị viên",
+      "admins_only_success": "Trang hiện chỉ hiển thị với quản trị viên không gian làm việc và chủ sở hữu.",
+      "change_error": "Không thể thay đổi quyền truy cập trang. Vui lòng thử lại.",
+      "members_only": "Chỉ thành viên",
+      "make_members_only": "Đặt chỉ thành viên",
+      "members_only_success": "Trang hiện đã được ẩn khỏi khách."
     }
   }
 }

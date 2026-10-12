@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { ArchiveOutline, GlobeOutline, LockOutline } from "@makeplane/propel/icons";
+import { ArchiveOutline, GlobeOutline, LockOutline, MembersOutline, ShieldOutline } from "@makeplane/propel/icons";
 import { EPageAccess } from "@plane/constants";
 import type { TPage } from "@plane/types";
 
@@ -15,6 +15,10 @@ export function PageAccessIcon(page: TPage) {
         <ArchiveOutline className="h-2.5 w-2.5 text-tertiary" />
       ) : page.access === EPageAccess.PUBLIC ? (
         <GlobeOutline className="h-2.5 w-2.5 text-tertiary" />
+      ) : page.access === EPageAccess.ADMIN ? (
+        <ShieldOutline className="h-2.5 w-2.5 text-tertiary" />
+      ) : page.access === EPageAccess.MEMBERS ? (
+        <MembersOutline className="h-2.5 w-2.5 text-tertiary" />
       ) : (
         <LockOutline className="h-2.5 w-2.5 text-tertiary" />
       )}

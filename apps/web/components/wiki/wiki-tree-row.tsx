@@ -34,6 +34,8 @@ const WIKI_ROW_OPTIONS_ORDER: TPageActions[] = [
   "publish",
   "toggle-lock",
   "toggle-access",
+  "make-members-only",
+  "make-admins-only",
   "archive-restore",
   "delete",
 ];

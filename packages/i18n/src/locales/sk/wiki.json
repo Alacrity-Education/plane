@@ -114,6 +114,8 @@
         "all": "Všetky",
         "public": "Verejné",
         "private": "Súkromné",
+        "members": "Členovia",
+        "admins": "Iba správcovia",
         "archived": "Archivované"
       },
       "adding_page": "Pridáva sa",
@@ -128,6 +130,14 @@
         "private": {
           "title": "Zatiaľ žiadne súkromné stránky",
           "description": "Súkromné stránky vidíte iba Vy."
+        },
+        "members": {
+          "title": "Zatiaľ žiadne stránky iba pre členov",
+          "description": "Stránky iba pre členov vidia správcovia a členovia pracovného priestoru, ale nie hostia."
+        },
+        "admins": {
+          "title": "Zatiaľ žiadne stránky iba pre správcov",
+          "description": "Stránky iba pre správcov vidia len správcovia pracovného priestoru a ich vlastník."
         },
         "archived": {
           "title": "Zatiaľ žiadne archivované stránky",
@@ -154,8 +164,15 @@
         "name_placeholder": "Bez názvu",
         "name_max_length": "Názov stránky musí mať menej ako 255 znakov",
         "parent_label": "Vytvoriť pod",
+        "access_label": "Prístup",
+        "public_label": "Verejná stránka",
+        "public_description": "Vidia ju všetci v pracovnom priestore",
         "private_label": "Súkromná stránka",
         "private_description": "Vidíte ju iba Vy",
+        "members_label": "Iba členovia",
+        "members_description": "Vidia ju správcovia a členovia pracovného priestoru, hostia nie",
+        "admins_label": "Iba správcovia",
+        "admins_description": "Vidia ju iba správcovia pracovného priestoru a Vy",
         "submit": "Vytvoriť stránku",
         "submitting": "Vytvára sa"
       },
@@ -224,6 +241,15 @@
       "unpublish_success": "Stránka bola odstránená z webu dokumentácie.",
       "error": "Stránku sa nepodarilo publikovať. Skúste to znova.",
       "unpublish_error": "Stránku sa nepodarilo odstrániť z webu dokumentácie. Skúste to znova."
+    },
+    "access": {
+      "admins_only": "Iba správcovia",
+      "make_admins_only": "Sprístupniť iba správcom",
+      "admins_only_success": "Stránku teraz vidia iba správcovia pracovného priestoru a jej vlastník.",
+      "change_error": "Prístup k stránke sa nepodarilo zmeniť. Skúste to prosím znova.",
+      "members_only": "Iba členovia",
+      "make_members_only": "Sprístupniť iba členom",
+      "members_only_success": "Stránka je teraz skrytá pred hosťami."
     }
   }
 }

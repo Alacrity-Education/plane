@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { computed, makeObservable } from "mobx";
+import { action, computed, makeObservable, runInAction } from "mobx";
 import { computedFn } from "mobx-utils";
 // plane imports
 import { EPageAccess, EUserPermissions } from "@plane/constants";
@@ -19,8 +19,13 @@ import type { TPageInstance } from "./base-page";
 
 const workspacePageService = new WorkspacePageService();
 
+// wiki only access levels between public and private
+export type TWikiRestrictedAccess = EPageAccess.ADMIN | EPageAccess.MEMBERS;
+
 export type TWorkspacePage = TPageInstance & {
   canCurrentUserPublishPage: boolean;
+  canCurrentUserSetRestrictedAccess: boolean;
+  setRestrictedAccess: (access: TWikiRestrictedAccess) => Promise<void>;
 };
 
 /**
@@ -43,8 +48,8 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
       updateAccess: async (payload) => {
         if (!workspaceSlug || !page.id) throw new Error("Missing required fields.");
         await workspacePageService.updateAccess(workspaceSlug, page.id, payload);
-        // the server unpublishes pages made private
-        if (payload.access === EPageAccess.PRIVATE) {
+        // the server unpublishes pages that are no longer public
+        if (payload.access !== EPageAccess.PUBLIC) {
           store.workspacePages.getPageById(page.id)?.mutateProperties({ is_published: false });
         }
       },
@@ -89,7 +94,10 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
       canCurrentUserFavoritePage: computed,
       canCurrentUserMovePage: computed,
       canCurrentUserPublishPage: computed,
+      canCurrentUserSetRestrictedAccess: computed,
       isContentEditable: computed,
+      // actions
+      setRestrictedAccess: action,
     });
   }
 
@@ -113,21 +121,34 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
   }
 
   /**
+   * @description true when the access of the page lets the current user see it (mirrors the API visibility rule):
+   * public pages and own pages for everyone, members-only pages for workspace admins and members, admins-only pages
+   * for workspace admins
+   */
+  private get isVisibleToCurrentUser() {
+    if (this.access === EPageAccess.PUBLIC || this.isCurrentUserOwner) return true;
+    if (this.access === EPageAccess.MEMBERS) return this.isAtLeastWorkspaceMember;
+    return this.access === EPageAccess.ADMIN && this.isWorkspaceAdmin;
+  }
+
+  private get isRestrictedAccess() {
+    return this.access === EPageAccess.ADMIN || this.access === EPageAccess.MEMBERS;
+  }
+
+  /**
    * @description returns true if the current logged in user can access the page
    */
   get canCurrentUserAccessPage() {
-    const isPagePublic = this.access === EPageAccess.PUBLIC;
-    return isPagePublic || this.isCurrentUserOwner;
+    return this.isVisibleToCurrentUser;
   }
 
   /**
    * @description returns true if the current logged in user can edit the page
    */
   get canCurrentUserEditPage() {
-    const isPagePublic = this.access === EPageAccess.PUBLIC;
     // guests are always read-only in the wiki, even on pages they own
     if (!this.isAtLeastWorkspaceMember) return false;
-    return isPagePublic || this.isCurrentUserOwner;
+    return this.isVisibleToCurrentUser;
   }
 
   /**
@@ -145,9 +166,20 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
   }
 
   /**
-   * @description returns true if the current logged in user can change the access of the page
+   * @description returns true if the current logged in user can toggle the page between public and private
+   * (the owner), or make an admins-only / members-only page public (the owner and workspace admins)
    */
   get canCurrentUserChangeAccess() {
+    if (!this.isAtLeastWorkspaceMember) return false;
+    return this.isCurrentUserOwner || (this.isRestrictedAccess && this.isWorkspaceAdmin);
+  }
+
+  /**
+   * @description returns true if the current logged in user can make the page admins-only or members-only
+   * (workspace admins, and the owner when they are a workspace member or admin)
+   */
+  get canCurrentUserSetRestrictedAccess() {
+    if (!this.isAtLeastWorkspaceMember) return false;
     return this.isCurrentUserOwner || this.isWorkspaceAdmin;
   }
 
@@ -191,14 +223,30 @@ export class WorkspacePage extends BasePage implements TWorkspacePage {
    * @description returns true if the page can be edited
    */
   get isContentEditable() {
-    const isOwner = this.isCurrentUserOwner;
-    const isPublic = this.access === EPageAccess.PUBLIC;
     const isArchived = this.archived_at;
     const isLocked = this.is_locked;
 
     // guests are always read-only in the wiki, even on pages they own
-    return !isArchived && !isLocked && this.isAtLeastWorkspaceMember && (isOwner || isPublic);
+    return !isArchived && !isLocked && this.isAtLeastWorkspaceMember && this.isVisibleToCurrentUser;
   }
+
+  /**
+   * @description make the page admins-only or members-only (the server unpublishes it)
+   */
+  setRestrictedAccess = async (access: TWikiRestrictedAccess) => {
+    const previousAccess = this.access;
+    runInAction(() => {
+      this.access = access;
+    });
+    try {
+      await this.services.updateAccess({ access });
+    } catch (error) {
+      runInAction(() => {
+        this.access = previousAccess;
+      });
+      throw error;
+    }
+  };
 
   getRedirectionLink = computedFn(() => {
     const { workspaceSlug } = this.rootStore.router;

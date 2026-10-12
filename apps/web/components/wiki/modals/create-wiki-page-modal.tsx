@@ -7,7 +7,7 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
-import { CloseOutline } from "@makeplane/propel/icons";
+import { CloseOutline, GlobeOutline, LockOutline, MembersOutline, ShieldOutline } from "@makeplane/propel/icons";
 // plane imports
 import { Button } from "@makeplane/propel/components/button";
 import {
@@ -25,7 +25,7 @@ import {
 import { Icon } from "@makeplane/propel/components/icon";
 import { IconButton } from "@makeplane/propel/components/icon-button";
 import { InputField } from "@makeplane/propel/components/input-field";
-import { Switch } from "@makeplane/propel/components/switch";
+import { Radio, RadioGroup } from "@makeplane/propel/components/radio";
 import { EPageAccess } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { setToast } from "@plane/blocks/toast";
@@ -47,12 +47,41 @@ type Props = {
 
 const MAX_PAGE_NAME_LENGTH = 255;
 
+// the creator owns the page, so every user who can create a wiki page (workspace admins and members) may pick
+// any of these, admins-only and members-only included
+const ACCESS_OPTIONS = [
+  {
+    key: EPageAccess.PUBLIC,
+    icon: GlobeOutline,
+    labelKey: "wiki.pages.create_modal.public_label",
+    descriptionKey: "wiki.pages.create_modal.public_description",
+  },
+  {
+    key: EPageAccess.PRIVATE,
+    icon: LockOutline,
+    labelKey: "wiki.pages.create_modal.private_label",
+    descriptionKey: "wiki.pages.create_modal.private_description",
+  },
+  {
+    key: EPageAccess.MEMBERS,
+    icon: MembersOutline,
+    labelKey: "wiki.pages.create_modal.members_label",
+    descriptionKey: "wiki.pages.create_modal.members_description",
+  },
+  {
+    key: EPageAccess.ADMIN,
+    icon: ShieldOutline,
+    labelKey: "wiki.pages.create_modal.admins_label",
+    descriptionKey: "wiki.pages.create_modal.admins_description",
+  },
+] as const;
+
 export const CreateWikiPageModal = observer(function CreateWikiPageModal(props: Props) {
   const { isOpen, onClose, workspaceSlug, defaultParentId = null, defaultAccess = EPageAccess.PUBLIC } = props;
   // states
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string | null>(defaultParentId);
-  const [isPrivate, setIsPrivate] = useState(defaultAccess === EPageAccess.PRIVATE);
+  const [access, setAccess] = useState<EPageAccess>(defaultAccess);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // router
   const router = useAppRouter();
@@ -68,7 +97,7 @@ export const CreateWikiPageModal = observer(function CreateWikiPageModal(props: 
     if (!isOpen) return;
     setName("");
     setParentId(defaultParentId);
-    setIsPrivate(defaultAccess === EPageAccess.PRIVATE);
+    setAccess(defaultAccess);
     setIsSubmitting(false);
   }, [isOpen, defaultParentId, defaultAccess]);
 
@@ -79,7 +108,7 @@ export const CreateWikiPageModal = observer(function CreateWikiPageModal(props: 
 
     const payload: Partial<TPage> = {
       name: name.trim(),
-      access: isPrivate ? EPageAccess.PRIVATE : EPageAccess.PUBLIC,
+      access,
       parent: parentId,
     };
 
@@ -148,20 +177,33 @@ export const CreateWikiPageModal = observer(function CreateWikiPageModal(props: 
                   </span>
                   <WikiPageParentPicker value={parentId} onChange={setParentId} />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Switch
-                    size="sm"
-                    checked={isPrivate}
-                    onCheckedChange={(checked) => setIsPrivate(checked)}
-                    aria-label={t("wiki.pages.create_modal.private_label")}
-                    data-testid="wiki-create-page-private"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-13 font-medium text-primary">
-                      {t("wiki.pages.create_modal.private_label")}
-                    </span>
-                    <span className="text-11 text-tertiary">{t("wiki.pages.create_modal.private_description")}</span>
-                  </div>
+                <div className="flex flex-col gap-1.5">
+                  <span id="wiki-create-page-access-label" className="text-13 font-medium text-secondary">
+                    {t("wiki.pages.create_modal.access_label")}
+                  </span>
+                  <RadioGroup<EPageAccess>
+                    density="compact"
+                    value={access}
+                    onValueChange={(value) => setAccess(value)}
+                    aria-labelledby="wiki-create-page-access-label"
+                    data-testid="wiki-create-page-access"
+                  >
+                    {ACCESS_OPTIONS.map((option) => (
+                      // oxlint-disable-next-line jsx_a11y/label-has-associated-control -- the radio button is the control
+                      <label
+                        key={option.key}
+                        className="flex cursor-pointer items-center gap-3"
+                        data-testid={`wiki-create-page-access-${option.key}`}
+                      >
+                        <Radio value={option.key} />
+                        <option.icon className="size-4 flex-shrink-0 text-tertiary" />
+                        <span className="flex flex-col">
+                          <span className="text-13 font-medium text-primary">{t(option.labelKey)}</span>
+                          <span className="text-11 text-tertiary">{t(option.descriptionKey)}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </RadioGroup>
                 </div>
               </div>
             </DialogBody>

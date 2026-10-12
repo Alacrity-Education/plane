@@ -6,7 +6,15 @@
 
 import { useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { AddPageOutline, GlobeOutline, LogOutOutline, MovePageOutline, ProjectsOutline } from "@makeplane/propel/icons";
+import {
+  AddPageOutline,
+  GlobeOutline,
+  LogOutOutline,
+  MembersOutline,
+  MovePageOutline,
+  ProjectsOutline,
+  ShieldOutline,
+} from "@makeplane/propel/icons";
 // plane imports
 import { setToast } from "@plane/blocks/toast";
 import { EPageAccess } from "@plane/constants";
@@ -17,7 +25,7 @@ import type { TPageActionsMenuItem } from "@/components/pages/dropdowns";
 import { EPageStoreType, usePageStore } from "@/hooks/store";
 // store
 import type { TPageInstance } from "@/store/pages/base-page";
-import type { TWorkspacePage } from "@/store/pages/workspace-page";
+import type { TWikiRestrictedAccess, TWorkspacePage } from "@/store/pages/workspace-page";
 
 type TArgs = {
   page: TPageInstance | undefined;
@@ -27,7 +35,8 @@ type TArgs = {
 };
 
 /**
- * @description wiki only page actions ("Add sub-page", "Move", the project wiki moves and docs site publishing),
+ * @description wiki only page actions ("Add sub-page", "Move", the project wiki moves, "Make admins / members only" and docs
+ * site publishing),
  * injected into PageActions via extraOptions
  */
 export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => {
@@ -51,9 +60,14 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
   const isInsideProjectWiki = !!projectWikiRootId;
   const canCurrentUserMovePage = !!page?.canCurrentUserMovePage;
   // docs site publishing (only workspace pages carry the publish permission)
-  const canCurrentUserPublishPage = !!(page as TWorkspacePage | undefined)?.canCurrentUserPublishPage;
+  const workspacePage = page as TWorkspacePage | undefined;
+  const canCurrentUserPublishPage = !!workspacePage?.canCurrentUserPublishPage;
   const isPublished = !!page?.is_published;
-  const isPrivate = page?.access === EPageAccess.PRIVATE;
+  // only public pages can be published
+  const isNotPublic = !!page && page.access !== EPageAccess.PUBLIC;
+  // admins-only / members-only access (wiki pages only)
+  const access = page?.access;
+  const canCurrentUserSetRestrictedAccess = !!workspacePage?.canCurrentUserSetRestrictedAccess;
 
   // moving a page out of a project wiki section makes it a top level page (with its own sub-pages)
   const handleMoveOutOfProjectWiki = useCallback(async () => {
@@ -95,12 +109,37 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
     }
   }, [pageId, isPublished, publishPage, unpublishPage, t]);
 
+  const handleSetRestrictedAccess = useCallback(
+    async (restrictedAccess: TWikiRestrictedAccess) => {
+      if (!workspacePage) return;
+      try {
+        await workspacePage.setRestrictedAccess(restrictedAccess);
+        setToast({
+          type: "success",
+          title: t("toast.success"),
+          message: t(
+            restrictedAccess === EPageAccess.ADMIN
+              ? "wiki.access.admins_only_success"
+              : "wiki.access.members_only_success"
+          ),
+        });
+      } catch (error) {
+        setToast({
+          type: "error",
+          title: t("toast.error"),
+          message: (error as { error?: string } | undefined)?.error || t("wiki.access.change_error"),
+        });
+      }
+    },
+    [workspacePage, t]
+  );
+
   // a published page can always be unpublished, publishing needs a public, active page
   const publishDisabledReason = isPublished
     ? undefined
     : isArchived
       ? t("wiki.publish.disabled_archived")
-      : isPrivate
+      : isNotPublic
         ? t("wiki.publish.disabled_private")
         : undefined;
 
@@ -153,6 +192,24 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
         shouldRender: !!pageId && canCurrentUserMovePage && !isArchived && isInsideProjectWiki,
       },
       {
+        key: "make-members-only",
+        action: () => {
+          void handleSetRestrictedAccess(EPageAccess.MEMBERS);
+        },
+        title: t("wiki.access.make_members_only"),
+        icon: MembersOutline,
+        shouldRender: !!pageId && canCurrentUserSetRestrictedAccess && access !== EPageAccess.MEMBERS && !isArchived,
+      },
+      {
+        key: "make-admins-only",
+        action: () => {
+          void handleSetRestrictedAccess(EPageAccess.ADMIN);
+        },
+        title: t("wiki.access.make_admins_only"),
+        icon: ShieldOutline,
+        shouldRender: !!pageId && canCurrentUserSetRestrictedAccess && access !== EPageAccess.ADMIN && !isArchived,
+      },
+      {
         key: "publish",
         action: () => {
           void handleTogglePublish();
@@ -180,6 +237,9 @@ export const useWikiPageExtraOptions = (args: TArgs): TPageActionsMenuItem[] => 
       isPublished,
       publishDisabledReason,
       handleTogglePublish,
+      canCurrentUserSetRestrictedAccess,
+      access,
+      handleSetRestrictedAccess,
       t,
     ]
   );
