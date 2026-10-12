@@ -1,0 +1,59 @@
+{
+  "name": "@plane/wikijs-import",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Import a Wiki.js git-sync repository into a Plane workspace Wiki",
+  "license": "AGPL-3.0",
+  "bin": {
+    "plane-wikijs-import": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch --no-clean",
+    "start": "node ./dist/cli.js",
+    "test": "vitest run",
+    "check:lint": "oxlint --max-warnings=0 .",
+    "check:types": "tsc --noEmit",
+    "check:format": "oxfmt --check .",
+    "fix:lint": "oxlint --fix .",
+    "fix:format": "oxfmt .",
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist"
+  },
+  "dependencies": {
+    "@plane/editor": "workspace:*",
+    "yjs": "catalog:"
+  },
+  "devDependencies": {
+    "@plane/typescript-config": "workspace:*",
+    "@types/hast": "catalog:",
+    "@types/mdast": "catalog:",
+    "@types/node": "catalog:",
+    "hast-util-from-html": "2.0.3",
+    "hast-util-to-html": "9.0.5",
+    "mdast-util-to-hast": "13.2.1",
+    "rehype-raw": "7.0.0",
+    "remark-gfm": "catalog:",
+    "remark-parse": "11.0.0",
+    "remark-rehype": "11.1.2",
+    "tsdown": "catalog:",
+    "typescript": "catalog:",
+    "unified": "catalog:",
+    "unist-util-visit": "5.0.0",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

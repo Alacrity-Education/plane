@@ -1841,6 +1841,64 @@ importers:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.12.0)(@vitest/coverage-v8@4.1.11)(jsdom@23.2.0)(vite@8.0.16(@types/node@22.12.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.3))
 
+  packages/wikijs-import:
+    dependencies:
+      '@plane/editor':
+        specifier: workspace:*
+        version: link:../editor
+      yjs:
+        specifier: 'catalog:'
+        version: 13.6.27
+    devDependencies:
+      '@plane/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/hast':
+        specifier: 'catalog:'
+        version: 3.0.4
+      '@types/mdast':
+        specifier: 'catalog:'
+        version: 4.0.4
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.12.0
+      hast-util-from-html:
+        specifier: 2.0.3
+        version: 2.0.3
+      hast-util-to-html:
+        specifier: 9.0.5
+        version: 9.0.5
+      mdast-util-to-hast:
+        specifier: 13.2.1
+        version: 13.2.1
+      rehype-raw:
+        specifier: 7.0.0
+        version: 7.0.0
+      remark-gfm:
+        specifier: 'catalog:'
+        version: 4.0.1
+      remark-parse:
+        specifier: 11.0.0
+        version: 11.0.0
+      remark-rehype:
+        specifier: 11.1.2
+        version: 11.1.2
+      tsdown:
+        specifier: 'catalog:'
+        version: 0.16.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3)(oxc-resolver@11.20.0)(typescript@5.8.3)
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+      unified:
+        specifier: 'catalog:'
+        version: 11.0.5
+      unist-util-visit:
+        specifier: 5.0.0
+        version: 5.0.0
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.12.0)(@vitest/coverage-v8@4.1.11)(jsdom@23.2.0)(vite@8.0.16(@types/node@22.12.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.43.1)(tsx@4.20.6)(yaml@2.8.3))
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
