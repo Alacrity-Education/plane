@@ -46,6 +46,8 @@ export type TReportPage = {
   /** What happened to its content. */
   content?: "written" | "unchanged" | "empty" | "failed" | "planned" | undefined;
   images?: number | undefined;
+  /** Linked repository files (downloads): uploaded, reused from earlier uploads, kept as text. */
+  files?: { uploaded: number; reused: number; skipped: number; planned: number } | undefined;
   convertedImages?: string[] | undefined;
   project?: string | undefined;
   publish?: "published" | "already-published" | "unpublished" | "unavailable" | "not-published" | "failed" | undefined;
@@ -93,6 +95,10 @@ export function summarize(report: TImportReport): void {
     if (page.publish) summary[`publish_${page.publish}`] = (summary[`publish_${page.publish}`] ?? 0) + 1;
     if (page.accessUpdated) summary.access_updated = (summary.access_updated ?? 0) + 1;
     summary.images = (summary.images ?? 0) + (page.images ?? 0);
+    for (const kind of ["uploaded", "reused", "skipped", "planned"] as const) {
+      const count = page.files?.[kind] ?? 0;
+      if (count || kind !== "planned") summary[`files_${kind}`] = (summary[`files_${kind}`] ?? 0) + count;
+    }
     const top = page.path.includes("/") || page.kind === "folder" ? (page.path.split("/")[0] ?? "") : "(root)";
     const bucket = (visibility[top] ??= { public: 0, members: 0, admins: 0 });
     bucket[accessLabel(page.visibility)]++;
@@ -156,8 +162,8 @@ export function renderMarkdownReport(report: TImportReport): string {
       lines.push("}", "```");
     }
   }
-  lines.push("", "## Pages", "", "| Path | Title | Visibility | Action | Content | Images | Publish |");
-  lines.push("| --- | --- | --- | --- | --- | --- | --- |");
+  lines.push("", "## Pages", "", "| Path | Title | Visibility | Action | Content | Images | Files | Publish |");
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- |");
   for (const page of report.pages) {
     const cells = [
       `\`${page.path}\`${page.kind === "folder" ? " (folder)" : ""}`,
@@ -168,6 +174,16 @@ export function renderMarkdownReport(report: TImportReport): string {
         (page.error ? `: ${page.error.replace(/\|/g, "\\|").slice(0, 120)}` : ""),
       page.content ?? "",
       String(page.images ?? 0) + (page.convertedImages?.length ? ` (${page.convertedImages.length} converted)` : ""),
+      page.files
+        ? [
+            page.files.uploaded && `${page.files.uploaded} uploaded`,
+            page.files.reused && `${page.files.reused} reused`,
+            page.files.skipped && `${page.files.skipped} as text`,
+            page.files.planned && `${page.files.planned} planned`,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : "",
       page.publish ?? "",
     ];
     lines.push(`| ${cells.join(" | ")} |`);

@@ -25,8 +25,17 @@ export type TImportState = {
   workspaceSlug?: string;
   /** Normalized Wiki.js path → Plane page. */
   pages: Record<string, TPageState>;
-  /** Normalized Wiki.js path → image sha256 → Plane asset id. */
+  /**
+   * Normalized Wiki.js path → sha256 of the source file → Plane asset id of the page's
+   * PAGE_DESCRIPTION assets: images, and linked PNG/JPEG/GIF/WebP files (stored unchanged, so a
+   * file used both as an image and as a download link is uploaded once).
+   */
   assets: Record<string, Record<string, string>>;
+  /**
+   * sha256 → asset id of linked files uploaded through the v1 API-key endpoint (SVG, PDF,
+   * archives…). Workspace assets, not bound to a page: shared by every page linking the file.
+   */
+  files?: Record<string, string>;
   /** Pages archived by `--prune` because they left the source (kept for reference). */
   pruned?: Record<string, TPageState & { prunedAt: string }>;
 };

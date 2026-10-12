@@ -6,14 +6,16 @@
 
 /* oxlint-disable no-await-in-loop -- pages are written one by one, parents first */
 import { createHash } from "node:crypto";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
+import { basename, extname, join } from "node:path";
 import type { Root } from "hast";
 import type { PlaneWikiApi, TPlanePage } from "./api";
 import { buildDescription } from "./editor-doc";
-import { collectImageSources, toEditorHtml } from "./html";
+import { assetDownloadPath, fileMimeType, uploadRouteFor } from "./files";
+import { collectImageSources, collectLinks, toEditorHtml } from "./html";
 import type { TResolvedImage } from "./html";
 import { indexRepositoryImages, loadImageSource, locateImage, prepareImage, shrinkImage } from "./images";
-import { createLinkResolver } from "./links";
+import { createLinkResolver, parseLink } from "./links";
 import { htmlToHast, markdownToHast } from "./markdown";
 import { pathKey } from "./paths";
 import type { TProjectMatch } from "./projects";
@@ -65,6 +67,8 @@ export type TImportOptions = {
   /** Upload limit of the Plane instance (FILE_SIZE_LIMIT); larger images are re-encoded. */
   maxImageBytes: number;
   api?: PlaneWikiApi | undefined;
+  /** Dry run without API access: whether `PLANE_API_KEY` is set (non-raster linked files need it). */
+  canUploadAnyFile?: boolean | undefined;
   workspaceSlug: string;
   baseUrl?: string | undefined;
   log: (line: string) => void;
@@ -463,7 +467,24 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
         pageWarnings.push({ path: node.path, message: `converted: ${converted.join("; ")}` });
       }
 
-      const links = createLinkResolver({ fromPath: node.path, workspaceSlug: options.workspaceSlug, pageIds });
+      const linked = await resolveLinkedFiles({
+        node,
+        hast,
+        options,
+        pageId,
+        pageIds,
+        imageIndex,
+        warnings: pageWarnings,
+      });
+      if (linked.stats.uploaded + linked.stats.reused + linked.stats.skipped + linked.stats.planned) {
+        entry.files = linked.stats;
+      }
+      const links = createLinkResolver({
+        fromPath: node.path,
+        workspaceSlug: options.workspaceSlug,
+        pageIds,
+        fileLinks: linked.links,
+      });
       const { html, codeLanguages } = toEditorHtml(hast, {
         path: node.path,
         warnings: pageWarnings,
@@ -472,14 +493,6 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
       });
       for (const href of new Set(links.unresolved)) {
         pageWarnings.push({ path: node.path, message: `unresolved internal link ${safeDecode(href)} (kept as text)` });
-      }
-      const files = [...new Set(links.files)];
-      if (files.length) {
-        const sample = files.slice(0, 3).map(safeDecode).join(", ");
-        pageWarnings.push({
-          path: node.path,
-          message: `${files.length} link(s) to repository files that are not pages kept as text (${sample}${files.length > 3 ? ", …" : ""})`,
-        });
       }
 
       if (options.dryRun) {
@@ -507,7 +520,10 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
       entry.content = node.source ? "written" : "empty";
       if (entry.action === "unchanged") entry.action = "updated";
       saveState(options.statePath, state);
-      log(`content  ${node.path}${entry.images ? ` (${entry.images} images)` : ""}`);
+      const fileNote = (entry.files?.uploaded ?? 0) + (entry.files?.reused ?? 0);
+      log(
+        `content  ${node.path}${entry.images ? ` (${entry.images} images)` : ""}${fileNote ? ` (${fileNote} linked files)` : ""}`
+      );
     } catch (error) {
       entry.content = "failed";
       entry.error = (error as Error).message;
@@ -658,6 +674,93 @@ async function pruneStalePages(
       entry.reason = (error as Error).message;
     }
   }
+}
+
+type TLinkedFileOutcome = { kind: "uploaded" | "reused"; assetId: string } | { kind: "planned" } | { kind: "skipped" };
+
+/**
+ * Links to repository files that are not pages (downloads): each file is uploaded once as a
+ * Plane asset and the link points at Plane's session download route. PNG/JPEG/GIF/WebP go
+ * through the session endpoint as assets of the page (sharing the page's image assets by
+ * sha256); other types (SVG, PDF, archives…) need the v1 API-key endpoint (`PLANE_API_KEY`)
+ * and are shared workspace-wide by sha256. Files that cannot be uploaded keep their link text.
+ */
+async function resolveLinkedFiles(args: {
+  node: TTreeNode;
+  hast: Root;
+  options: TImportOptions;
+  pageId: string | undefined;
+  pageIds: Map<string, string>;
+  imageIndex: Map<string, string[]>;
+  warnings: TWarning[];
+}): Promise<{ links: Map<string, string>; stats: NonNullable<TReportPage["files"]> }> {
+  const { node, options, warnings } = args;
+  const { state } = options;
+  const stats = { uploaded: 0, reused: 0, skipped: 0, planned: 0 };
+  const links = new Map<string, string>();
+  const known = new Set(args.pageIds.keys());
+  const byPath = new Map<string, TLinkedFileOutcome>();
+  const pageFile = node.source?.file ?? `${node.path}/index.md`;
+
+  const handle = async (path: string): Promise<TLinkedFileOutcome> => {
+    const label = safeDecode(path);
+    const skip = (reason: string): TLinkedFileOutcome => {
+      warnings.push({ path: node.path, message: `linked file ${label} ${reason} (kept as text)` });
+      return { kind: "skipped" };
+    };
+    const located = locateImage(path, pageFile, options.sourceDir, args.imageIndex);
+    if (!located || located.source.kind !== "file") return skip("not found in the source");
+    const file = located.source.file;
+    const name = basename(file);
+    const mime = fileMimeType(name);
+    const route = uploadRouteFor(mime);
+    if (route === "unsupported") {
+      return skip(`not uploaded: Plane does not accept ${mime ?? (extname(name) || "files without an extension")}`);
+    }
+    if (route === "api-key" && !(options.api?.canUploadAnyFile ?? options.canUploadAnyFile)) {
+      return skip(`not uploaded: set PLANE_API_KEY to upload ${mime} files`);
+    }
+    if (options.dryRun || !options.api) return { kind: "planned" };
+    const data = readFileSync(file);
+    if (data.length > options.maxImageBytes) {
+      return skip(`not uploaded: larger than the ${options.maxImageBytes} byte upload limit`);
+    }
+    const hash = createHash("sha256").update(data).digest("hex");
+    try {
+      if (route === "session") {
+        // Same bytes as an image of the page (raster images under the limit are stored unchanged)
+        const pageAssets = (state.assets[node.key] ??= {});
+        const existing = pageAssets[hash];
+        if (existing) return { kind: "reused", assetId: existing };
+        const assetId = await options.api.uploadPageImage(args.pageId!, { name, mime: mime!, data });
+        pageAssets[hash] = assetId;
+        saveState(options.statePath, state);
+        return { kind: "uploaded", assetId };
+      }
+      const files = (state.files ??= {});
+      const existing = files[hash];
+      if (existing) return { kind: "reused", assetId: existing };
+      const assetId = await options.api.uploadWorkspaceFile({ name, mime: mime!, data });
+      files[hash] = assetId;
+      saveState(options.statePath, state);
+      return { kind: "uploaded", assetId };
+    } catch (error) {
+      return skip(`not uploaded: ${(error as Error).message}`);
+    }
+  };
+
+  for (const href of new Set(collectLinks(args.hast))) {
+    const target = parseLink(href, node.path, known);
+    if (target.kind !== "file") continue;
+    let outcome = byPath.get(target.path);
+    if (!outcome) {
+      outcome = await handle(target.path);
+      byPath.set(target.path, outcome);
+      stats[outcome.kind]++;
+    }
+    if ("assetId" in outcome) links.set(href, assetDownloadPath(options.workspaceSlug, outcome.assetId));
+  }
+  return { links, stats };
 }
 
 export const defaultCacheDir = (statePath: string) => join(statePath, "..", "cache");

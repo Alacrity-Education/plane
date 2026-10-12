@@ -55,4 +55,24 @@ describe("buildDescription (editor schema round trip)", () => {
     expect(json).toContain('"type":"imageComponent"');
     expect(json).toContain('"language":"python"');
   });
+
+  it("keeps root-relative link hrefs (page links, file download links), also inside tables", async () => {
+    const download = "/api/assets/v2/workspaces/acme/download/11111111-2222-3333-4444-555555555555/";
+    const markdown = ["| Logo | |", "| -- | -- |", "| [Vector](/f.svg) | [Page](/other) |", "", "[PDF](/f.pdf)"].join(
+      "\n"
+    );
+    const links: Record<string, string> = { "/f.svg": download, "/other": "/acme/wiki/page-1", "/f.pdf": download };
+    const { html } = toEditorHtml(markdownToHast(markdown), {
+      path: "t",
+      warnings: [],
+      images: new Map(),
+      resolveLink: (href) => links[href] ?? null,
+    });
+    const result = await buildDescription(html, "Links", []);
+    expect(result.description_html).toContain(`href="${download}"`);
+    expect(result.description_html).toContain('href="/acme/wiki/page-1"');
+    expect(result.description_html.match(new RegExp(`href="${download}"`, "g"))).toHaveLength(2);
+    const json = JSON.stringify(result.description_json);
+    expect(json).toContain(`"href":"${download}"`);
+  });
 });

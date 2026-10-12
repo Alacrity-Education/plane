@@ -4,7 +4,8 @@
  * See the LICENSE file for details.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -105,7 +106,7 @@ class FakeApi {
       created,
     };
   };
-  uploadPageImage = async () => "asset";
+  uploadPageImage: (pageId: string, file: { name: string; mime: string }) => Promise<string> = async () => "asset";
 }
 
 function makeRepo(): string {
@@ -397,5 +398,166 @@ describe("runImport: pages gone from the source", () => {
     const again = await run({ prune: true });
     expect(again.stale.map((p) => p.path)).toEqual(["Courses/older"]);
     expect(api.archived).toHaveLength(4);
+  });
+});
+
+/** Minimal PNG header (enough for the size probe; the fake API never decodes it). */
+const png = (seed: number) => {
+  const data = Buffer.alloc(40);
+  data.writeUInt32BE(0x89504e47, 0);
+  data.writeUInt32BE(0x0d0a1a0a, 4);
+  data.writeUInt32BE(13, 8);
+  data.write("IHDR", 12, "ascii");
+  data.writeUInt32BE(100, 16);
+  data.writeUInt32BE(50, 20);
+  data.writeUInt32BE(seed, 30);
+  return data;
+};
+
+const download = (id: string) => `href="/api/assets/v2/workspaces/ws/download/${id}/"`;
+
+describe("runImport: links to repository files", () => {
+  it("uploads linked files once, links to Plane's download route and keeps the rest as text", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "wikijs-import-"));
+    const write = (file: string, content: string | Buffer) => {
+      mkdirSync(dirname(join(dir, file)), { recursive: true });
+      writeFileSync(join(dir, file), content);
+    };
+    write("branding/logo.png", png(1));
+    write("branding/logo-4000.png", png(2));
+    write("branding/logo.svg", '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>');
+    write("branding/guide.pdf", "%PDF-1.4");
+    write("branding/calendar.ics", "BEGIN:VCALENDAR");
+    write(
+      "branding.md",
+      [
+        "---",
+        "title: Branding",
+        "---",
+        "![logo](/branding/logo.png)",
+        "",
+        "| [Vector](/branding/logo.svg) | [4000px](/branding/logo-4000.png) | [Default](/branding/logo.png) |",
+        "| -- | -- | -- |",
+        "| [PDF](/branding/guide.pdf) | [Again](/branding/logo-4000.png#x) | [Cal](/branding/calendar.ics) |",
+        "",
+        "[Gone](/branding/missing.zip)",
+      ].join("\n")
+    );
+    write("other.md", "---\ntitle: Other\n---\n[Logo](/branding/logo.svg) and [PNG](/branding/logo-4000.png)");
+
+    const api = Object.assign(new FakeApi(), { canUploadAnyFile: false });
+    const pageUploads: { pageId: string; name: string; mime: string }[] = [];
+    const fileUploads: { name: string; mime: string }[] = [];
+    api.uploadPageImage = async (pageId: string, file: { name: string; mime: string }) => {
+      pageUploads.push({ pageId, name: file.name, mime: file.mime });
+      return `page-asset-${pageUploads.length}`;
+    };
+    (api as unknown as { uploadWorkspaceFile: unknown }).uploadWorkspaceFile = async (file: {
+      name: string;
+      mime: string;
+    }) => {
+      fileUploads.push({ name: file.name, mime: file.mime });
+      return `file-asset-${fileUploads.length}`;
+    };
+    const state = emptyState();
+    const run = (extra: Record<string, unknown> = {}) =>
+      runImport({
+        sourceDir: dir,
+        dryRun: false,
+        statePath: join(dir, ".state", "state.json"),
+        state,
+        cacheDir: join(dir, ".state", "cache"),
+        maxImageBytes: 5_000_000,
+        api: api as unknown as PlaneWikiApi,
+        workspaceSlug: "ws",
+        log: () => undefined,
+        ...extra,
+      });
+
+    // 1. without an API key: PNGs through the session endpoint (logo.png reuses the image), the rest as text
+    const first = await run();
+    const branding = () => api.pages.get(state.pages.branding!.id)!.description_html;
+    const other = () => api.pages.get(state.pages.other!.id)!.description_html;
+    expect(pageUploads.map((u) => [u.name, u.mime])).toEqual([
+      ["logo.png", "image/png"], // the image
+      ["logo-4000.png", "image/png"], // linked file of branding
+      ["logo-4000.png", "image/png"], // linked file of other (page assets are per page)
+    ]);
+    expect(pageUploads[1]?.pageId).toBe(state.pages.branding!.id);
+    expect(fileUploads).toEqual([]);
+    expect(branding()).toContain(`${download("page-asset-1")}>Default</a>`);
+    expect(branding()).toContain(download("page-asset-2"));
+    expect(branding()).not.toContain("logo.svg");
+    expect(branding()).toContain("Vector");
+    expect(branding()).toContain("Cal");
+    expect(first.pages.find((p) => p.path === "branding")?.files).toEqual({
+      uploaded: 1,
+      reused: 1,
+      skipped: 4,
+      planned: 0,
+    });
+    expect(first.summary).toMatchObject({ files_uploaded: 2, files_reused: 1, files_skipped: 5 });
+    const messages = first.warnings.filter((w) => w.path === "branding").map((w) => w.message);
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        "linked file /branding/logo.svg not uploaded: set PLANE_API_KEY to upload image/svg+xml files (kept as text)",
+        "linked file /branding/guide.pdf not uploaded: set PLANE_API_KEY to upload application/pdf files (kept as text)",
+        "linked file /branding/calendar.ics not uploaded: Plane does not accept .ics (kept as text)",
+        "linked file /branding/missing.zip not found in the source (kept as text)",
+      ])
+    );
+
+    // 2. with an API key: SVG/PDF through the v1 endpoint, once for both pages; PNGs reused
+    api.canUploadAnyFile = true;
+    const second = await run();
+    expect(fileUploads).toEqual([
+      { name: "logo.svg", mime: "image/svg+xml" },
+      { name: "guide.pdf", mime: "application/pdf" },
+    ]);
+    expect(pageUploads).toHaveLength(3);
+    expect(branding()).toContain(download("file-asset-1"));
+    expect(branding()).toContain(download("file-asset-2"));
+    expect(other()).toContain(download("file-asset-1"));
+    expect(other()).toContain(download("page-asset-3"));
+    expect(second.summary).toMatchObject({ files_uploaded: 2, files_reused: 4, files_skipped: 2 });
+    expect(state.files).toEqual({
+      [createHash("sha256")
+        .update(readFileSync(join(dir, "branding/logo.svg")))
+        .digest("hex")]: "file-asset-1",
+      [createHash("sha256")
+        .update(readFileSync(join(dir, "branding/guide.pdf")))
+        .digest("hex")]: "file-asset-2",
+    });
+
+    // 3. nothing new: no uploads, descriptions unchanged
+    const third = await run();
+    expect(fileUploads).toHaveLength(2);
+    expect(pageUploads).toHaveLength(3);
+    expect(third.summary.content_written ?? 0).toBe(0);
+  });
+
+  it("the dry run plans the uploads it can do and warns about the rest", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "wikijs-import-"));
+    mkdirSync(join(dir, "files"), { recursive: true });
+    writeFileSync(join(dir, "files/a.png"), png(3));
+    writeFileSync(join(dir, "files/b.pdf"), "%PDF");
+    writeFileSync(join(dir, "page.md"), "---\ntitle: Page\n---\n[A](/files/a.png) [B](/files/b.pdf)");
+    const report = await runImport({
+      sourceDir: dir,
+      dryRun: true,
+      statePath: join(dir, ".state", "state.json"),
+      state: emptyState(),
+      cacheDir: join(dir, ".state", "cache"),
+      maxImageBytes: 5_000_000,
+      workspaceSlug: "ws",
+      log: () => undefined,
+    });
+    expect(report.pages.find((p) => p.path === "page")?.files).toEqual({
+      uploaded: 0,
+      reused: 0,
+      skipped: 1,
+      planned: 1,
+    });
+    expect(report.summary).toMatchObject({ files_planned: 1, files_skipped: 1 });
   });
 });

@@ -55,3 +55,17 @@ describe("createLinkResolver", () => {
     expect(resolver.files).toEqual(["/files/doc.ics"]);
   });
 });
+
+describe("createLinkResolver with uploaded files", () => {
+  it("points links to uploaded files at their download URL and keeps the others as text", () => {
+    const resolver = createLinkResolver({
+      fromPath: "branding",
+      workspaceSlug: "acme",
+      pageIds: new Map(),
+      fileLinks: new Map([["/branding/logo.svg", "/api/assets/v2/workspaces/acme/download/a1/"]]),
+    });
+    expect(resolver.resolve("/branding/logo.svg")).toBe("/api/assets/v2/workspaces/acme/download/a1/");
+    expect(resolver.resolve("/branding/logo.ico")).toBeNull();
+    expect(resolver.files).toEqual(["/branding/logo.ico"]);
+  });
+});

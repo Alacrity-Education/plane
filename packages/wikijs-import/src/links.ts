@@ -59,12 +59,15 @@ export type TLinkResolver = {
 
 /**
  * Builds the converter's link callback: internal links to a migrated page become the Plane
- * page URL `/<slug>/wiki/<page id>`; unresolved internal links are dropped (text kept).
+ * page URL `/<slug>/wiki/<page id>`, links to uploaded repository files their download URL;
+ * unresolved internal links and files that were not uploaded are dropped (text kept).
  */
 export function createLinkResolver(args: {
   fromPath: string;
   workspaceSlug: string;
   pageIds: Map<string, string>;
+  /** Link href → Plane URL of a linked repository file uploaded as an asset. */
+  fileLinks?: Map<string, string>;
 }): TLinkResolver {
   const known = new Set(args.pageIds.keys());
   const unresolved: string[] = [];
@@ -77,6 +80,8 @@ export function createLinkResolver(args: {
       if (target.kind === "external") return target.href ?? href;
       if (target.kind === "anchor") return href;
       if (target.kind === "file") {
+        const uploaded = args.fileLinks?.get(href);
+        if (uploaded) return uploaded;
         files.push(target.path);
         return null;
       }

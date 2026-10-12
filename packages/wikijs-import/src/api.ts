@@ -5,7 +5,6 @@
  */
 
 /* oxlint-disable no-await-in-loop -- retries are sequential by design */
-import type { TPreparedImage } from "./images";
 import type { TPlaneProject } from "./projects";
 
 export class PlaneApiError extends Error {
@@ -180,12 +179,50 @@ export type TProjectWiki = { id: string; project: string; root_page: string; roo
 
 export type TPublishResult = "published" | "unpublished" | "unavailable";
 
+/** A file to store as a Plane asset. */
+export type TUploadFile = { name: string; mime: string; data: Buffer };
+
+/** Posts a file to a presigned S3/MinIO POST form; returns the failed response, or null when stored. */
+async function postToStorage(
+  upload: { url: string; fields: Record<string, string> },
+  file: TUploadFile,
+  baseUrl: string
+): Promise<{ status: number; body: string; url: string } | null> {
+  const send = async (url: string) => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(upload.fields)) form.append(key, value);
+    form.append("file", new Blob([new Uint8Array(file.data)], { type: file.mime }), file.name);
+    return fetch(url, { method: "POST", body: form });
+  };
+  const uploadUrl = new URL(upload.url, `${baseUrl}/`).toString();
+  let response: Response;
+  try {
+    response = await send(uploadUrl);
+  } catch (error) {
+    // A server-side presigned POST may name the storage's internal host (MinIO behind the
+    // app's proxy). The POST policy does not sign the host, so retry through the Plane origin.
+    const viaPlane = new URL(new URL(uploadUrl).pathname, `${baseUrl}/`).toString();
+    if (viaPlane === uploadUrl) throw error;
+    response = await send(viaPlane);
+  }
+  if (response.ok) return null;
+  const body = await response.text();
+  return { status: response.status, body: /<Code>([^<]+)<\/Code>/.exec(body)?.[1] ?? body, url: uploadUrl };
+}
+
 /** Workspace wiki endpoints. */
 export class PlaneWikiApi {
   constructor(
     private readonly session: PlaneSession,
-    readonly workspaceSlug: string
+    readonly workspaceSlug: string,
+    /** Plane API key (`PLANE_API_KEY`) for the v1 asset endpoint (SVG, PDF, archives…). */
+    private readonly apiKey?: string
   ) {}
+
+  /** Whether files the session endpoint refuses (non-raster types) can be uploaded. */
+  get canUploadAnyFile(): boolean {
+    return !!this.apiKey;
+  }
 
   private get base(): string {
     return `/api/workspaces/${encodeURIComponent(this.workspaceSlug)}/wiki/pages`;
@@ -265,8 +302,11 @@ export class PlaneWikiApi {
     return publish ? "published" : "unpublished";
   }
 
-  /** Uploads an image as a PAGE_DESCRIPTION asset of the page; returns the asset id. */
-  async uploadPageImage(pageId: string, image: TPreparedImage): Promise<string> {
+  /**
+   * Uploads an image (or a linked PNG/JPEG/GIF/WebP file) as a PAGE_DESCRIPTION asset of the
+   * page; returns the asset id.
+   */
+  async uploadPageImage(pageId: string, image: TUploadFile): Promise<string> {
     const slug = encodeURIComponent(this.workspaceSlug);
     const signed = await this.session.json<{
       asset_id: string;
@@ -278,22 +318,61 @@ export class PlaneWikiApi {
       entity_type: "PAGE_DESCRIPTION",
       entity_identifier: pageId,
     });
-    const form = new FormData();
-    for (const [key, value] of Object.entries(signed.upload_data.fields)) form.append(key, value);
-    form.append("file", new Blob([new Uint8Array(image.data)], { type: image.mime }), image.name);
-    const uploadUrl = new URL(signed.upload_data.url, `${this.session.baseUrl}/`).toString();
-    const upload = await fetch(uploadUrl, { method: "POST", body: form });
-    if (!upload.ok) {
-      const body = await upload.text();
+    const failed = await postToStorage(signed.upload_data, image, this.session.baseUrl);
+    if (failed) {
       // Drop the asset row that never received its file
       await this.session
         .request("DELETE", `/api/assets/v2/workspaces/${slug}/${signed.asset_id}/`, { allowStatus: [404] })
         .catch(() => undefined);
-      throw new PlaneApiError(upload.status, `upload ${uploadUrl}`, /<Code>([^<]+)<\/Code>/.exec(body)?.[1] ?? body);
+      throw new PlaneApiError(failed.status, `upload ${failed.url}`, failed.body);
     }
     await this.session.request("PATCH", `/api/assets/v2/workspaces/${slug}/${signed.asset_id}/`, {
       json: { attributes: { name: image.name, type: image.mime, size: image.data.length } },
     });
+    return signed.asset_id;
+  }
+
+  /** v1 request with the API key (`X-Api-Key`), retrying throttled/transient responses. */
+  private async apiKeyRequest(method: string, path: string, json?: unknown): Promise<Response> {
+    if (!this.apiKey) throw new Error("PLANE_API_KEY is not set");
+    const url = `${this.session.baseUrl}${path}`;
+    for (let attempt = 0; ; attempt++) {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "X-Api-Key": this.apiKey,
+          Accept: "application/json",
+          ...(json !== undefined ? { "Content-Type": "application/json" } : {}),
+        },
+        ...(json !== undefined ? { body: JSON.stringify(json) } : {}),
+      });
+      if (RETRYABLE_STATUS.has(response.status) && attempt < 5) {
+        await response.body?.cancel().catch(() => undefined);
+        const reset = Number(response.headers.get("x-ratelimit-reset"));
+        const retryAfter = Number(response.headers.get("retry-after"));
+        const wait =
+          reset > 1e9 ? reset * 1000 - Date.now() + 250 : retryAfter > 0 ? retryAfter * 1000 : 1000 * 2 ** attempt;
+        await sleep(Math.min(Math.max(wait, 500), 120_000));
+        continue;
+      }
+      if (response.status >= 400) throw new PlaneApiError(response.status, `${method} ${url}`, await response.text());
+      return response;
+    }
+  }
+
+  /**
+   * Uploads a file of any type Plane accepts as an attachment (`ATTACHMENT_MIME_TYPES`: SVG,
+   * PDF, office documents, archives…) through the v1 `GenericAssetEndpoint` with the API key.
+   * The asset belongs to the workspace (not to a page); returns its id.
+   */
+  async uploadWorkspaceFile(file: TUploadFile): Promise<string> {
+    const base = `/api/v1/workspaces/${encodeURIComponent(this.workspaceSlug)}/assets/`;
+    const signed = (await (
+      await this.apiKeyRequest("POST", base, { name: file.name, type: file.mime, size: file.data.length })
+    ).json()) as { asset_id: string; upload_data: { url: string; fields: Record<string, string> } };
+    const failed = await postToStorage(signed.upload_data, file, this.session.baseUrl);
+    if (failed) throw new PlaneApiError(failed.status, `upload ${failed.url}`, failed.body);
+    await this.apiKeyRequest("PATCH", `${base}${signed.asset_id}/`, { is_uploaded: true });
     return signed.asset_id;
   }
 }

@@ -46,6 +46,8 @@ Environment:
   PLANE_URL               Plane API origin, e.g. https://plane.example.com (dev: http://localhost:8000)
   PLANE_WORKSPACE_SLUG    Target workspace slug
   PLANE_SESSION_COOKIE    Raw Cookie header copied from a signed-in browser (session-id=…; csrftoken=…)
+  PLANE_API_KEY           Optional Plane API key (Profile settings → API tokens) of the same user: needed
+                          to upload linked files other than PNG/JPEG/GIF/WebP (SVG, PDF, archives…)
   WIKIJS_TOKEN            Wiki.js API key for --wikijs-url (Administration → API Access)
 `;
 
@@ -158,7 +160,15 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
       const me = await session.assertAuthenticated();
       io.stdout(`Authenticated as ${me.email}`);
     }
-    api = new PlaneWikiApi(session, workspaceSlug);
+    const apiKey = io.env.PLANE_API_KEY?.trim() || undefined;
+    if (apiKey) {
+      const check = await fetch(`${baseUrl}/api/v1/users/me/`, { headers: { "X-Api-Key": apiKey } });
+      if (!check.ok) {
+        io.stderr(`PLANE_API_KEY was rejected by ${baseUrl} (HTTP ${check.status})`);
+        return 2;
+      }
+    }
+    api = new PlaneWikiApi(session, workspaceSlug, apiKey);
     maxImageBytes = (await fetchFileSizeLimit(session)) ?? DEFAULT_FILE_SIZE_LIMIT;
   }
 
@@ -177,6 +187,7 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
     cacheDir: defaultCacheDir(statePath),
     maxImageBytes,
     api,
+    canUploadAnyFile: !!io.env.PLANE_API_KEY?.trim(),
     workspaceSlug: workspaceSlug || "<workspace>",
     baseUrl,
     log: io.stdout,

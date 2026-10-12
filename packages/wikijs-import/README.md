@@ -46,6 +46,7 @@ node packages/wikijs-import/dist/cli.js --source /path/to/wikijs-repo
 | `PLANE_WORKSPACE_SLUG` | Target workspace                                                                                                  |
 | `PLANE_SESSION_COOKIE` | The raw `Cookie` request header of a signed-in browser                                                            |
 | `WIKIJS_TOKEN`         | Wiki.js API key for `--wikijs-url` (Administration → API Access); never a flag, never logged                      |
+| `PLANE_API_KEY`        | Optional Plane API key (Profile settings → API tokens) to upload linked files other than PNG/JPEG/GIF/WebP        |
 
 ### Live Wiki.js source (`--wikijs-url`)
 
@@ -166,8 +167,21 @@ Content:
   downloaded and uploaded too.
 - Internal links (`/Folder/page`, `/en/Folder/page`, relative links) are rewritten to
   `/<workspace>/wiki/<page id>`. All pages are created before any content is written, so every link
-  to a migrated page resolves; links to pages that do not exist, or to repository files that are not
-  pages (downloads), keep their text and are listed as warnings.
+  to a migrated page resolves; links to pages that do not exist keep their text and are listed as
+  warnings.
+- Links to repository files that are not pages (downloads: `[Vector](/branding/logo.svg)`, PDFs,
+  archives…) are uploaded as workspace assets and point at Plane's download route,
+  `/api/assets/v2/workspaces/<workspace>/download/<asset id>/` (root-relative, so it survives a
+  host name change; a signed-in member gets a redirect to the file with `Content-Disposition:
+attachment`). PNG/JPEG/GIF/WebP go through the session endpoint as assets of the page, sharing
+  the page's image uploads (same sha256 → same asset). Every other type needs the v1 API-key
+  endpoint, which accepts Plane's `ATTACHMENT_MIME_TYPES` (SVG, PDF, office documents, archives,
+  audio/video…): set `PLANE_API_KEY` (an API token of the same user), otherwise those links keep
+  their text with a warning `set PLANE_API_KEY to upload <type> files`. Those assets belong to the
+  workspace and are shared by every page linking the same file (`files` in the state file).
+  Missing files, types Plane does not accept (`.ics`, `.ico`…) and files above the upload limit
+  keep their text and are listed as warnings. The summary counts `files_uploaded`, `files_reused`
+  and `files_skipped` (`files_planned` in a dry run).
 - Not representable in Plane, reported as warnings: iframes/videos (replaced by a link), mermaid
   (kept as a code block), Wiki.js tabsets (flattened), missing images (an `[image not available]` note).
 
