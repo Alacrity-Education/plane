@@ -21,6 +21,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from plane.db.models import (
+    DeployBoard,
     Page,
     PageVersion,
     Project,
@@ -97,6 +98,14 @@ def _project_page(workspace, owner, project, is_global=False):
     )
     ProjectPage.objects.create(workspace=workspace, project=project, page=page)
     return page
+
+
+def _publish_row(page):
+    return DeployBoard.objects.create(entity_name="page", entity_identifier=page.id, workspace=page.workspace)
+
+
+def _is_published(page):
+    return DeployBoard.objects.filter(entity_name="page", entity_identifier=page.id).exists()
 
 
 def _ids(response):
@@ -317,7 +326,7 @@ class TestWikiNesting:
         assert _ids(session_client.get(_pages_url(), {"type": "archived"})) == {str(archived.id)}
 
         summary = session_client.get(f"{BASE}/pages-summary/").json()
-        assert summary == {"public_pages": 1, "private_pages": 1, "archived_pages": 1}
+        assert summary == {"public_pages": 1, "private_pages": 1, "archived_pages": 1, "published_pages": 0}
 
     @pytest.mark.django_db
     def test_create_with_parent(self, session_client, workspace, create_user):
@@ -698,3 +707,168 @@ class TestWikiFavorites:
 
         listed_pages = session_client.get(_pages_url()).json()
         assert next(item for item in listed_pages if item["id"] == str(page.id))["is_favorite"] is True
+
+
+@pytest.mark.contract
+class TestWikiPublish:
+    @pytest.mark.django_db
+    def test_member_publishes_and_unpublishes_idempotently(self, workspace, create_user, member):
+        page = _wiki_page(workspace, create_user)
+        client = _client_for(member)
+
+        for _ in range(2):
+            response = client.post(_pages_url(page.id, "publish/"))
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["is_published"] is True
+            assert set(response.json().keys()) == LIST_FIELDS | {"description_html"}
+        row = DeployBoard.objects.get(entity_name="page", entity_identifier=page.id)
+        assert row.workspace_id == workspace.id
+
+        listed = client.get(_pages_url()).json()
+        assert next(item for item in listed if item["id"] == str(page.id))["is_published"] is True
+        assert client.get(_pages_url(page.id)).json()["is_published"] is True
+
+        for _ in range(2):
+            response = client.delete(_pages_url(page.id, "publish/"))
+            assert response.status_code == status.HTTP_200_OK
+            assert response.json()["is_published"] is False
+        assert not _is_published(page)
+        assert DeployBoard.all_objects.filter(entity_identifier=page.id, deleted_at__isnull=False).count() == 1
+        assert client.get(_pages_url(page.id)).json()["is_published"] is False
+
+        # Publishing again after an unpublish creates a fresh live row
+        response = client.post(_pages_url(page.id, "publish/"))
+        assert response.json()["is_published"] is True
+        assert DeployBoard.objects.filter(entity_identifier=page.id).count() == 1
+
+    @pytest.mark.django_db
+    def test_guest_cannot_publish_or_unpublish(self, workspace, create_user, guest):
+        page = _wiki_page(workspace, create_user)
+        own_page = _wiki_page(workspace, guest)
+        client = _client_for(guest)
+
+        for target in (page, own_page):
+            assert client.post(_pages_url(target.id, "publish/")).status_code == status.HTTP_403_FORBIDDEN
+            assert not _is_published(target)
+
+        _publish_row(page)
+        assert client.delete(_pages_url(page.id, "publish/")).status_code == status.HTTP_403_FORBIDDEN
+        assert _is_published(page)
+
+    @pytest.mark.django_db
+    def test_non_member_forbidden(self, workspace, create_user):
+        page = _wiki_page(workspace, create_user)
+        outsider = _make_user("outsider")
+
+        response = _client_for(outsider).post(_pages_url(page.id, "publish/"))
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert not _is_published(page)
+
+    @pytest.mark.django_db
+    def test_private_and_archived_pages_rejected(self, session_client, workspace, create_user):
+        private = _wiki_page(workspace, create_user, access=Page.PRIVATE_ACCESS)
+        archived = _wiki_page(workspace, create_user, archived_at=timezone.now())
+
+        for page in (private, archived):
+            response = session_client.post(_pages_url(page.id, "publish/"))
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            assert "error" in response.json()
+            assert not _is_published(page)
+
+    @pytest.mark.django_db
+    def test_others_private_and_project_pages_not_found(self, workspace, create_user, member, project):
+        private = _wiki_page(workspace, create_user, access=Page.PRIVATE_ACCESS)
+        project_page = _project_page(workspace, create_user, project, is_global=True)
+
+        for page in (private, project_page):
+            response = _client_for(member).post(_pages_url(page.id, "publish/"))
+            assert response.status_code == status.HTTP_404_NOT_FOUND
+            assert not _is_published(page)
+
+    @pytest.mark.django_db
+    def test_making_private_unpublishes(self, session_client, workspace, create_user):
+        via_access = _wiki_page(workspace, create_user)
+        via_patch = _wiki_page(workspace, create_user)
+        _publish_row(via_access)
+        _publish_row(via_patch)
+
+        response = session_client.post(_pages_url(via_access.id, "access/"), {"access": 1}, format="json")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        response = session_client.patch(_pages_url(via_patch.id), {"access": 1}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["is_published"] is False
+
+        assert not _is_published(via_access)
+        assert not _is_published(via_patch)
+
+    @pytest.mark.django_db
+    def test_archive_unpublishes_page_and_descendants(self, session_client, workspace, create_user):
+        root = _wiki_page(workspace, create_user, name="root")
+        child = _wiki_page(workspace, create_user, name="child", parent=root)
+        sibling = _wiki_page(workspace, create_user, name="sibling")
+        for page in (root, child, sibling):
+            _publish_row(page)
+
+        response = session_client.post(_pages_url(root.id, "archive/"))
+        assert response.status_code == status.HTTP_200_OK
+
+        assert not _is_published(root)
+        assert not _is_published(child)
+        assert _is_published(sibling)
+
+        # Restoring does not re-publish
+        session_client.delete(_pages_url(root.id, "archive/"))
+        assert not _is_published(root)
+
+    @pytest.mark.django_db
+    def test_delete_unpublishes(self, session_client, workspace, create_user):
+        page = _wiki_page(workspace, create_user, archived_at=timezone.now())
+        _publish_row(page)
+
+        response = session_client.delete(_pages_url(page.id))
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not _is_published(page)
+
+    @pytest.mark.django_db
+    def test_duplicate_does_not_copy_published_state(self, session_client, workspace, create_user):
+        page = _wiki_page(workspace, create_user, name="Doc")
+        _publish_row(page)
+
+        response = session_client.post(_pages_url(page.id, "duplicate/"))
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.json()["is_published"] is False
+        copy = Page.objects.get(pk=response.json()["id"])
+        assert not _is_published(copy)
+        assert _is_published(page)
+
+    @pytest.mark.django_db
+    def test_summary_counts_published(self, session_client, workspace, create_user):
+        published = _wiki_page(workspace, create_user)
+        _wiki_page(workspace, create_user)
+        _publish_row(published)
+
+        response = session_client.get(f"{BASE}/pages-summary/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["public_pages"] == 2
+        assert response.json()["published_pages"] == 1
+
+    @pytest.mark.django_db
+    def test_v1_feed_follows_publish_state(self, session_client, workspace, create_user, api_token):
+        page = _wiki_page(workspace, create_user, name="Docs")
+        feed = APIClient()
+        feed.credentials(HTTP_X_API_KEY=api_token.token)
+        feed_url = f"/api/v1/workspaces/{SLUG}/wiki/pages/"
+
+        assert str(page.id) not in {item["id"] for item in feed.get(feed_url).json()["results"]}
+
+        session_client.post(_pages_url(page.id, "publish/"))
+        assert str(page.id) in {item["id"] for item in feed.get(feed_url).json()["results"]}
+        assert feed.get(f"{feed_url}{page.id}/").status_code == status.HTTP_200_OK
+
+        session_client.delete(_pages_url(page.id, "publish/"))
+        assert str(page.id) not in {item["id"] for item in feed.get(feed_url).json()["results"]}
+        assert feed.get(f"{feed_url}{page.id}/").status_code == status.HTTP_404_NOT_FOUND

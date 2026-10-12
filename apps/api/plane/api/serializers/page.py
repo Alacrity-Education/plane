@@ -34,6 +34,8 @@ class WikiPageSerializer(BaseSerializer):
     parent = serializers.UUIDField(source="parent_id", read_only=True, allow_null=True)
     label_ids = serializers.ListField(child=serializers.UUIDField(), read_only=True)
     sub_pages_count = serializers.IntegerField(read_only=True)
+    # Always true in the feed, which only lists published pages
+    is_published = serializers.BooleanField(read_only=True)
     project_wiki = serializers.SerializerMethodField()
 
     class Meta:
@@ -55,6 +57,7 @@ class WikiPageSerializer(BaseSerializer):
             "created_at",
             "updated_at",
             "workspace",
+            "is_published",
             "project_wiki",
         ]
         read_only_fields = fields

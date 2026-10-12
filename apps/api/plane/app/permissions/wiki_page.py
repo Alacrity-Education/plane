@@ -11,7 +11,7 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 # Module imports
 from plane.app.permissions.base import ROLE
-from plane.db.models import Page, ProjectPage, ProjectWiki, WorkspaceMember
+from plane.db.models import DeployBoard, Page, ProjectPage, ProjectWiki, WorkspaceMember
 
 
 # Permission Mappings for workspace members
@@ -31,6 +31,33 @@ def wiki_pages_queryset(slug):
         .annotate(has_project=Exists(ProjectPage.objects.filter(page_id=OuterRef("pk"))))
         .filter(has_project=False)
     )
+
+
+def published_pages_queryset():
+    """
+    Live DeployBoard rows marking wiki pages as published to the docs site.
+    A wiki page is published when a non-deleted
+    DeployBoard(entity_name="page", entity_identifier=page.id) of its
+    workspace exists.
+    """
+    return DeployBoard.objects.filter(entity_name="page")
+
+
+def annotate_is_published(queryset):
+    """Annotate pages with `is_published` (one Exists subquery, no N+1)."""
+    return queryset.annotate(
+        is_published=Exists(
+            published_pages_queryset().filter(
+                entity_identifier=OuterRef("pk"),
+                workspace_id=OuterRef("workspace_id"),
+            )
+        )
+    )
+
+
+def unpublish_wiki_pages(page_ids, workspace_id):
+    """Soft-delete the publish rows of the given pages (no-op when absent)."""
+    return published_pages_queryset().filter(workspace_id=workspace_id, entity_identifier__in=page_ids).delete()
 
 
 def annotate_project_wiki(queryset):
@@ -133,3 +160,25 @@ class WorkspacePagePermission(BasePermission):
 
         # Deny by default
         return False
+
+
+class WorkspacePagePublishPermission(BasePermission):
+    """
+    Publishing a wiki page to the docs site (POST) and unpublishing it
+    (DELETE): workspace ADMIN and MEMBER only. Guests are refused even on
+    pages they own; private pages of other users stay invisible (404).
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+
+        slug = view.kwargs.get("slug")
+        role = get_workspace_role(request.user, slug)
+        if role not in [ADMIN, MEMBER]:
+            return False
+
+        page = wiki_pages_queryset(slug).filter(id=view.kwargs.get("page_id")).first()
+        if page is not None and page.access == Page.PRIVATE_ACCESS and page.owned_by_id != request.user.id:
+            raise NotFound("Page not found")
+        return True

@@ -22,7 +22,11 @@ from drf_spectacular.utils import OpenApiResponse
 # Module imports
 from plane.api.serializers import WikiPageSerializer, WikiPageDetailSerializer
 from plane.app.permissions import WorkspaceEntityPermission
-from plane.app.permissions.wiki_page import annotate_project_wiki
+from plane.app.permissions.wiki_page import (
+    annotate_is_published,
+    annotate_project_wiki,
+    published_pages_queryset,
+)
 from plane.db.models import Page, ProjectPage
 from plane.utils.order_queryset import PAGE_ORDER_BY_ALLOWLIST, sanitize_order_by
 from plane.utils.openapi import (
@@ -62,8 +66,9 @@ def _parse_updated_since(value):
 class WikiPageBaseAPIEndpoint(BaseAPIView):
     """Shared scope for the read-only workspace wiki feed.
 
-    Only public, non-archived workspace wiki pages (``is_global=True`` without a
-    project link) are ever exposed, whoever owns the API token.
+    Only published (see ``WorkspacePagePublishEndpoint``), public, non-archived
+    workspace wiki pages (``is_global=True`` without a project link) are ever
+    exposed, whoever owns the API token.
     """
 
     model = Page
@@ -76,12 +81,16 @@ class WikiPageBaseAPIEndpoint(BaseAPIView):
             .filter(is_global=True, access=Page.PUBLIC_ACCESS, archived_at__isnull=True)
             .filter(~Exists(ProjectPage.objects.filter(page_id=OuterRef("pk"))))
         )
+        pages = annotate_is_published(pages).filter(is_published=True)
         return annotate_project_wiki(pages).annotate(
+            # Children that are exported as well
             sub_pages_count=Count(
                 "child_page",
                 filter=Q(
                     child_page__deleted_at__isnull=True,
                     child_page__archived_at__isnull=True,
+                    child_page__access=Page.PUBLIC_ACCESS,
+                    child_page__id__in=published_pages_queryset().values("entity_identifier"),
                 ),
                 distinct=True,
             ),
@@ -108,7 +117,7 @@ class WikiPageListAPIEndpoint(WikiPageBaseAPIEndpoint):
         operation_id="list_wiki_pages",
         summary="List wiki pages",
         description=(
-            "Retrieve all public, non-archived pages of the workspace wiki as a flat list. "
+            "Retrieve all published (public, non-archived) pages of the workspace wiki as a flat list. "
             "Rebuild the tree from each page's `parent` and `sort_order`."
         ),
         parameters=[
@@ -132,7 +141,7 @@ class WikiPageListAPIEndpoint(WikiPageBaseAPIEndpoint):
     def get(self, request, slug):
         """List wiki pages
 
-        Retrieve the public, non-archived pages of the workspace wiki.
+        Retrieve the published (public, non-archived) pages of the workspace wiki.
         Supports filtering by parent page and by last update time.
         """
         pages = self.get_queryset()
@@ -185,7 +194,8 @@ class WikiPageDetailAPIEndpoint(WikiPageBaseAPIEndpoint):
         operation_id="retrieve_wiki_page",
         summary="Retrieve wiki page",
         description=(
-            "Retrieve a public, non-archived wiki page with its HTML body and the uploaded assets embedded in it."
+            "Retrieve a published (public, non-archived) wiki page with its HTML body "
+            "and the uploaded assets embedded in it."
         ),
         parameters=[
             PAGE_ID_PARAMETER,
@@ -202,7 +212,7 @@ class WikiPageDetailAPIEndpoint(WikiPageBaseAPIEndpoint):
     def get(self, request, slug, pk):
         """Retrieve wiki page
 
-        Retrieve a public, non-archived wiki page including `description_html` and `assets`.
+        Retrieve a published (public, non-archived) wiki page including `description_html` and `assets`.
         """
         # `expand` is intentionally not honoured: the generic expansion map has no
         # page-aware serializers (it would render `parent` as a work item).

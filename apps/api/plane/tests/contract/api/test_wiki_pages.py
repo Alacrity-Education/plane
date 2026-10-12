@@ -12,6 +12,7 @@ from rest_framework import status
 
 from plane.api.views import WikiPageDetailAPIEndpoint, WikiPageListAPIEndpoint
 from plane.db.models import (
+    DeployBoard,
     FileAsset,
     Page,
     Project,
@@ -40,6 +41,7 @@ LIST_FIELDS = {
     "created_at",
     "updated_at",
     "workspace",
+    "is_published",
     "project_wiki",
 }
 
@@ -52,7 +54,12 @@ def detail_url(slug, page_id):
     return f"/api/v1/workspaces/{slug}/wiki/pages/{page_id}/"
 
 
-def make_page(workspace, owner, **kwargs):
+def publish(page):
+    return DeployBoard.objects.create(entity_name="page", entity_identifier=page.id, workspace=page.workspace)
+
+
+def make_page(workspace, owner, published=True, **kwargs):
+    """Wiki page fixture; published to the docs site unless `published=False`."""
     defaults = {
         "workspace": workspace,
         "owned_by": owner,
@@ -61,7 +68,10 @@ def make_page(workspace, owner, **kwargs):
         "name": "Wiki page",
     }
     defaults.update(kwargs)
-    return Page.objects.create(**defaults)
+    page = Page.objects.create(**defaults)
+    if published:
+        publish(page)
+    return page
 
 
 def result_ids(response):
@@ -160,6 +170,35 @@ class TestWikiPageListAPIEndpoint:
         for excluded in (project_page, linked_global, own_private, others_private, archived, deleted):
             detail = api_key_client.get(detail_url(workspace.slug, excluded.id))
             assert detail.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.django_db
+    def test_only_published_pages_are_exported(self, api_key_client, workspace, create_user, root_page):
+        draft = make_page(workspace, create_user, name="Draft", published=False)
+        unpublished = make_page(workspace, create_user, name="Unpublished")
+        DeployBoard.objects.filter(entity_identifier=unpublished.id).delete()
+        other_entity = make_page(workspace, create_user, name="Other entity", published=False)
+        DeployBoard.objects.create(entity_name="project", entity_identifier=other_entity.id, workspace=workspace)
+
+        response = api_key_client.get(list_url(workspace.slug))
+
+        assert response.status_code == status.HTTP_200_OK
+        assert result_ids(response) == {str(root_page.id)}
+        assert all(item["is_published"] is True for item in response.data["results"])
+        for excluded in (draft, unpublished, other_entity):
+            detail = api_key_client.get(detail_url(workspace.slug, excluded.id))
+            assert detail.status_code == status.HTTP_404_NOT_FOUND
+        assert api_key_client.get(detail_url(workspace.slug, root_page.id)).data["is_published"] is True
+
+    @pytest.mark.django_db
+    def test_sub_pages_count_ignores_unpublished_children(
+        self, api_key_client, workspace, create_user, root_page, child_page
+    ):
+        make_page(workspace, create_user, name="Draft child", parent=root_page, published=False)
+
+        response = api_key_client.get(list_url(workspace.slug))
+
+        by_id = {str(i["id"]): i for i in response.data["results"]}
+        assert by_id[str(root_page.id)]["sub_pages_count"] == 1
 
     @pytest.mark.django_db
     def test_updated_since_filter(self, api_key_client, workspace, create_user, root_page):

@@ -30,6 +30,7 @@ from django.db.models import (
 from django.db.models.functions import Cast, Coalesce
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.contrib.postgres.fields import ArrayField
+from django.db import IntegrityError, transaction
 from django.http import StreamingHttpResponse
 
 # Third party imports
@@ -40,8 +41,11 @@ from rest_framework.response import Response
 from plane.app.permissions.wiki_page import (
     ADMIN,
     WorkspacePagePermission,
+    WorkspacePagePublishPermission,
+    annotate_is_published,
     annotate_project_wiki,
     get_workspace_role,
+    unpublish_wiki_pages,
     wiki_pages_queryset,
 )
 from plane.app.serializers.page import (
@@ -101,19 +105,12 @@ def annotated_wiki_pages(slug, user, order_by=None):
         .values("count")
     )
     return (
-        annotate_project_wiki(_visible_wiki_pages(slug, user))
+        annotate_is_published(annotate_project_wiki(_visible_wiki_pages(slug, user)))
         .select_related("workspace")
         .select_related("owned_by")
         .prefetch_related("labels")
         .annotate(
             is_favorite=Exists(favorite_subquery),
-            is_published=Exists(
-                DeployBoard.objects.filter(
-                    entity_name="page",
-                    entity_identifier=OuterRef("pk"),
-                    workspace__slug=slug,
-                )
-            ),
             sub_pages_count=Coalesce(
                 Subquery(sub_pages_subquery, output_field=IntegerField()),
                 Value(0),
@@ -263,6 +260,9 @@ class WorkspacePageViewSet(BaseViewSet):
         page_description = page.description_html
         if serializer.is_valid():
             serializer.save()
+            # A private page can't stay published
+            if serializer.instance.access == Page.PRIVATE_ACCESS:
+                unpublish_wiki_pages([page.id], page.workspace_id)
             # capture the page transaction
             if request.data.get("description_html"):
                 page_transaction.delay(
@@ -327,7 +327,7 @@ class WorkspacePageViewSet(BaseViewSet):
 
         # A private page can't stay published
         if access == Page.PRIVATE_ACCESS:
-            DeployBoard.objects.filter(entity_name="page", entity_identifier=page.id, workspace__slug=slug).delete()
+            unpublish_wiki_pages([page.id], page.workspace_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def _is_owner_or_admin(self, request, slug, page):
@@ -344,10 +344,15 @@ class WorkspacePageViewSet(BaseViewSet):
             )
 
         UserFavorite.objects.filter(entity_type="page", entity_identifier=page_id, workspace__slug=slug).delete()
-        DeployBoard.objects.filter(entity_name="page", entity_identifier=page_id, workspace__slug=slug).delete()
 
         # Archives the page and all its descendants
         unarchive_archive_page_and_descendants(page_id, datetime.now())
+
+        # Archived pages can't stay published (the descendants were archived too)
+        unpublish_wiki_pages(
+            wiki_pages_queryset(slug).filter(archived_at__isnull=False).values("id"),
+            page.workspace_id,
+        )
 
         return Response({"archived_at": str(datetime.now())}, status=status.HTTP_200_OK)
 
@@ -390,6 +395,7 @@ class WorkspacePageViewSet(BaseViewSet):
         _ = Page.objects.filter(parent_id=page_id, workspace__slug=slug).update(parent=None)
 
         page.delete()
+        unpublish_wiki_pages([page_id], page.workspace_id)
         # Delete the user favorite page
         UserFavorite.objects.filter(
             workspace__slug=slug,
@@ -406,7 +412,7 @@ class WorkspacePageViewSet(BaseViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def summary(self, request, slug):
-        queryset = _visible_wiki_pages(slug, request.user)
+        queryset = annotate_is_published(_visible_wiki_pages(slug, request.user))
 
         stats = queryset.aggregate(
             public_pages=Count(
@@ -422,6 +428,7 @@ class WorkspacePageViewSet(BaseViewSet):
                 )
             ),
             archived_pages=Count(Case(When(archived_at__isnull=False, then=1), output_field=IntegerField())),
+            published_pages=Count(Case(When(is_published=True, then=1), output_field=IntegerField())),
         )
 
         return Response(stats, status=status.HTTP_200_OK)
@@ -547,3 +554,52 @@ class WorkspacePageDuplicateEndpoint(BaseAPIView):
         page = annotated_wiki_pages(slug, request.user).get(pk=page.id)
         serializer = WorkspacePageDetailSerializer(page)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class WorkspacePagePublishEndpoint(BaseAPIView):
+    """
+    Publish a wiki page to the docs site (POST) or unpublish it (DELETE).
+    Published = a live DeployBoard(entity_name="page") row for the page; the
+    v1 wiki feed read by the docs exporter only returns published pages.
+    """
+
+    permission_classes = [WorkspacePagePublishPermission]
+
+    def _response(self, slug, request, page_id):
+        page = annotated_wiki_pages(slug, request.user).get(pk=page_id)
+        return Response(WorkspacePageDetailSerializer(page).data, status=status.HTTP_200_OK)
+
+    def post(self, request, slug, page_id):
+        page = _visible_wiki_pages(slug, request.user).get(pk=page_id)
+
+        if page.access != Page.PUBLIC_ACCESS:
+            return Response(
+                {"error": "Only public pages can be published to the docs site"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if page.archived_at is not None:
+            return Response(
+                {"error": "Archived pages can't be published to the docs site"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not DeployBoard.objects.filter(
+            entity_name="page", entity_identifier=page.id, workspace_id=page.workspace_id
+        ).exists():
+            try:
+                with transaction.atomic():
+                    DeployBoard.objects.create(
+                        entity_name="page",
+                        entity_identifier=page.id,
+                        workspace_id=page.workspace_id,
+                    )
+            except IntegrityError:
+                # Published concurrently: the row exists, which is all we need
+                pass
+
+        return self._response(slug, request, page.id)
+
+    def delete(self, request, slug, page_id):
+        page = _visible_wiki_pages(slug, request.user).get(pk=page_id)
+        unpublish_wiki_pages([page.id], page.workspace_id)
+        return self._response(slug, request, page.id)

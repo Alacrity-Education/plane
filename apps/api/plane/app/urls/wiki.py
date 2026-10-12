@@ -10,6 +10,7 @@ from plane.app.views.page.workspace import (
     WorkspacePagesDescriptionViewSet,
     WorkspacePageVersionEndpoint,
     WorkspacePageDuplicateEndpoint,
+    WorkspacePagePublishEndpoint,
 )
 from plane.app.views.page.project_wiki import ProjectWikiEndpoint
 
@@ -64,6 +65,11 @@ urlpatterns = [
         "workspaces/<str:slug>/wiki/pages/<uuid:page_id>/duplicate/",
         WorkspacePageDuplicateEndpoint.as_view(),
         name="wiki-page-duplicate",
+    ),
+    path(
+        "workspaces/<str:slug>/wiki/pages/<uuid:page_id>/publish/",
+        WorkspacePagePublishEndpoint.as_view(),
+        name="wiki-page-publish",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/wiki/",
