@@ -25,7 +25,7 @@ import {
   projectPageNodes,
   sanitizeProjectName,
 } from "./projects";
-import type { TImportReport, TReportPage } from "./report";
+import type { TImportReport, TReportPage, TReportStalePage } from "./report";
 import { summarize } from "./report";
 import { readSourcePages } from "./source";
 import type { TImportState } from "./state";
@@ -48,6 +48,8 @@ export type TImportOptions = {
   adopt?: boolean | undefined;
   /** Rewrite descriptions even when unchanged since the last run. */
   force?: boolean | undefined;
+  /** Archive the pages of earlier runs that are no longer in the source (else only report them). */
+  prune?: boolean | undefined;
   statePath: string;
   /** `--project-map`: normalized Wiki.js path → project identifier or name. */
   projectMap?: Map<string, string> | undefined;
@@ -117,6 +119,7 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     warnings,
     publishPending: [],
     projects: [],
+    stale: [],
   };
 
   const sources = readSourcePages(options.sourceDir, warnings);
@@ -572,9 +575,89 @@ export async function runImport(options: TImportOptions): Promise<TImportReport>
     }
   }
 
+  await pruneStalePages(options, all, existing, report);
+
   report.finishedAt = new Date().toISOString();
   summarize(report);
   return report;
+}
+
+/**
+ * Pages of earlier runs that are no longer in the source (deleted or moved in Wiki.js). With
+ * `--prune` they are archived in Plane (with their sub-pages, which Plane archives along) and
+ * moved from `state.pages` to `state.pruned`; otherwise they are only listed. Deepest first, so a
+ * stale folder page whose sub-pages were all stale is archived too. Never archived: pages that
+ * still have live sub-pages and project section roots.
+ */
+async function pruneStalePages(
+  options: TImportOptions,
+  all: TTreeNode[],
+  existing: Map<string, TPlanePage>,
+  report: TImportReport
+): Promise<void> {
+  const { state } = options;
+  const live = new Set(all.map((node) => node.key));
+  const liveIds = new Set(all.map((node) => state.pages[node.key]?.id).filter(Boolean));
+  const prefix = options.only ? pathKey(options.only) : undefined;
+  const stale = Object.entries(state.pages)
+    .filter(([key]) => !live.has(key) && (!prefix || key === prefix || key.startsWith(`${prefix}/`)))
+    .toSorted(([a], [b]) => b.split("/").length - a.split("/").length || a.localeCompare(b));
+  if (!stale.length) return;
+
+  const archived = new Set<string>();
+  for (const [key, page] of stale) {
+    const entry: TReportStalePage = { path: page.path, title: page.title, pageId: page.id, action: "stale" };
+    report.stale.push(entry);
+    const keep = (reason: string) => {
+      entry.action = "kept";
+      entry.reason = reason;
+      report.warnings.push({ path: page.path, message: `not in the source any more; kept: ${reason}` });
+    };
+    if (liveIds.has(page.id)) {
+      // another (renamed or merged) path took this page over: only the state entry is stale
+      if (!options.dryRun) delete state.pages[key];
+      entry.action = "pruned";
+      entry.reason = "page reused by another path";
+      continue;
+    }
+    if (page.rootName) {
+      keep("it is a project section root page");
+      continue;
+    }
+    if (options.dryRun || !options.api) {
+      entry.action = options.prune ? "planned" : "stale";
+      if (!options.prune)
+        report.warnings.push({ path: page.path, message: "not in the source any more (archive it with --prune)" });
+      continue;
+    }
+    if (!options.prune) {
+      report.warnings.push({ path: page.path, message: "not in the source any more (archive it with --prune)" });
+      continue;
+    }
+    const current = existing.get(page.id);
+    const children = [...existing.values()].filter(
+      (p) => p.parent === page.id && !p.archived_at && !archived.has(p.id)
+    );
+    if (children.length) {
+      keep(`it still has sub-pages (${children.map((c) => c.name).join(", ")})`);
+      continue;
+    }
+    try {
+      if (current && !current.archived_at) await options.api.archivePage(page.id);
+      archived.add(page.id);
+      if (current) existing.set(page.id, { ...current, archived_at: current.archived_at ?? new Date().toISOString() });
+      delete state.pages[key];
+      delete state.assets[key];
+      state.pruned = { ...state.pruned, [key]: { ...page, prunedAt: new Date().toISOString() } };
+      saveState(options.statePath, state);
+      entry.action = "pruned";
+      if (!current) entry.reason = "page no longer exists in Plane";
+      options.log(`pruned   ${page.path} (${page.id})`);
+    } catch (error) {
+      entry.action = "failed";
+      entry.reason = (error as Error).message;
+    }
+  }
 }
 
 export const defaultCacheDir = (statePath: string) => join(statePath, "..", "cache");

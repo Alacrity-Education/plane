@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -72,6 +72,17 @@ class FakeApi {
     if (publish) this.published.add(id);
     else this.published.delete(id);
     return publish ? ("published" as const) : ("unpublished" as const);
+  };
+  archived: string[] = [];
+  archivePage = async (id: string) => {
+    const archive = (pageId: string) => {
+      const page = this.pages.get(pageId);
+      if (!page) return;
+      page.archived_at = "2026-01-01T00:00:00Z";
+      for (const child of this.pages.values()) if (child.parent === pageId) archive(child.id);
+    };
+    archive(id);
+    this.archived.push(id);
   };
   deletePage = async (id: string) => {
     this.pages.delete(id);
@@ -320,5 +331,71 @@ describe("runImport: access levels", () => {
     expect(lines.some((l) => l.trim().startsWith("[public]") && l.includes("Courses/intro"))).toBe(true);
     expect(lines.some((l) => l.includes("[members]") && l.includes("Meetings/weekly"))).toBe(true);
     expect(lines.some((l) => l.includes("[admins]") && l.includes("Board/minutes"))).toBe(true);
+  });
+});
+
+describe("runImport: pages gone from the source", () => {
+  it("lists them, and with --prune archives them (and folder pages left empty)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "wikijs-import-"));
+    const write = (file: string, content: string) => {
+      mkdirSync(dirname(join(dir, file)), { recursive: true });
+      writeFileSync(join(dir, file), content);
+    };
+    write("home.md", "---\ntitle: Home\n---\nWelcome");
+    write("Courses/keep.md", "---\ntitle: Keep\n---\nKeep");
+    write("Courses/old.md", "---\ntitle: Old\n---\nOld");
+    write("Courses/older.md", "---\ntitle: Older\n---\nOlder");
+    write("Meetings/a.md", "---\ntitle: A\n---\nA");
+    write("Meetings/b.md", "---\ntitle: B\n---\nB");
+    const api = new FakeApi();
+    const state = emptyState();
+    const run = (extra: Record<string, unknown> = {}) =>
+      runImport({
+        sourceDir: dir,
+        dryRun: false,
+        statePath: join(dir, ".state", "state.json"),
+        state,
+        cacheDir: join(dir, ".state", "cache"),
+        maxImageBytes: 5_000_000,
+        api: api as unknown as PlaneWikiApi,
+        workspaceSlug: "ws",
+        log: () => undefined,
+        ...extra,
+      });
+    await run();
+    const ids = Object.fromEntries(Object.entries(state.pages).map(([key, page]) => [key, page.id]));
+    rmSync(join(dir, "Meetings"), { recursive: true });
+    rmSync(join(dir, "Courses/old.md"));
+    rmSync(join(dir, "Courses/older.md"));
+    // someone added a page under "Older" in Plane: it must not be archived along
+    api.addPage("Notes", ids["courses/older"]);
+
+    // 1. without --prune: only listed
+    const listed = await run();
+    expect(listed.stale.map((p) => [p.path, p.action]).toSorted()).toEqual([
+      ["Courses/old", "stale"],
+      ["Courses/older", "stale"],
+      ["Meetings", "stale"],
+      ["Meetings/a", "stale"],
+      ["Meetings/b", "stale"],
+    ]);
+    expect(listed.summary.stale).toBe(5);
+    expect(api.archived).toEqual([]);
+    expect(listed.warnings.some((w) => w.path === "Meetings/a" && w.message.includes("--prune"))).toBe(true);
+
+    // 2. --prune: archived deepest first; the folder page goes once its pages are gone
+    const pruned = await run({ prune: true });
+    expect(api.archived).toEqual([ids["courses/old"], ids["meetings/a"], ids["meetings/b"], ids.meetings]);
+    expect(pruned.summary.pruned).toBe(4);
+    expect(pruned.stale.find((p) => p.path === "Courses/older")).toMatchObject({ action: "kept" });
+    expect(state.pages["meetings/a"]).toBeUndefined();
+    expect(state.pruned?.["meetings/a"]).toMatchObject({ id: ids["meetings/a"], path: "Meetings/a" });
+    expect(api.pages.get(ids["courses/keep"]!)!.archived_at).toBeNull();
+    expect(api.pages.get(ids.courses!)!.archived_at).toBeNull();
+
+    // 3. nothing new: only the kept page is still listed
+    const again = await run({ prune: true });
+    expect(again.stale.map((p) => p.path)).toEqual(["Courses/older"]);
+    expect(api.archived).toHaveLength(4);
   });
 });

@@ -27,6 +27,8 @@ export type TImportState = {
   pages: Record<string, TPageState>;
   /** Normalized Wiki.js path → image sha256 → Plane asset id. */
   assets: Record<string, Record<string, string>>;
+  /** Pages archived by `--prune` because they left the source (kept for reference). */
+  pruned?: Record<string, TPageState & { prunedAt: string }>;
 };
 
 export function emptyState(): TImportState {

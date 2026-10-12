@@ -25,7 +25,9 @@ node packages/wikijs-import/dist/cli.js --source /path/to/wikijs-repo
 
 | Option                              | Meaning                                                                                                                                      |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--source <dir>`                    | Wiki.js git-sync repository (required)                                                                                                       |
+| `--source <dir>`                    | Wiki.js git-sync repository (this or `--wikijs-url`)                                                                                         |
+| `--wikijs-url <url>`                | Export the live Wiki.js (token in `WIKIJS_TOKEN`) and import from that export instead of `--source`                                          |
+| `--wikijs-cache <dir>`              | Folder for the live export, default `wikijs-source` next to the state file                                                                   |
 | `--dry-run`                         | Print the tree and the visibility of every page; write the report; no API calls                                                              |
 | `--only <path prefix>`              | Only import pages under this Wiki.js path (e.g. `Courses/AirboxBootcamp`); missing ancestors are created                                     |
 | `--state <file>`                    | State file, default `.wikijs-import/state.json`                                                                                              |
@@ -34,6 +36,7 @@ node packages/wikijs-import/dist/cli.js --source /path/to/wikijs-repo
 | `--create-missing-projects`         | Create a Plane project for every `Projects/` page that matches none (see below)                                                              |
 | `--no-project-sections`             | Never match `Projects/` pages to Plane projects: all of them stay under the plain "Projects" folder page (to move into projects by hand)     |
 | `--force`                           | Rewrite descriptions even when unchanged since the last run                                                                                  |
+| `--prune`                           | Archive pages of earlier runs that are no longer in the source (without it: only listed)                                                     |
 | `--adopt`                           | Without a state entry, reuse an existing page with the same name and parent (recovery after losing the state file; that page is overwritten) |
 | `--login-email`, `--login-password` | Sign in with email/password instead of a cookie (also `PLANE_LOGIN_EMAIL` / `PLANE_LOGIN_PASSWORD`)                                          |
 
@@ -42,6 +45,34 @@ node packages/wikijs-import/dist/cli.js --source /path/to/wikijs-repo
 | `PLANE_URL`            | Origin serving the Plane API (`/api/…`, `/auth/…`). Production: the Plane URL. Dev stack: `http://localhost:8000` |
 | `PLANE_WORKSPACE_SLUG` | Target workspace                                                                                                  |
 | `PLANE_SESSION_COOKIE` | The raw `Cookie` request header of a signed-in browser                                                            |
+| `WIKIJS_TOKEN`         | Wiki.js API key for `--wikijs-url` (Administration → API Access); never a flag, never logged                      |
+
+### Live Wiki.js source (`--wikijs-url`)
+
+Instead of a git-sync checkout (which goes stale when the Wiki.js storage sync stops), the importer
+can read the live wiki through its GraphQL API:
+
+```bash
+export WIKIJS_TOKEN=…   # Wiki.js → Administration → API Access (read access to pages and assets)
+node packages/wikijs-import/dist/cli.js --wikijs-url https://wiki.example.com --state ~/wikijs-import/state.json …
+```
+
+It writes the same layout git-sync does into `--wikijs-cache` (default `wikijs-source/` next to the
+state file) and imports from there: every page (`pages.list` + `pages.single`) as `<path>.md` with
+front matter or `<path>.html` with the `<!-- -->` header, every file of the asset database at its
+folder path, and then every `/….png|jpg|svg|gif|webp|mp4|pdf` the pages reference that the asset
+database does not know (pasted screenshots), fetched by URL. References the server does not have
+are listed as warnings. Page files are rewritten on every run (a page deleted in Wiki.js disappears
+from the source); downloaded files are kept and not fetched again: delete the folder to refresh them.
+
+### Pages removed from Wiki.js (`--prune`)
+
+Pages the state file knows that are no longer in the source are listed in the report (`stale`) and
+warned about. With `--prune` they are archived in Plane (the web app's Archive, which takes their
+sub-pages along) and moved to `pruned` in the state file; folder pages whose pages were all pruned
+go too. A page that still has sub-pages in Plane that the importer did not create, and project
+section roots, are kept (`kept`, with a warning). With `--only`, only pages under that prefix are
+considered.
 
 ### Running against production (session cookie)
 

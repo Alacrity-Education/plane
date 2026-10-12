@@ -56,6 +56,16 @@ export type TReportPage = {
   error?: string | undefined;
 };
 
+/** A page of an earlier run that is no longer in the source. */
+export type TReportStalePage = {
+  path: string;
+  title: string;
+  pageId: string;
+  /** pruned: archived in Plane; stale: left alone (no --prune); kept: not archivable; failed. */
+  action: "pruned" | "stale" | "kept" | "failed" | "planned";
+  reason?: string | undefined;
+};
+
 export type TImportReport = {
   startedAt: string;
   finishedAt?: string | undefined;
@@ -70,6 +80,8 @@ export type TImportReport = {
   warnings: TWarning[];
   publishPending: string[];
   projects: TReportProject[];
+  /** Pages of earlier runs that are gone from the source (archived with --prune). */
+  stale: TReportStalePage[];
 };
 
 export function summarize(report: TImportReport): void {
@@ -85,6 +97,9 @@ export function summarize(report: TImportReport): void {
     const bucket = (visibility[top] ??= { public: 0, members: 0, admins: 0 });
     bucket[accessLabel(page.visibility)]++;
   }
+  for (const page of report.stale)
+    summary[page.action === "planned" ? "stale" : page.action] =
+      (summary[page.action === "planned" ? "stale" : page.action] ?? 0) + 1;
   summary.warnings = report.warnings.length;
   report.summary = summary;
   report.visibility = visibility;
@@ -156,6 +171,19 @@ export function renderMarkdownReport(report: TImportReport): string {
       page.publish ?? "",
     ];
     lines.push(`| ${cells.join(" | ")} |`);
+  }
+  if (report.stale.length) {
+    lines.push(
+      "",
+      "## Pages no longer in the source",
+      "",
+      "| Path | Title | Plane page | Action |",
+      "| --- | --- | --- | --- |"
+    );
+    for (const page of report.stale) {
+      const action = page.action + (page.reason ? `: ${page.reason.replace(/\|/g, "\\|")}` : "");
+      lines.push(`| \`${page.path}\` | ${page.title.replace(/\|/g, "\\|")} | ${page.pageId} | ${action} |`);
+    }
   }
   lines.push("", `## Warnings (${report.warnings.length})`, "");
   for (const warning of report.warnings) lines.push(`- \`${warning.path || "(global)"}\`: ${warning.message}`);

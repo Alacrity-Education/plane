@@ -22,3 +22,4 @@ export * from "./state";
 export * from "./tree";
 export * from "./types";
 export * from "./visibility";
+export * from "./wikijs-live";

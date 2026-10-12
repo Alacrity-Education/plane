@@ -214,6 +214,11 @@ export class PlaneWikiApi {
     return this.session.json("GET", `${this.base}/${id}/`);
   }
 
+  /** Archives a page and its sub-pages (what the web app's "Archive" does). */
+  async archivePage(id: string): Promise<void> {
+    await this.session.request("POST", `${this.base}/${id}/archive/`);
+  }
+
   /** Archives then deletes a page (Plane only deletes archived pages). */
   async deletePage(id: string): Promise<void> {
     await this.session.request("POST", `${this.base}/${id}/archive/`, { allowStatus: [400] });

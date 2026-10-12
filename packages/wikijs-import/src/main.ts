@@ -5,7 +5,7 @@
  */
 
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { fetchFileSizeLimit, PlaneSession, PlaneWikiApi } from "./api";
 import { defaultCacheDir, runImport } from "./importer";
@@ -13,16 +13,23 @@ import { renderMarkdownReport } from "./report";
 import { ensureDir } from "./images";
 import { parseProjectMap } from "./projects";
 import { loadState } from "./state";
+import type { TWarning } from "./types";
+import { exportWikiJs } from "./wikijs-live";
 
-export const USAGE = `Usage: plane-wikijs-import --source <wiki.js repo> [options]
+export const USAGE = `Usage: plane-wikijs-import (--source <wiki.js repo> | --wikijs-url <url>) [options]
 
 Options:
-  --source <dir>          Wiki.js git-sync repository (required)
+  --source <dir>          Wiki.js git-sync repository
+  --wikijs-url <url>      Export the live Wiki.js (GraphQL API, token in WIKIJS_TOKEN) into the
+                          --wikijs-cache folder and import from there instead of --source
+  --wikijs-cache <dir>    Folder for the live export (default: wikijs-source next to the state file)
   --dry-run               Print the page tree with the resolved visibility; no writes
   --only <path prefix>    Only import pages under this Wiki.js path (e.g. Courses/AirboxBootcamp)
   --state <file>          State file (default .wikijs-import/state.json)
   --report <file>         Report file; writes <file> (JSON) and <file>.md (default .wikijs-import/report.json)
   --force                 Rewrite page descriptions even when unchanged since the last run
+  --prune                 Archive the pages of earlier runs that are no longer in the source
+                          (without it they are only listed in the report)
   --project-map <json>    JSON object { "<Wiki.js path>": "<project identifier or name>" } placing
                           Projects/ pages into those projects' wiki sections (else matched by name)
   --create-missing-projects
@@ -39,6 +46,7 @@ Environment:
   PLANE_URL               Plane API origin, e.g. https://plane.example.com (dev: http://localhost:8000)
   PLANE_WORKSPACE_SLUG    Target workspace slug
   PLANE_SESSION_COOKIE    Raw Cookie header copied from a signed-in browser (session-id=…; csrftoken=…)
+  WIKIJS_TOKEN            Wiki.js API key for --wikijs-url (Administration → API Access)
 `;
 
 const DEFAULT_FILE_SIZE_LIMIT = 5 * 1024 * 1024;
@@ -50,10 +58,14 @@ export type TMainIo = {
 };
 
 export async function main(argv: string[], io: TMainIo): Promise<number> {
+  const sourceWarnings: TWarning[] = [];
   const { values } = parseArgs({
     args: argv,
     options: {
       source: { type: "string" },
+      "wikijs-url": { type: "string" },
+      "wikijs-cache": { type: "string" },
+      prune: { type: "boolean", default: false },
       "dry-run": { type: "boolean", default: false },
       only: { type: "string" },
       state: { type: "string", default: ".wikijs-import/state.json" },
@@ -73,18 +85,38 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
     io.stdout(USAGE);
     return 0;
   }
-  if (!values.source) {
-    io.stderr("--source is required\n");
+  const dryRun = values["dry-run"] ?? false;
+  const statePath = resolve(values.state ?? ".wikijs-import/state.json");
+  const wikijsUrl = values["wikijs-url"]?.replace(/\/+$/, "");
+  if (!values.source === !wikijsUrl) {
+    io.stderr("pass either --source or --wikijs-url\n");
     io.stderr(USAGE);
     return 2;
   }
-  const sourceDir = resolve(values.source);
-  if (!existsSync(sourceDir) || !statSync(sourceDir).isDirectory()) {
-    io.stderr(`source directory not found: ${sourceDir}`);
-    return 2;
+  let sourceDir: string;
+  if (wikijsUrl) {
+    const token = io.env.WIKIJS_TOKEN?.trim();
+    if (!token) {
+      io.stderr("--wikijs-url needs the Wiki.js API key in WIKIJS_TOKEN");
+      return 2;
+    }
+    sourceDir = resolve(values["wikijs-cache"] ?? join(dirname(statePath), "wikijs-source"));
+    const exportWarnings: TWarning[] = [];
+    try {
+      await exportWikiJs({ baseUrl: wikijsUrl, token, outDir: sourceDir, warnings: exportWarnings, log: io.stdout });
+    } catch (error) {
+      io.stderr(`Wiki.js export failed: ${(error as Error).message}`);
+      return 1;
+    }
+    for (const warning of exportWarnings) io.stdout(`warning  ${warning.path}: ${warning.message}`);
+    sourceWarnings.push(...exportWarnings);
+  } else {
+    sourceDir = resolve(values.source ?? "");
+    if (!existsSync(sourceDir) || !statSync(sourceDir).isDirectory()) {
+      io.stderr(`source directory not found: ${sourceDir}`);
+      return 2;
+    }
   }
-  const dryRun = values["dry-run"] ?? false;
-  const statePath = resolve(values.state ?? ".wikijs-import/state.json");
   const reportPath = resolve(values.report ?? ".wikijs-import/report.json");
   const baseUrl = io.env.PLANE_URL?.replace(/\/+$/, "");
   const workspaceSlug = io.env.PLANE_WORKSPACE_SLUG ?? "";
@@ -135,6 +167,7 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
     dryRun,
     only: values.only,
     force: values.force,
+    prune: values.prune,
     adopt: values.adopt,
     projectMap,
     createMissingProjects: values["create-missing-projects"],
@@ -149,6 +182,8 @@ export async function main(argv: string[], io: TMainIo): Promise<number> {
     log: io.stdout,
   });
 
+  report.warnings.unshift(...sourceWarnings);
+  report.summary.warnings = report.warnings.length;
   ensureDir(reportPath);
   writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
   const markdownPath = reportPath.replace(/\.json$/i, "") + ".md";
