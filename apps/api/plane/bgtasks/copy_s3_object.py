@@ -17,6 +17,7 @@ from plane.utils.exception_logger import log_exception
 from plane.settings.storage import S3Storage
 from celery import shared_task
 from plane.utils.url import normalize_url_path
+from plane.utils.uuid import is_valid_uuid
 
 
 def get_entity_id_field(entity_type, entity_id):
@@ -52,7 +53,8 @@ def extract_all_asset_ids(html, asset_attrs=None):
         for element in soup.find_all(list(asset_attrs.keys())):
             for attr in asset_attrs.get(element.name, []):
                 value = element.get(attr)
-                if value and value not in asset_ids:
+                # Only uploaded assets carry a UUID src; external image URLs must not reach id__in
+                if value and is_valid_uuid(value) and value not in asset_ids:
                     asset_ids.append(value)
         return asset_ids
     except Exception as e:

@@ -28,7 +28,7 @@ from rest_framework.response import Response
 
 # Module imports
 from plane.app.views.base import BaseAPIView
-from plane.app.permissions import WorkspaceUserPermission
+from plane.app.permissions import ROLE, WorkspaceUserPermission
 from plane.app.permissions.wiki_page import visible_wiki_pages_queryset
 from plane.db.models import (
     Workspace,
@@ -107,10 +107,15 @@ class GlobalSearchEndpoint(BaseAPIView):
                 else:
                     q |= Q(**{f"{field}__icontains": query})
 
+        # Guests only see issues they created unless guest_view_all_features
         issues = Issue.issue_objects.filter(
             q,
+            Q(project__project_projectmember__role__gt=ROLE.GUEST.value)
+            | Q(project__guest_view_all_features=True)
+            | Q(created_by=self.request.user),
             project__project_projectmember__member=self.request.user,
             project__project_projectmember__is_active=True,
+            project__project_projectmember__deleted_at__isnull=True,
             project__archived_at__isnull=True,
             workspace__slug=slug,
         )
@@ -183,11 +188,18 @@ class GlobalSearchEndpoint(BaseAPIView):
                 q |= Q(**{f"{field}__icontains": query})
 
         pages = (
+            # Guests only see pages they own unless guest_view_all_features;
+            # private pages are owner-only, as in PageViewSet
             Page.objects.filter(
                 q,
                 Q(
+                    Q(projects__project_projectmember__role__gt=ROLE.GUEST.value)
+                    | Q(projects__guest_view_all_features=True)
+                    | Q(owned_by=self.request.user),
+                    Q(owned_by=self.request.user) | Q(access=Page.PUBLIC_ACCESS),
                     projects__project_projectmember__member=self.request.user,
                     projects__project_projectmember__is_active=True,
+                    projects__project_projectmember__deleted_at__isnull=True,
                     projects__archived_at__isnull=True,
                 )
                 # Workspace wiki pages have no project; they come back with
@@ -234,10 +246,17 @@ class GlobalSearchEndpoint(BaseAPIView):
             for field in fields:
                 q |= Q(**{f"{field}__icontains": query})
 
+        # Guests only see views they own unless guest_view_all_features;
+        # private views are owner-only, as in IssueViewViewSet
         issue_views = IssueView.objects.filter(
             q,
+            Q(project__project_projectmember__role__gt=ROLE.GUEST.value)
+            | Q(project__guest_view_all_features=True)
+            | Q(owned_by=self.request.user),
+            Q(owned_by=self.request.user) | Q(access=1),
             project__project_projectmember__member=self.request.user,
             project__project_projectmember__is_active=True,
+            project__project_projectmember__deleted_at__isnull=True,
             project__archived_at__isnull=True,
             workspace__slug=slug,
         )
@@ -264,10 +283,15 @@ class GlobalSearchEndpoint(BaseAPIView):
                 else:
                     q |= Q(**{f"{field}__icontains": query})
 
+        # Guests only see intake issues they created unless guest_view_all_features
         issues = Issue.objects.filter(
             q,
+            Q(project__project_projectmember__role__gt=ROLE.GUEST.value)
+            | Q(project__guest_view_all_features=True)
+            | Q(created_by=self.request.user),
             project__project_projectmember__member=self.request.user,
             project__project_projectmember__is_active=True,
+            project__project_projectmember__deleted_at__isnull=True,
             project__archived_at__isnull=True,
             workspace__slug=slug,
         ).filter(models.Q(issue_intake__status=0) | models.Q(issue_intake__status=-2))
@@ -420,8 +444,12 @@ class SearchEndpoint(BaseAPIView):
                     issues = (
                         Issue.issue_objects.filter(
                             q,
+                            Q(project__project_projectmember__role__gt=ROLE.GUEST.value)
+                            | Q(project__guest_view_all_features=True)
+                            | Q(created_by=self.request.user),
                             project__project_projectmember__member=self.request.user,
                             project__project_projectmember__is_active=True,
+                            project__project_projectmember__deleted_at__isnull=True,
                             workspace__slug=slug,
                             project_id=project_id,
                         )
@@ -528,8 +556,12 @@ class SearchEndpoint(BaseAPIView):
                     pages = (
                         Page.objects.filter(
                             q,
+                            Q(projects__project_projectmember__role__gt=ROLE.GUEST.value)
+                            | Q(projects__guest_view_all_features=True)
+                            | Q(owned_by=self.request.user),
                             projects__project_projectmember__member=self.request.user,
                             projects__project_projectmember__is_active=True,
+                            projects__project_projectmember__deleted_at__isnull=True,
                             projects__id=project_id,
                             workspace__slug=slug,
                             access=0,
@@ -625,8 +657,12 @@ class SearchEndpoint(BaseAPIView):
                     issues = (
                         Issue.issue_objects.filter(
                             q,
+                            Q(project__project_projectmember__role__gt=ROLE.GUEST.value)
+                            | Q(project__guest_view_all_features=True)
+                            | Q(created_by=self.request.user),
                             project__project_projectmember__member=self.request.user,
                             project__project_projectmember__is_active=True,
+                            project__project_projectmember__deleted_at__isnull=True,
                             workspace__slug=slug,
                         )
                         .order_by("-created_at")
@@ -731,8 +767,12 @@ class SearchEndpoint(BaseAPIView):
                         Page.objects.filter(
                             q,
                             Q(
+                                Q(projects__project_projectmember__role__gt=ROLE.GUEST.value)
+                                | Q(projects__guest_view_all_features=True)
+                                | Q(owned_by=self.request.user),
                                 projects__project_projectmember__member=self.request.user,
                                 projects__project_projectmember__is_active=True,
+                                projects__project_projectmember__deleted_at__isnull=True,
                                 access=0,
                                 is_global=True,
                             )

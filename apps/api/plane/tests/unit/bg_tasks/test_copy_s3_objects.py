@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+import uuid
+
 import pytest
 from bs4 import BeautifulSoup
 from django.test import override_settings
@@ -335,3 +337,17 @@ class TestAssetIdHelpers:
         soup = BeautifulSoup(replace_asset_ids(_page_html(), "image-component", mapping), "html.parser")
         assert soup.find("image-component")["src"] == "new-img"
         assert soup.find("excalidraw-component")["src"] == DRAWING_ASSET_ID
+
+
+@pytest.mark.unit
+def test_extract_asset_ids_skips_external_urls():
+    """External image srcs used to reach ``FileAsset.objects.filter(id__in=...)`` and
+    raise "is not a valid UUID", aborting the whole asset copy on page duplicate."""
+    asset_id = str(uuid.uuid4())
+    html = (
+        f'<image-component src="{asset_id}"></image-component>'
+        '<image-component src="https://media.docs.plane.so/seed_assets/31.png"></image-component>'
+        "<image-component></image-component>"
+    )
+
+    assert extract_asset_ids(html, "image-component") == [asset_id]
